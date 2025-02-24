@@ -9,7 +9,7 @@
 | Ксения Лышова    | Дизайнер, Верстальщик            | [GitHub](https://github.com/imxenia) | [VK](https://vk.com/im.xeenia) |
 | Алексей Беляев   | Тестировщик, Разнорабочий        | [GitHub](https://github.com/TOX1C677) | [VK](https://vk.com/tox1c677) |
 | Дмитрий Круглов  | Технический писатель, Разнорабочий | [GitHub](https://github.com/IrONTorG) | [VK](https://vk.com/irontorg) |
-| Илья Четвергов   | Аналитик, Сейл                   | [GitHub](https://github.com) | [VK](https://vk.com/id213022518) |
+| Илья Четвергов   | Аналитик, Сейл                   | [GitHub](https://github.com/EHoTinv) | [VK](https://vk.com/id213022518) |
 
 ## Наши ресурсы
 
