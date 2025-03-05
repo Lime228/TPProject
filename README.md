@@ -14,7 +14,7 @@
 ## Наши ресурсы
 
 ### Доска задач
-- [Jira](https://jumpie.atlassian.net/jira/software/projects/KANBAN/boards/1)
+- [YouTrack](https://projecttp.youtrack.cloud/agiles)
 
 ### Дополнительные ресурсы
 - Пока здесь ничего нет
