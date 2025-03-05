@@ -17,4 +17,4 @@
 - [YouTrack](https://projecttp.youtrack.cloud/agiles) (нужен VPN)
 
 ### Дополнительные ресурсы
-- Пока здесь ничего нет
+- [Miro](https://miro.com/app/board/uXjVIVLnelk=/)
