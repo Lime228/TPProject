@@ -14,7 +14,7 @@
 ## Наши ресурсы
 
 ### Доска задач
-- [YouTrack](https://projecttp.youtrack.cloud/agiles)
+- [YouTrack](https://projecttp.youtrack.cloud/agiles) (нужен VPN)
 
 ### Дополнительные ресурсы
 - Пока здесь ничего нет
