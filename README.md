@@ -18,3 +18,4 @@
 
 ### Дополнительные ресурсы
 - [Miro](https://miro.com/app/board/uXjVIVLnelk=/)
+- [Figma](https://www.figma.com/design/FeBuqTk5FFe9QljM7Z3QmR/тп?node-id=0-1&t=js9svRIyNNHnEnSF-1)
