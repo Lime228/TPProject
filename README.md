@@ -4,7 +4,7 @@
 
 | Участник         | Роль                               | Профиль GitHub                        | Профиль ВК                     |
 |------------------|----------------------------------|---------------------------------------|----------------------------------|
-| Владимир Мосякин | PM, Backend-Разработчик                  | [GitHub](https://github.com/Lime228)  | [VK](https://vk.com/aquamarine_diamond) |
+| Владимир Мосякин | PM, Lead Backend-Разработчик                  | [GitHub](https://github.com/Lime228)  | [VK](https://vk.com/aquamarine_diamond) |
 | Александр Зыков  | Backend-Разработчик                      | [GitHub](https://github.com/Mihulich) | [VK](https://vk.com/mihul_ich) |
 | Ксения Лышова    | Дизайнер, Lead Frontend-разработчик      | [GitHub](https://github.com/imxenia) | [VK](https://vk.com/im.xeenia) |
 | Алексей Беляев   | Тестировщик, Frontend-разработчик        | [GitHub](https://github.com/TOX1C677) | [VK](https://vk.com/tox1c677) |
