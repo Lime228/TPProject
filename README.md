@@ -16,6 +16,11 @@
 ### Доска задач
 - [YouTrack](http://185.239.50.208:8080/agiles)
 
+### Видео
+- [Презентация](https://rutube.ru/video/private/a85e811868c46b3603de2aa67ca15791/?p=VjMTJI3Fn6lerUq2h8GveA)
+
 ### Дополнительные ресурсы
 - [Miro](https://miro.com/app/board/uXjVIVLnelk=/)
 - [Figma](https://www.figma.com/design/FeBuqTk5FFe9QljM7Z3QmR/тп?node-id=0-1&t=js9svRIyNNHnEnSF-1)
+
+
