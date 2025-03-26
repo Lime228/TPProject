@@ -1,4 +1,4 @@
-# Команда №8.2
+![image](https://github.com/user-attachments/assets/25120fff-c105-4411-82ff-2ff533c04136)# Команда №8.2
 
 ## Состав команды
 
@@ -11,16 +11,31 @@
 | Дмитрий Круглов  | Технический писатель, Frontend-разработчик | [GitHub](https://github.com/IrONTorG) | [VK](https://vk.com/irontorg) |
 | Илья Четвергов   | Аналитик, Сейл, Backend-Разработчик      | [GitHub](https://github.com/EHoTinv) | [VK](https://vk.com/id213022518) |
 
+## О приложении
+
+### ZадачOk
+Мобильное приложение «ZадачOk» предназначено для совместного ведения задач с возможностью создания групп пользователей.
+В зависимости от установленных администратором условий, участники могут получать вознаграждение в виде внутренней некоммерческой валюты. 
+В приложении предусмотрен встроенный магазин, в котором данная валюта может быть использована для приобретения доступных товаров или услуг, предусмотренных администратором.
+
 ## Наши ресурсы
 
 ### Доска задач
 - [YouTrack](http://185.239.50.208:8080/agiles)
+- [База знаний](http://185.239.50.208:8080/articles/TPP-A-1/Chto-takoe-ZadachOk)
 
 ### Видео
 - [Презентация](https://rutube.ru/video/private/a85e811868c46b3603de2aa67ca15791/?p=VjMTJI3Fn6lerUq2h8GveA)
 
+### Дизайн
+- [Макет](https://www.figma.com/design/FeBuqTk5FFe9QljM7Z3QmR/тп?node-id=0-1&t=js9svRIyNNHnEnSF-1)
+- [UI Kit](https://www.figma.com/design/FeBuqTk5FFe9QljM7Z3QmR/тп?node-id=4474-2&p=f&t=X9U2rRnZUpLaTmW8-0)
+
+### Документация
+- [Еженедельные отчеты](https://github.com/Lime228/TPProject/tree/main/Weekly%20reports)
+- [Остальная документация](https://github.com/Lime228/TPProject/tree/main/Documentation)
+
 ### Дополнительные ресурсы
 - [Miro](https://miro.com/app/board/uXjVIVLnelk=/)
-- [Figma](https://www.figma.com/design/FeBuqTk5FFe9QljM7Z3QmR/тп?node-id=0-1&t=js9svRIyNNHnEnSF-1)
 
 
