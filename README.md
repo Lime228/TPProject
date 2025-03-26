@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/25120fff-c105-4411-82ff-2ff533c04136)# Команда №8.2
+# Команда №8.2
 
 ## Состав команды
 
