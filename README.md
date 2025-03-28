@@ -30,6 +30,7 @@
 ### Дизайн
 - [Макет](https://www.figma.com/design/FeBuqTk5FFe9QljM7Z3QmR/тп?node-id=0-1&t=js9svRIyNNHnEnSF-1)
 - [UI Kit](https://www.figma.com/design/FeBuqTk5FFe9QljM7Z3QmR/тп?node-id=4474-2&p=f&t=X9U2rRnZUpLaTmW8-0)
+- [Brandbook](https://www.figma.com/slides/uC9wJ5Sb4cqGahNlHbuKRz/Brandbook?node-id=1-42&t=l0CqrePWgSncocg2-0)
 
 ### Документация
 - [Еженедельные отчеты](https://github.com/Lime228/TPProject/tree/main/Weekly%20reports)
