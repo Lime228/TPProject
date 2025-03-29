@@ -24,8 +24,9 @@
 - [YouTrack](http://185.239.50.208:8080/agiles)
 - [База знаний](http://185.239.50.208:8080/articles/TPP-A-1/Chto-takoe-ZadachOk)
 
-### Видео
-- [Презентация](https://rutube.ru/video/private/a85e811868c46b3603de2aa67ca15791/?p=VjMTJI3Fn6lerUq2h8GveA)
+### Презентация
+- [Видео](https://rutube.ru/video/private/a85e811868c46b3603de2aa67ca15791/?p=VjMTJI3Fn6lerUq2h8GveA)
+- [Презентация](https://github.com/Lime228/TPProject/tree/main/Presentation)
 
 ### Дизайн
 - [Макет](https://www.figma.com/design/FeBuqTk5FFe9QljM7Z3QmR/тп?node-id=0-1&t=js9svRIyNNHnEnSF-1)
@@ -34,9 +35,10 @@
 
 ### Документация
 - [Еженедельные отчеты](https://github.com/Lime228/TPProject/tree/main/Weekly%20reports)
-- [Остальная документация](https://github.com/Lime228/TPProject/tree/main/Documentation)
+- Диаграммы, рассчеты, Roadmap и т.д. находятся на [Miro](https://miro.com/app/board/uXjVIVLnelk=/)
+- Техническое задание
 
-### Дополнительные ресурсы
-- [Miro](https://miro.com/app/board/uXjVIVLnelk=/)
+### Дополнительно
+- [О коммитах](http://185.239.50.208:8080/articles/TPP-A-7/O-kommitah)
 
 
