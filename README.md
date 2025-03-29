@@ -37,6 +37,7 @@
 - [Еженедельные отчеты](https://github.com/Lime228/TPProject/tree/main/Weekly%20reports)
 - Диаграммы, рассчеты, Roadmap и т.д. находятся на [Miro](https://miro.com/app/board/uXjVIVLnelk=/)
 - Техническое задание
+- [Схема API](https://app.swaggerhub.com/apis/zadachok/ZadachOk/1.0.0)
 
 ### Дополнительно
 - [О коммитах](http://185.239.50.208:8080/articles/TPP-A-7/O-kommitah)
