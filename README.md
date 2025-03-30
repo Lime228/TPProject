@@ -39,6 +39,14 @@
 - [Техническое задание](https://github.com/Lime228/TPProject/tree/main/Documentation)
 - [Схема API](https://app.swaggerhub.com/apis/zadachok/ZadachOk/1.0.0)
 
+### Проверка
+- [Чек-лист](https://github.com/Lime228/TPProject/blob/main/Documentation/ВГУ-ТП.%20Чеклист%201%20этап%20Команда%208.2.pdf)
+#### Нас проверяли
+- [Команда 8.1](https://github.com/mxnmiraii/Vkatun/tree/main)
+- [Команда 8.5](https://gitlab.com/vsu.cs/TPmain)
+- [Команда 9.1](https://github.com/IgorPustylnik/TP-9.1)
+- [Команда 9.4](https://github.com/MaksimStrelnikov/tp-9.4)
+
 ### Дополнительно
 - [О коммитах](http://185.239.50.208:8080/articles/TPP-A-7/O-kommitah)
 
