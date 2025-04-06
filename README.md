@@ -21,8 +21,8 @@
 ## Наши ресурсы
 
 ### Доска задач
-- [YouTrack](http://185.239.50.208:8080/agiles)
-- [База знаний](http://185.239.50.208:8080/articles/TPP-A-1/Chto-takoe-ZadachOk)
+- [YouTrack](https://youtrack.zadachok.ru/agiles)
+- [База знаний](https://youtrack.zadachok.ru/articles/TPP-A-1/Chto-takoe-ZadachOk)
 
 ### Презентация
 - [Видео](https://rutube.ru/video/private/a85e811868c46b3603de2aa67ca15791/?p=VjMTJI3Fn6lerUq2h8GveA)
