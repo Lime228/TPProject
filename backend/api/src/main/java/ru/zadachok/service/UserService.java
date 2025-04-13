@@ -1,3 +1,4 @@
+// service/UserService.java
 package ru.zadachok.service;
 
 import lombok.RequiredArgsConstructor;
@@ -6,44 +7,44 @@ import org.springframework.stereotype.Service;
 import ru.zadachok.dto.RegisterRequest;
 import ru.zadachok.dto.UserDto;
 import ru.zadachok.exception.UserAlreadyExistsException;
-import ru.zadachok.model.Role;
-import ru.zadachok.model.User;
-import ru.zadachok.repository.UserRepository;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import ru.zadachok.model.Customer;
+import ru.zadachok.repository.CustomerRepository;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    private final UserRepository userRepository;
+    private final CustomerRepository customerRepository;
     private final PasswordEncoder passwordEncoder;
 
     public UserDto register(RegisterRequest request) {
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new UserAlreadyExistsException("Username already taken");
+        // Проверяем уникальность логина и email
+        if (customerRepository.existsByLogin(request.getUsername())) {
+            throw new UserAlreadyExistsException("Логин уже занят");
+        }
+        if (customerRepository.existsByEmail(request.getEmail())) {
+            throw new UserAlreadyExistsException("Email уже занят");
         }
 
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new UserAlreadyExistsException("Email already in use");
-        }
-
-        User user = User.builder()
-                .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword()))
+        // Создаем нового Customer
+        Customer customer = Customer.builder()
+                .name(request.getUsername())
                 .email(request.getEmail())
-                .role(Role.USER)
-                .enabled(true)
+                .password(passwordEncoder.encode(request.getPassword()))
+                .login(request.getUsername())  // login = username
+                .isAdmin(false)                // По умолчанию не админ
                 .build();
 
-        User savedUser = userRepository.save(user);
-        return mapToDto(savedUser);
-    }
+        // Сохраняем через JPA
+        Customer savedCustomer = customerRepository.save(customer);
 
-    private UserDto mapToDto(User user) {
+        // Конвертируем в DTO
         return UserDto.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .role(user.getRole().name())
+                .id(customer.getId().longValue())  // Конвертируем Integer в Long
+                .username(customer.getName())
+                .email(customer.getEmail())
+                .role(customer.isAdmin() ? "ADMIN" : "USER")  // Определяем роль
+                .birthday(customer.getBirthday())  // Добавляем, если нужно
+                .login(customer.getLogin())        // Добавляем, если нужно
                 .build();
     }
 }
