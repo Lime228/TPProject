@@ -2,6 +2,8 @@
 package ru.zadachok.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.zadachok.dto.RegisterRequest;
@@ -46,5 +48,10 @@ public class UserService {
                 .birthday(customer.getBirthday())  // Добавляем, если нужно
                 .login(customer.getLogin())        // Добавляем, если нужно
                 .build();
+    }
+
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return customerRepository.findByLogin(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 }
