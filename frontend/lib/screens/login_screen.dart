@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:untitled/api/api_interface.dart';
+import 'package:untitled/api/mock_api_client.dart';
+import '../models/register_request.dart';
 import 'register_screen.dart';
 
 
@@ -15,13 +18,26 @@ import 'register_screen.dart';
 
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final ApiInterface apiClient;
+
+  const LoginScreen({
+    Key? key,
+    this.apiClient = const MockApiClient(),
+  }) : super(key: key);
+
 
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController(); //это надо подвязать к полю с вводом логина
+  final _passwordController = TextEditingController();// то же с паролем
+  final _emailController = TextEditingController();// для почты
+  bool _isLoading = false;
+  String? _errorMessage;
+
   static const _borderRadius = 15.0;
   static const _shadowOffset = Offset(0, 4);
   static const _shadowBlur = 6.0;
@@ -34,8 +50,8 @@ class _LoginScreenState extends State<LoginScreen> {
   static const _inputHeight = 41.0;
 
   // Цвета
-  static const _colorEnter = const Color.fromARGB(100, 110, 68, 255);
-  static const _colorEnterButton = const Color.fromARGB(	100, 147, 125, 243);
+  static const _colorEnter = Color.fromARGB(100, 110, 68, 255);
+  static const _colorEnterButton = Color.fromARGB(	100, 147, 125, 243);
 
   // Стили текста
   static const _textStyle = TextStyle(
@@ -54,6 +70,36 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscureText = true;
 
   void _togglePasswordVisibility() => setState(() => _obscureText = !_obscureText);
+
+  Future<void> _register() async { // что то такое должно быть, но не уверен пока что, надо протестить
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final user = await widget.apiClient.register(
+        RegisterRequest(
+          username: _usernameController.text,
+          password: _passwordController.text,
+          email: _emailController.text,
+        ),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Успешно! ID: ${user.id}')),
+      );
+
+    } catch (e) {
+      setState(() => _errorMessage = e.toString());
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+
 
   @override
   Widget build(BuildContext context) {

@@ -4,6 +4,9 @@ import '../models/user_response.dart';
 import 'api_interface.dart';
 
 class MockApiClient implements ApiInterface {
+
+  const MockApiClient();
+
   @override
   Future<UserResponse> register(RegisterRequest request) async {
     // Имитация задержки сети
@@ -27,12 +30,13 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<void> login(String username, String password) async {
+  Future<bool> login(String username, String password) async {
     await Future.delayed(const Duration(seconds: 1));
 
     if (username != 'test' || password != 'test123') {
       throw Exception('Неверные учетные данные');
     }
+    return true;
 
     // В реальном приложении здесь бы возвращался токен
   }
