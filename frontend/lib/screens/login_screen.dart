@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:untitled/api/api_interface.dart';
-import 'package:untitled/api/mock_api_client.dart';
-import '../models/user/register_request.dart';
+import 'package:zadachok/api/api_interface.dart';
+import 'package:zadachok/api/mock_api_client.dart';
+import '/models/user/register_request.dart';
 import 'register_screen.dart';
+
 
 
 
@@ -190,25 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.white,
-        currentIndex: 1,
-        selectedItemColor: Colors.deepPurple,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Календарь',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.login),
-            label: 'Вход',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Настройки',
-          ),
-        ],
-      ),
+
     );
   }
 
