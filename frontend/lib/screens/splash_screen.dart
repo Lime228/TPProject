@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
+import '../main_navigation.dart';
+
+
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -22,7 +24,7 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    // логотип: scale и затем slide
+
     _logoController = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
@@ -47,18 +49,18 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _startAnimation() async {
-    await _logoController.forward(); // scale → slide (в одной анимации)
+    await _logoController.forward();
 
     await Future.delayed(const Duration(milliseconds: 300));
-    await _textController.forward(); // текст появляется
+    await _textController.forward();
     await Future.delayed(const Duration(milliseconds: 1000));
-    await _textController.reverse(); // текст исчезает
+    await _textController.reverse();
     await Future.delayed(const Duration(milliseconds: 500));
 
     if (mounted) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
       );
     }
   }
