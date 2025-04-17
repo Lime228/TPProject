@@ -14,10 +14,10 @@ class RegisterRequest {
   });
 
   Map<String, dynamic> toJson() => {
-    'Customer_name': name,
-    'Customer_email': email,
-    'Password': password,
-    'Birthday_date': birthdayDate.toIso8601String(),
-    'Login': login,
+    // 'Customer_name': name,
+    'email': email,
+    'password': password,
+    // 'Birthday_date': birthdayDate.toIso8601String(),
+    'username': login,
   };
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:zadachok/api/api_interface.dart';
 import 'package:zadachok/api/mock_api_client.dart';
+import '../api/api_client.dart';
 import '/models/user/register_request.dart';
 import 'register_screen.dart';
 
@@ -179,7 +180,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 GestureDetector(
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                    MaterialPageRoute(builder: (_) => RegisterScreen(apiClient: ApiClient(),)),
+                    //*
+                    // RegisterScreen теперь не создается как константа, и всегда требует в себя ApiClient
+                    // *//
                   ),
                   child: const Text(
                     "Зарегистрироваться",
