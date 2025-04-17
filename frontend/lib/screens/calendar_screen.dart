@@ -198,8 +198,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       ),
                     ],
                   ),
+
+                  //TODO: слепить блок с календарем и с месяцев наложением в один блок
                   child: Text(
-                    currentMonth!,
+                    currentMonth,
                     style: const TextStyle(
                       color: Color(0xFF6E44FF),
                       fontSize: 36,
@@ -322,4 +324,5 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
     );
   }
+
 }

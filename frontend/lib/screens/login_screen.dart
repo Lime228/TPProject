@@ -4,6 +4,7 @@ import 'package:zadachok/api/mock_api_client.dart';
 import '../api/api_client.dart';
 import '/models/user/register_request.dart';
 import 'register_screen.dart';
+import 'password_recovery_screen.dart';
 
 
 
@@ -139,12 +140,20 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            const Align(
+            Align(
               alignment: Alignment.centerRight,
-              child: Text(
-                'Не помню пароль',
-                style: TextStyle(color: Colors.grey),
-              ),
+              child: GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PasswordRecoveryScreen(apiClient: widget.apiClient),
+                  ),
+                ),
+                child: const Text(
+                  'Не помню пароль',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              )
             ),
             const SizedBox(height: 20),
             Container(

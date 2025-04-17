@@ -96,6 +96,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+
+  //TODO: размер подровнять с экраном логина
   @override
   Widget build(BuildContext context) {
     return Scaffold(
