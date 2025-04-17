@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../main_navigation.dart';
+import 'package:zadachok/routes/main_navigation.dart';
 
 
 
@@ -34,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _logoController, curve: const Interval(0.0, 0.3, curve: Curves.easeOutBack)),
     );
 
-    _logoSlide = Tween<double>(begin: 0.0, end: -163.0).animate(
+    _logoSlide = Tween<double>(begin: 0.0, end: -152.0).animate(
       CurvedAnimation(parent: _logoController, curve: const Interval(0.5, 1.0, curve: Curves.easeInOut)),
     );
 
