@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:intl/date_symbol_data_local.dart'; // Импортируем для инициализации локали
+import 'package:intl/date_symbol_data_local.dart'; //
 import 'screens/splash_screen.dart';
 
 void main() async {
