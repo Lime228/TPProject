@@ -1,4 +1,4 @@
-import 'package:untitled/models/shop/shop_response.dart';
+import 'package:zadachok/models/shop/shop_response.dart';
 
 class ShopByProductResponse {
   final List<ShopResponse> shops;

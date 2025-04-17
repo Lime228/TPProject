@@ -1,4 +1,4 @@
-import 'package:untitled/models/wallet/wallet_response.dart';
+import 'package:zadachok/models/wallet/wallet_response.dart';
 
 class WalletListResponse {
   final List<WalletResponse> wallets;

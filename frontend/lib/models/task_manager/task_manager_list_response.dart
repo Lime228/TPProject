@@ -1,4 +1,4 @@
-import 'package:untitled/models/task_manager/task_manager_response.dart';
+import 'package:zadachok/models/task_manager/task_manager_response.dart';
 
 class TaskManagerListResponse {
   final List<TaskManagerResponse> taskManagers;

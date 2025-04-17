@@ -1,4 +1,4 @@
-import 'package:untitled/models/task/task_response.dart';
+import 'package:zadachok/models/task/task_response.dart';
 
 class TaskByCustomerResponse {
   final List<TaskResponse> tasks;
