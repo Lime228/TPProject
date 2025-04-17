@@ -1,5 +1,5 @@
-import '../models/register_request.dart';
-import '../models/user_response.dart';
+import '../models/user/register_request.dart';
+import '../models/user/user_response.dart';
 
 abstract class ApiInterface {
   Future<UserResponse> register(RegisterRequest request);

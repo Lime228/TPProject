@@ -1,6 +1,6 @@
 import 'dart:async';
-import '../models/register_request.dart';
-import '../models/user_response.dart';
+import '../models/user/register_request.dart';
+import '../models/user/user_response.dart';
 import 'api_interface.dart';
 
 class MockApiClient implements ApiInterface {
@@ -13,7 +13,7 @@ class MockApiClient implements ApiInterface {
     await Future.delayed(const Duration(seconds: 1));
 
     // Валидация тестовых данных
-    if (request.username.isEmpty || request.password.isEmpty) {
+    if (request.login.isEmpty || request.password.isEmpty) {
       throw Exception('Все поля обязательны для заполнения');
     }
 
@@ -23,9 +23,12 @@ class MockApiClient implements ApiInterface {
 
     // Успешный ответ
     return UserResponse(
-      id: DateTime.now().millisecondsSinceEpoch,
-      username: request.username,
-      email: request.email,
+        id: DateTime.now().millisecondsSinceEpoch,
+        name: 'razdva',
+        email: request.email,
+        birthdayDate: DateTime.parse('1969-07-20 20:18:04Z'),
+        login: request.login,
+        isAdmin: false
     );
   }
 

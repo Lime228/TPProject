@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/register_request.dart';
-import '../models/user_response.dart';
+import '../models/user/register_request.dart';
+import '../models/user/user_response.dart';
 import 'api_endpoints.dart';
 
 class ApiClient {

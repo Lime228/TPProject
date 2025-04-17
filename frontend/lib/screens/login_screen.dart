@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:untitled/api/api_interface.dart';
 import 'package:untitled/api/mock_api_client.dart';
-import '../models/register_request.dart';
+import '../models/user/register_request.dart';
 import 'register_screen.dart';
 
 
@@ -82,9 +82,11 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final user = await widget.apiClient.register(
         RegisterRequest(
-          username: _usernameController.text,
           password: _passwordController.text,
           email: _emailController.text,
+          name: '',
+          birthdayDate: DateTime.parse('1969-07-20 20:18:04Z'),
+          login: _usernameController.text
         ),
       );
 
