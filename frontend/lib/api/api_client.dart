@@ -54,6 +54,46 @@ class ApiClient implements ApiInterface {
     }
   }
 
+
+
+  @override
+  Future<void> recoverPassword({required String email,required String login}) async {
+    final url = Uri.parse(ApiEndpoints.recoverPasswordUrl);
+
+    try {
+      final response = await _client.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
+          'login': login,
+        }),
+      ).timeout(const Duration(seconds: 10));
+
+      _handlePasswordRecoveryResponse(response);
+    } on http.ClientException catch (e) {
+      throw Exception('Ошибка подключения: ${e.message}');
+    } on Exception catch (e) {
+      throw Exception('Ошибка: $e');
+    }
+  }
+
+  void _handlePasswordRecoveryResponse(http.Response response) {
+    switch (response.statusCode) {
+      case 200:
+      case 201:
+        return;
+      case 400:
+        throw Exception('Неверный запрос: ${response.body}');
+      case 404:
+        throw Exception('Пользователь не найден');
+      case 500:
+        throw Exception('Ошибка сервера: ${response.body}');
+      default:
+        throw Exception('Ошибка: ${response.statusCode}');
+    }
+  }
+
   UserResponse _handleResponse(http.Response response) {
     switch (response.statusCode) {
       case 200:

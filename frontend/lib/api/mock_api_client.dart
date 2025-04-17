@@ -4,15 +4,12 @@ import '../models/user/user_response.dart';
 import 'api_interface.dart';
 
 class MockApiClient implements ApiInterface {
-
   const MockApiClient();
 
   @override
   Future<UserResponse> register(RegisterRequest request) async {
-    // Имитация задержки сети
     await Future.delayed(const Duration(seconds: 1));
 
-    // Валидация тестовых данных
     if (request.login.isEmpty || request.password.isEmpty) {
       throw Exception('Все поля обязательны для заполнения');
     }
@@ -21,7 +18,6 @@ class MockApiClient implements ApiInterface {
       throw Exception('Пароль должен содержать минимум 6 символов');
     }
 
-    // Успешный ответ
     return UserResponse(
         id: DateTime.now().millisecondsSinceEpoch,
         name: 'razdva',
@@ -33,14 +29,33 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<bool> login(String username, String password) async {
+  Future<UserResponse> login(String username, String password) async {
     await Future.delayed(const Duration(seconds: 1));
 
     if (username != 'test' || password != 'test123') {
       throw Exception('Неверные учетные данные');
     }
-    return true;
 
-    // В реальном приложении здесь бы возвращался токен
+    return UserResponse(
+        id: 1,
+        name: 'Test User',
+        email: 'test@example.com',
+        birthdayDate: DateTime.parse('1990-01-01'),
+        login: username,
+        isAdmin: false
+    );
+  }
+
+  @override
+  Future<void> recoverPassword({required String email, required String login}) async {
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (email.isEmpty || login.isEmpty) {
+      throw Exception('Пожалуйста, заполните все поля');
+    }
+
+    if (!email.contains('@')) {
+      throw Exception('Некорректный email');
+    }
   }
 }
