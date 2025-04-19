@@ -217,4 +217,9 @@ class MockApiClient implements ApiInterface {
       balance: request.balance,
     );
   }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+  }
 }

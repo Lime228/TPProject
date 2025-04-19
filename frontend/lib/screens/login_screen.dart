@@ -88,7 +88,6 @@ class _LoginScreenState extends State<LoginScreen> {
           password: _passwordController.text,
           email: _emailController.text,
           name: '',
-          birthdayDate: DateTime.parse('1969-07-20 20:18:04Z'),
           login: _usernameController.text
         ),
       );

@@ -77,7 +77,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           password: _passwordController.text,
           email: _emailController.text,
           name: '',
-          birthdayDate: DateTime.parse('1969-07-20 20:18:04Z'),
           login: _usernameController.text,
         ),
       );
@@ -92,6 +91,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       setState(() => _errorMessage = e.toString());
     } finally {
+      widget.apiClient.dispose();
+      //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
+      // ОЧЕНЬ ВАЖНО ЗАКРЫВАТЬ АПИШКУ В try() finally{} ИНАЧЕ БУДУТ ВИСЕТЬ КОННЕКТЫ//
+      //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
       setState(() => _isLoading = false);
     }
   }

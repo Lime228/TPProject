@@ -29,4 +29,6 @@ abstract class ApiInterface {
 
 
   Future<WalletResponse> updateWallet(WalletRequest request);
+
+  void dispose();
 }

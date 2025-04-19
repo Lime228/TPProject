@@ -119,6 +119,7 @@ class ApiClient implements ApiInterface {
     }
   }
 
+  @override
   void dispose() {
     _client.close();
   }
