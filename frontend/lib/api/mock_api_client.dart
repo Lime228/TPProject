@@ -207,4 +207,16 @@ class MockApiClient implements ApiInterface {
   void dispose() {
     // TODO: implement dispose
   }
+
+  @override
+  Future<void> deleteTask(String taskId) {
+    // TODO: implement deleteTask
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<TaskModel> updateTask(TaskModel task) {
+    // TODO: implement updateTask
+    throw UnimplementedError();
+  }
 }

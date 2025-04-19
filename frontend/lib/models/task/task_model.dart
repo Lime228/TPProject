@@ -64,9 +64,19 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
     );
   }
 
-  // Для списка задач (заменяет TaskListResponse)
-  List<TaskModel> listFromJson(List<dynamic> jsonList) {
-    return jsonList.map((json) => fromJson(json)).toList();
+
+
+   static List<TaskModel> listFromJson(List<dynamic> jsonList) {
+    return jsonList.map((json) => TaskModel(
+      id: json['Task_ID'] ?? 0,
+      name: json['Task_name'],
+      reward: (json['Reward'] as num).toDouble(),
+      description: json['Description'],
+      startPoint: json['Start_point'],
+      endPoint: json['End_point'],
+      customerId: json['Customer_ID'],
+      state: json['Task_state'],
+    )).toList();
   }
 
   // Для задач по customerId (заменяет TaskByCustomerResponse)

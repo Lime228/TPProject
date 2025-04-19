@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:zadachok/models/task/task_model.dart';
+import '../providers/task_provider.dart';
+import 'tasks_screen.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -12,6 +16,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
   DateTime selectedDate = DateTime.now();
   bool showMonthPicker = false;
 
+  DateTime? get date => null;
+
   void _selectMonth(int month) {
     setState(() {
       selectedDate = DateTime(selectedDate.year, month);
@@ -19,10 +25,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
     });
   }
 
+  // Метод для проверки, есть ли задачи на выбранную дату
+  bool _hasTasksForDate(DateTime date, List<TaskModel> tasks) {
+    return tasks.any((task) =>
+    task.endPoint != null && DateUtils.isSameDay(DateTime.parse(task.endPoint), date)
+    );
+  }
+
   List<Widget> _buildDayLabels() {
     const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-    return days
-        .map((day) => Center(
+    return days.map((day) => Center(
       child: Text(
         day,
         style: const TextStyle(
@@ -31,11 +43,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
           fontSize: 25,
         ),
       ),
-    ))
-        .toList();
+    )).toList();
   }
 
-  List<Widget> _buildCalendarDays(DateTime month) {
+  List<Widget> _buildCalendarDays(DateTime month, List<TaskModel> tasks) {
     final firstDayOfMonth = DateTime(month.year, month.month, 1);
     final lastDayOfMonth = DateTime(month.year, month.month + 1, 0);
     final startWeekday = (firstDayOfMonth.weekday + 6) % 7;
@@ -48,16 +59,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     for (int day = 1; day <= totalDays; day++) {
       final date = DateTime(month.year, month.month, day);
-      final isToday = DateTime.now().day == day &&
-          DateTime.now().month == month.month &&
-          DateTime.now().year == month.year;
-      final isSelected = selectedDate.day == day &&
-          selectedDate.month == month.month &&
-          selectedDate.year == month.year;
+      final isToday = DateUtils.isSameDay(DateTime.now(), date);
+      final isSelected = DateUtils.isSameDay(selectedDate, date);
+      final hasTasks = _hasTasksForDate(date, tasks);
 
       BoxDecoration decoration = const BoxDecoration();
-      TextStyle textStyle =
-      const TextStyle(color: Color(0xFF666666), fontSize: 25);
+      TextStyle textStyle = const TextStyle(
+        color: Color(0xFF666666),
+        fontSize: 25,
+      );
 
       if (isToday && !isSelected) {
         decoration = BoxDecoration(
@@ -73,9 +83,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
         decoration = BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-              color: Color(0xFFCCC1FF),
-              width: 2,
-              style: BorderStyle.solid),
+            color: Color(0xFFCCC1FF),
+            width: 2,
+            style: BorderStyle.solid,
+          ),
         );
         textStyle = const TextStyle(
           color: Color(0xFF666666),
@@ -95,18 +106,28 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
 
       dayWidgets.add(GestureDetector(
-        onTap: () {
-          setState(() {
-            selectedDate = date;
-          });
-        },
-        child: Container(
+        onTap: () => setState(() => selectedDate = date),
+        child: Stack(
           alignment: Alignment.center,
-          decoration: decoration,
-          child: Text(
-            '$day',
-            style: textStyle,
-          ),
+          children: [
+            Container(
+              alignment: Alignment.center,
+              decoration: decoration,
+              child: Text('$day', style: textStyle),
+            ),
+            if (hasTasks) Positioned(
+              top: 2,
+              right: 2,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ],
         ),
       ));
     }
@@ -114,12 +135,70 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return dayWidgets;
   }
 
+  Widget _buildTaskList(List<TaskModel> tasks) {
+    final tasksForSelectedDate = tasks.where((task) =>
+    task.endPoint != null && DateUtils.isSameDay(DateTime.parse(task.endPoint), date)
+    ).toList();
+
+    if (tasksForSelectedDate.isEmpty) {
+      return const Center(
+        child: Text(
+          'Нет задач на выбранную дату',
+          style: TextStyle(
+            fontSize: 17,
+            color: Color(0xFF666666),
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: tasksForSelectedDate.length,
+      itemBuilder: (context, index) {
+        final task = tasksForSelectedDate[index];
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  task.name,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF6E44FF),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                if (task.description != null) Text(task.description!),
+                const SizedBox(height: 8),
+                Text(
+                  'Дедлайн: ${DateFormat('dd.MM.yyyy').format(DateTime.parse(task.endPoint))}',
+                  style: TextStyle(
+                    color: DateTime.parse(task.endPoint).isBefore(DateTime.now())
+                        ? Colors.red
+                        : Colors.grey,
+                  ),
+                )
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final tasks = Provider.of<TaskProvider>(context).tasks;
     final screenWidth = MediaQuery.of(context).size.width;
     final currentYear = selectedDate.year;
-    final currentMonth =
-    toBeginningOfSentenceCase(DateFormat.MMMM('ru').format(selectedDate));
+    final currentMonth = toBeginningOfSentenceCase(
+        DateFormat.MMMM('ru').format(selectedDate)
+    );
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -127,60 +206,54 @@ class _CalendarScreenState extends State<CalendarScreen> {
         children: [
           Column(
             children: [
-              const SizedBox(height: 0),
-              Padding(
-                padding: EdgeInsets.zero,
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      showMonthPicker = !showMonthPicker;
-                    });
-                  },
-                  child: Container(
-                    width: screenWidth,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF937DF3),
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(40),
-                        bottomRight: Radius.circular(40),
+              // Заголовок с годом
+              GestureDetector(
+                onTap: () => setState(() => showMonthPicker = !showMonthPicker),
+                child: Container(
+                  width: screenWidth,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF937DF3),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(40),
+                      bottomRight: Radius.circular(40),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 12,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    padding:
-                    const EdgeInsets.only(left: 24, right: 24, top: 35),
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '$currentYear',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 50,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Icon(
-                          showMonthPicker
-                              ? Icons.keyboard_arrow_up
-                              : Icons.keyboard_arrow_down,
+                    ],
+                  ),
+                  padding: const EdgeInsets.only(left: 24, right: 24, top: 35),
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '$currentYear',
+                        style: const TextStyle(
                           color: Colors.white,
-                          size: 36,
+                          fontSize: 50,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ],
-                    ),
+                      ),
+                      Icon(
+                        showMonthPicker
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
+                        color: Colors.white,
+                        size: 36,
+                      ),
+                    ],
                   ),
                 ),
               ),
               const SizedBox(height: 20),
+
               if (!showMonthPicker) ...[
+                // Месяц и календарь
                 Container(
                   width: 352,
                   height: 62,
@@ -198,10 +271,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       ),
                     ],
                   ),
-
-                  //TODO: слепить блок с календарем и с месяцев наложением в один блок
                   child: Text(
-                    currentMonth,
+                    currentMonth!,
                     style: const TextStyle(
                       color: Color(0xFF6E44FF),
                       fontSize: 36,
@@ -240,7 +311,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             mainAxisSpacing: 8,
                             crossAxisSpacing: 8,
                             physics: const NeverScrollableScrollPhysics(),
-                            children: _buildCalendarDays(selectedDate),
+                            children: _buildCalendarDays(selectedDate, tasks),
                           ),
                         ),
                       ),
@@ -248,42 +319,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Заглушка для задач
+                // Список задач на выбранную дату
                 Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: const [
-                        Text(
-                          'Упс(',
-                          style: TextStyle(
-                            fontSize: 17,
-                            color: Color(0xFF666666),
-                          ),
-                        ),
-                        Text(
-                          'Свои задачи можно просматривать',
-                          style: TextStyle(
-                            fontSize: 17,
-                            color: Color(0xFF666666),
-                          ),
-                        ),
-                        Text(
-                          'только авторизовавшись',
-                          style: TextStyle(
-                            fontSize: 17,
-                            color: Color(0xFF666666),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  child: _buildTaskList(tasks),
                 ),
-                //  Здесь после авторизации отобразятся карточки задач
-                // TODO: если пользователь авторизован, подгрузить задачи из API и отобразить карточки:
-                //  Вызов API для получения TaskByCustomerResponse
-                //  Отображение списка задач с названием, дедлайном и описанием
               ] else ...[
+                // Выбор месяца
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
@@ -294,7 +335,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       children: List.generate(12, (index) {
                         final monthName = toBeginningOfSentenceCase(
                             DateFormat.MMMM('ru')
-                                .format(DateTime(currentYear, index + 1)));
+                                .format(DateTime(currentYear, index + 1))
+                        );
                         return GestureDetector(
                           onTap: () => _selectMonth(index + 1),
                           child: Container(
@@ -324,5 +366,4 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
     );
   }
-
 }

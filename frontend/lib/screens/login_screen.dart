@@ -1,24 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:zadachok/api/api_interface.dart';
-import 'package:zadachok/api/mock_api_client.dart';
-import 'package:zadachok/models/user/user_model.dart';
-import '../api/api_client.dart';
-import 'register_screen.dart';
-import 'password_recovery_screen.dart';
+import 'package:zadachok/providers/auth_provider.dart';
+import 'package:zadachok/routes/main_navigation.dart';
+import 'package:zadachok/screens/password_recovery_screen.dart';
+import 'package:zadachok/screens/register_screen.dart';
 
-
-
-
-
-
-//TODO: Связать экран с заглушками api.
-
-//TODO: Поменять png на svg и доработать первые базовые экраны входа и регистрации.
-
-
-
-
-
+import '../api/mock_api_client.dart';
 
 class LoginScreen extends StatefulWidget {
   final ApiInterface apiClient;
@@ -28,35 +16,29 @@ class LoginScreen extends StatefulWidget {
     this.apiClient = const MockApiClient(),
   }) : super(key: key);
 
-
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController(); //это надо подвязать к полю с вводом логина
-  final _passwordController = TextEditingController();// то же с паролем
-  final _emailController = TextEditingController();// для почты
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
+  bool _obscureText = true;
 
   static const _borderRadius = 15.0;
   static const _shadowOffset = Offset(0, 4);
   static const _shadowBlur = 6.0;
   static const _contentPadding = EdgeInsets.symmetric(horizontal: 20, vertical: 15);
-
-  // Размеры
   static const _buttonWidth = 150.0;
   static const _buttonHeight = 44.0;
   static const _inputWidth = 305.0;
   static const _inputHeight = 41.0;
-
-  // Цвета
   static const _colorEnter = Color.fromARGB(100, 110, 68, 255);
-  static const _colorEnterButton = Color.fromARGB(	100, 147, 125, 243);
+  static const _colorEnterButton = Color.fromARGB(100, 147, 125, 243);
 
-  // Стили текста
   static const _textStyle = TextStyle(
     fontSize: 15,
     fontFamily: 'Inter',
@@ -67,14 +49,12 @@ class _LoginScreenState extends State<LoginScreen> {
     fontSize: 15,
     fontFamily: 'Inter',
     fontWeight: FontWeight.w600,
-    color: Colors.white
+    color: Colors.white,
   );
-
-  bool _obscureText = true;
 
   void _togglePasswordVisibility() => setState(() => _obscureText = !_obscureText);
 
-  Future<void> _register() async { // что то такое должно быть, но не уверен пока что, надо протестить
+  Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -82,29 +62,33 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = null;
     });
 
+    // Имитация задержки сети
+    await Future.delayed(const Duration(seconds: 1));
+
     try {
-      final user = await widget.apiClient.register(
-        UserModel(
-          password: _passwordController.text,
-          email: _emailController.text,
-          name: '',
-          login: _usernameController.text,
-            birthdayDate: DateTime.parse('1990-01-01')
-        ),
-      );
+      // Проверка тестовых учетных данных
+      if (_usernameController.text == 'admin' &&
+          _passwordController.text == 'admin') {
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Успешно! ID: ${user.id}')),
-      );
+        // Авторизация через провайдер
+        Provider.of<AuthProvider>(context, listen: false).login();
 
+        // Переход на главный экран
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+        );
+      } else {
+        throw Exception('Неверные учетные данные. Попробуйте admin/admin');
+      }
     } catch (e) {
       setState(() => _errorMessage = e.toString());
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -112,106 +96,139 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30),
-        child: Column(
+        child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                    const SizedBox(height: 30),
+                Image.asset('lib/assets/logo.png', width: 150),
+                const SizedBox(height: 30),
+                const Text(
+                  "Вход",
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: _colorEnter,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                _buildInputField(
+                  hintText: 'Логин',
+                  controller: _usernameController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Введите логин';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 10),
+                _buildInputField(
+                  hintText: 'Пароль',
+                  controller: _passwordController,
+                  isPassword: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Введите пароль';
+                    }
+                    return null;
+                  },
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureText ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.grey,
+                    ),
+                    onPressed: _togglePasswordVisibility,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PasswordRecoveryScreen(apiClient: widget.apiClient),
+                      ),
+                    ),
+                    child: const Text(
+                      'Не помню пароль',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                ),
+                if (_errorMessage != null)
+            Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: Text(
+          _errorMessage!,
+          style: const TextStyle(color: Colors.red),
+        ),
+      ),
+      const SizedBox(height: 20),
+      Container(
+        width: _buttonWidth,
+        height: _buttonHeight,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: const [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 6,
+            offset: Offset(0, 4),
+            ),
+            ],
+          ),
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _login,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _colorEnterButton,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+              shadowColor: Colors.transparent,
+            ),
+            child: _isLoading
+                ? const CircularProgressIndicator(color: Colors.white)
+                : const Text("Войти", style: _enterStyle),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('lib/assets/logo.png', width: 150),
-            const SizedBox(height: 30),
-            const Text(
-              "Вход",
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: _colorEnter,
-              ),
-            ),
-            const SizedBox(height: 20),
-            _buildInputField(hintText: 'Логин'),
-            const SizedBox(height: 10),
-            _buildInputField(
-              hintText: 'Пароль',
-              isPassword: true,
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _obscureText ? Icons.visibility_off : Icons.visibility,
-                  color: Colors.grey,
+            const Text("Ещё нет аккаунта? "),
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => RegisterScreen(apiClient: widget.apiClient),
                 ),
-                onPressed: _togglePasswordVisibility,
               ),
-            ),
-            const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerRight,
-              child: GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PasswordRecoveryScreen(apiClient: widget.apiClient),
-                  ),
-                ),
-                child: const Text(
-                  'Не помню пароль',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              )
-            ),
-            const SizedBox(height: 20),
-            Container(
-              width: _buttonWidth,
-              height: _buttonHeight,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(25),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 6,
-                    offset: Offset(0, 4),
-                  ),
-                ],
+              child: const Text(
+                "Зарегистрироваться",
+                style: TextStyle(color: _colorEnterButton),
               ),
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _colorEnterButton,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  shadowColor: Colors.transparent,
-                ),
-                child: const Text("Войти", style: _enterStyle),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text("Ещё нет аккаунта? "),
-                GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => RegisterScreen(apiClient: ApiClient(),)),
-                    //*
-                    // RegisterScreen теперь не создается как константа, и всегда требует в себя ApiClient
-                    // *//
-                  ),
-                  child: const Text(
-                    "Зарегистрироваться",
-                    style: TextStyle(color: _colorEnterButton),
-                  ),
-                )
-              ],
             )
           ],
         ),
+        const SizedBox(height: 30),
+        ],
       ),
-
+    ),
+    ),
+    ),
     );
   }
 
   Widget _buildInputField({
     required String hintText,
+    required TextEditingController controller,
     bool isPassword = false,
     Widget? suffixIcon,
+    String? Function(String?)? validator,
   }) {
     return SizedBox(
       width: _inputWidth,
@@ -222,13 +239,13 @@ class _LoginScreenState extends State<LoginScreen> {
           borderRadius: BorderRadius.circular(_borderRadius),
           boxShadow: const [
             BoxShadow(
-              color: Colors.black26,
-              blurRadius: _shadowBlur,
-              offset: _shadowOffset,
-            ),
+                color: Colors.black26,
+                blurRadius: _shadowBlur,
+                offset: _shadowOffset),
           ],
         ),
-        child: TextField(
+        child: TextFormField(
+          controller: controller,
           obscureText: isPassword ? _obscureText : false,
           decoration: InputDecoration(
             hintText: hintText,
@@ -241,9 +258,18 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             contentPadding: _contentPadding,
             suffixIcon: suffixIcon,
+            errorStyle: const TextStyle(height: 0),
           ),
+          validator: validator,
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 }

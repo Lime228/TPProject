@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../providers/settings_provider.dart';
+import '../routes/main_navigation.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -17,17 +21,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final ImagePicker _picker = ImagePicker();
   File? _avatarImage;
 
-  bool isAuthorized = true; //поменять авторизацию
-  bool notificationsEnabled = true;
-  bool darkTheme = false;
-  double volume = 0.5;
-  bool backgroundMusic = false;
-  bool interfaceAnimations = true;
-  bool experimentalFeatures = false;
-  bool autoUpdates = true;
-  bool locationAccess = false;
 
-  //данные для гистограммы
+
   final Map<String, int> _taskStatistics = {
     'Пн': 3,
     'Вт': 7,
@@ -47,6 +42,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     'экспериментальные функции': GlobalKey(),
     'обновления': GlobalKey(),
     'геолокация': GlobalKey(),
+    'аккаунт': GlobalKey(),
   };
 
   void _scrollToBlock(String query) {
@@ -80,7 +76,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ),
   );
 
-
   Future<void> _pickImage() async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -88,7 +83,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() {
           _avatarImage = File(image.path);
         });
-        //заглушка для отправки в БД
         _uploadAvatarToServer(_avatarImage!);
       }
     } catch (e) {
@@ -96,26 +90,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // заглушка для отправки аватарки на сервер
   Future<void> _uploadAvatarToServer(File image) async {
-    // здесь будет реализация отправки на сервер
     print('Начало загрузки аватарки на сервер...');
-
-    // Имитация загрузки
     await Future.delayed(const Duration(seconds: 1));
-
-    // в реальном приложении здесь будет вызов API:
-    // final response = await http.post(
-    //   Uri.parse('ваш_api_эндпоинт'),
-    //   body: {'avatar': await image.readAsBytes()},
-    //   headers: {...},
-    // );
-
     print('Аватар успешно загружен на сервер!');
   }
 
   @override
   Widget build(BuildContext context) {
+
+    final settings = Provider.of<SettingsProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context);
+    final isAuthorized = authProvider.isAuthorized;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -166,11 +153,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 15),
 
-
                 _buildBlock(
                   key: _blockKeys['личные данные']!,
                   title: 'Личные данные',
-                  child: isAuthorized
+                  child: authProvider.isAuthorized
                       ? Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -208,7 +194,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Имя', style: TextStyle(fontSize: 12, color: Color(0xFF666666))), //TODO: добавить тень к полю ввода имени и фамилии
+                            const Text('Имя', style: TextStyle(fontSize: 12, color: Color(0xFF666666))),
                             const SizedBox(height: 4),
                             SizedBox(
                               width: 156,
@@ -257,11 +243,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 _decorativeLine(),
 
-
                 _buildBlock(
                   key: _blockKeys['статистика']!,
                   title: 'Статистика',
-                  child: isAuthorized
+                  child: authProvider.isAuthorized
                       ? Column(
                     children: [
                       const Text(
@@ -314,8 +299,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   key: _blockKeys['уведомления']!,
                   title: 'Уведомления',
                   child: SwitchListTile(
-                    value: notificationsEnabled,
-                    onChanged: (val) => setState(() => notificationsEnabled = val),
+                    value: settings.notificationsEnabled,
+                    onChanged: (val) => settings.update('notificationsEnabled', val),
                     title: const Text('Получать уведомления'),
                   ),
                 ),
@@ -330,23 +315,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ListTile(
                         title: const Text('Темная тема'),
                         trailing: Switch(
-                          value: darkTheme,
-                          onChanged: (val) => setState(() => darkTheme = val),
+                          value: settings.darkTheme,
+                          onChanged: (val) => settings.update('darkTheme', val),
                         ),
                       ),
                       ListTile(
                         title: const Text('Уровень громкости'),
                         subtitle: Slider(
-                          value: volume,
-                          onChanged: (val) => setState(() => volume = val),
+                          value: settings.volume,
+                          onChanged: (val) => settings.update('volume', val),
                         ),
                       ),
+
                     ],
                   ),
                 ),
 
                 _decorativeLine(),
-
 
                 _buildBlock(
                   key: _blockKeys['бонусные настройки']!,
@@ -357,17 +342,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ListTile(
                         title: const Text('Фоновая музыка'),
                         trailing: Switch(
-                          value: backgroundMusic,
-                          onChanged: (val) => setState(() => backgroundMusic = val),
+                          value: settings.backgroundMusic,
+                          onChanged: (val) => settings.update('backgroundMusic', val),
                         ),
                       ),
                       ListTile(
                         title: const Text('Анимации интерфейса'),
                         trailing: Switch(
-                          value: interfaceAnimations,
-                          onChanged: (val) => setState(() => interfaceAnimations = val),
+                          value: settings.interfaceAnimations,
+                          onChanged: (val) => settings.update('interfaceAnimations', val),
                         ),
                       ),
+
                     ],
                   )
                       : _unauthorizedMessage('Упс(\nЭти настройки доступны только\nавторизованным пользователям'),
@@ -375,15 +361,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 _decorativeLine(),
 
-
                 _buildBlock(
                   key: _blockKeys['экспериментальные функции']!,
                   title: 'Экспериментальные функции',
                   child: SwitchListTile(
-                    value: experimentalFeatures,
-                    onChanged: (val) => setState(() => experimentalFeatures = val),
+                    value: settings.experimentalFeatures,
+                    onChanged: (val) => settings.update('experimentalFeatures', val),
                     title: const Text('Включить экспериментальные функции'),
                   ),
+
                 ),
 
                 _decorativeLine(),
@@ -392,10 +378,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   key: _blockKeys['обновления']!,
                   title: 'Обновления',
                   child: SwitchListTile(
-                    value: autoUpdates,
-                    onChanged: (val) => setState(() => autoUpdates = val),
+                    value: settings.autoUpdates,
+                    onChanged: (val) => settings.update('autoUpdates', val),
                     title: const Text('Автоматические обновления'),
                   ),
+
                 ),
 
                 _decorativeLine(),
@@ -404,9 +391,94 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   key: _blockKeys['геолокация']!,
                   title: 'Геолокация',
                   child: SwitchListTile(
-                    value: locationAccess,
-                    onChanged: (val) => setState(() => locationAccess = val),
+                    value: settings.locationAccess,
+                    onChanged: (val) => settings.update('locationAccess', val),
                     title: const Text('Разрешить доступ к геолокации'),
+                  ),
+
+                ),
+
+                _decorativeLine(),
+
+                _buildBlock(
+                  key: _blockKeys['аккаунт']!,
+                  title: 'Аккаунт',
+                  child: isAuthorized
+                      ? Column(
+                    children: [
+                      const SizedBox(height: 20),
+                      Container(
+                        width: double.infinity,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: Colors.red[50],
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(color: Colors.red.withOpacity(0.3)),
+                        ),
+                        child: TextButton(
+                          onPressed: () {
+                            authProvider.logout();
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+                                  (route) => false,
+                            );
+                          },
+                          child: const Text(
+                            'Выйти из аккаунта',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'После выхода потребуется повторная авторизация',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  )
+                      : Column(
+                    children: [
+                      const SizedBox(height: 20),
+                      Container(
+                        width: double.infinity,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: Colors.green[50],
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(color: Colors.green.withOpacity(0.3)),
+                        ),
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pushNamed('/login');
+                          },
+                          child: const Text(
+                            'Войти в аккаунт',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Авторизуйтесь для доступа ко всем функциям',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -453,19 +525,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 25,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF6E44FF),
-            ),
+        Text(
+        title,
+        style: const TextStyle(
+            fontSize: 25,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF6E44FF)),
+
           ),
-          const SizedBox(height: 15),
+        const SizedBox(height: 15),
           child,
-        ],
-      ),
+          ],
+    ),
     );
   }
-
 }

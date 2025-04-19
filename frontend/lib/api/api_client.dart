@@ -159,4 +159,16 @@ class ApiClient implements ApiInterface {
     // TODO: implement updateWallet
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> deleteTask(String taskId) {
+    // TODO: implement deleteTask
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<TaskModel> updateTask(TaskModel task) {
+    // TODO: implement updateTask
+    throw UnimplementedError();
+  }
 }
