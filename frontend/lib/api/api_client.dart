@@ -1,18 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:zadachok/models/lobby/lobby_request.dart';
-import 'package:zadachok/models/lobby/lobby_response.dart';
-import 'package:zadachok/models/shop/product/product_request.dart';
-import 'package:zadachok/models/shop/product/product_response.dart';
-import 'package:zadachok/models/task/task_request.dart';
-import 'package:zadachok/models/task/task_response.dart';
-import 'package:zadachok/models/user/user_update_request.dart';
-import 'package:zadachok/models/wallet/wallet_request.dart';
-import 'package:zadachok/models/wallet/wallet_response.dart';
+import 'package:zadachok/models/lobby/lobby_model.dart';
+import '../models/shop/product/product_model.dart';
+import '../models/task/task_model.dart';
+import '../models/user/user_model.dart';
+import '../models/wallet/wallet_model.dart';
 import 'api_interface.dart';
 import 'api_endpoints.dart';
-import '../models/user/register_request.dart';
-import '../models/user/user_response.dart';
 
 class ApiClient implements ApiInterface {
   final http.Client _client;
@@ -23,7 +17,7 @@ class ApiClient implements ApiInterface {
         _baseUrl = baseUrl ?? ApiEndpoints.baseUrl;
 
   @override
-  Future<UserResponse> register(RegisterRequest request) async {
+  Future<UserModel> register(UserModel request) async {
     final url = Uri.parse(ApiEndpoints.registerUrl);
 
     try {
@@ -42,7 +36,7 @@ class ApiClient implements ApiInterface {
   }
 
   @override
-  Future<UserResponse> login(String username, String password) async {
+  Future<UserModel> login(String username, String password) async {
     final url = Uri.parse(ApiEndpoints.loginUrl);
 
     try {
@@ -103,11 +97,11 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  UserResponse _handleResponse(http.Response response) {
+  UserModel _handleResponse(http.Response response) {
     switch (response.statusCode) {
       case 200:
       case 201:
-        return UserResponse.fromJson(json.decode(response.body));
+        return UserModel.fromResponse(json.decode(response.body));
       case 400:
         throw Exception('Неверный запрос: ${response.body}');
       case 401:
@@ -125,43 +119,43 @@ class ApiClient implements ApiInterface {
   }
 
   @override
-  Future<TaskResponse> completeTask(String taskId) {
+  Future<TaskModel> completeTask(String taskId) {
     // TODO: implement completeTask
     throw UnimplementedError();
   }
 
   @override
-  Future<LobbyResponse> createLobby(LobbyRequest request) {
+  Future<LobbyModel> createLobby(LobbyModel request) {
     // TODO: implement createLobby
     throw UnimplementedError();
   }
 
   @override
-  Future<ProductResponse> createShopItem(ProductRequest request) {
+  Future<ProductModel> createShopItem(ProductModel request) {
     // TODO: implement createShopItem
     throw UnimplementedError();
   }
 
   @override
-  Future<TaskResponse> createTask(TaskRequest request) {
+  Future<TaskModel> createTask(TaskModel request) {
     // TODO: implement createTask
     throw UnimplementedError();
   }
 
   @override
-  Future<List<TaskResponse>> getUserTasks(String userId) {
+  Future<List<TaskModel>> getUserTasks(String userId) {
     // TODO: implement getUserTasks
     throw UnimplementedError();
   }
 
   @override
-  Future<UserResponse> updateUserProfile(UserUpdateRequest request) {
+  Future<UserModel> updateUserProfile(UserModel request) {
     // TODO: implement updateUserProfile
     throw UnimplementedError();
   }
 
   @override
-  Future<WalletResponse> updateWallet(WalletRequest request) {
+  Future<WalletModel> updateWallet(WalletModel request) {
     // TODO: implement updateWallet
     throw UnimplementedError();
   }

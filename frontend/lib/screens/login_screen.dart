@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:zadachok/api/api_interface.dart';
 import 'package:zadachok/api/mock_api_client.dart';
+import 'package:zadachok/models/user/user_model.dart';
 import '../api/api_client.dart';
-import '/models/user/register_request.dart';
 import 'register_screen.dart';
 import 'password_recovery_screen.dart';
 
@@ -84,11 +84,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final user = await widget.apiClient.register(
-        RegisterRequest(
+        UserModel(
           password: _passwordController.text,
           email: _emailController.text,
           name: '',
-          login: _usernameController.text
+          login: _usernameController.text,
+            birthdayDate: DateTime.parse('1990-01-01')
         ),
       );
 

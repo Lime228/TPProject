@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zadachok/api/api_interface.dart';
-import '/models/user/register_request.dart';
+import 'package:zadachok/models/user/user_model.dart';
 
 
 //TODO: поправить поля ввода чтобы они корректно перематывались при большой длинне
@@ -73,11 +73,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       final user = await widget.apiClient.register(
-        RegisterRequest(
+        UserModel(
           password: _passwordController.text,
           email: _emailController.text,
           name: '',
-          login: _usernameController.text,
+          login: _usernameController.text, birthdayDate: DateTime.parse('1990-01-01'),
         ),
       );
 

@@ -1,31 +1,16 @@
 import 'dart:async';
-import 'package:zadachok/models/lobby/lobby_request.dart';
-
-import 'package:zadachok/models/lobby/lobby_response.dart';
-
-import 'package:zadachok/models/shop/product/product_request.dart';
-
-import 'package:zadachok/models/shop/product/product_response.dart';
-
-import 'package:zadachok/models/task/task_request.dart';
-
-import 'package:zadachok/models/task/task_response.dart';
-
-import 'package:zadachok/models/user/user_update_request.dart';
-
-import 'package:zadachok/models/wallet/wallet_request.dart';
-
-import 'package:zadachok/models/wallet/wallet_response.dart';
-
-import '../models/user/register_request.dart';
-import '../models/user/user_response.dart';
+import 'package:zadachok/models/user/user_model.dart';
+import '../models/lobby/lobby_model.dart';
+import '../models/shop/product/product_model.dart';
+import '../models/task/task_model.dart';
+import '../models/wallet/wallet_model.dart';
 import 'api_interface.dart';
 
 class MockApiClient implements ApiInterface {
   const MockApiClient();
 
   @override
-  Future<UserResponse> register(RegisterRequest request) async {
+  Future<UserModel> register(UserModel request) async {
     await Future.delayed(const Duration(seconds: 1));
 
     if (request.login.isEmpty || request.password.isEmpty) {
@@ -36,7 +21,7 @@ class MockApiClient implements ApiInterface {
       throw Exception('Пароль должен содержать минимум 6 символов');
     }
 
-    return UserResponse(
+    return UserModel(
         id: DateTime.now().millisecondsSinceEpoch,
         name: 'razdva',
         email: request.email,
@@ -47,14 +32,14 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<UserResponse> login(String username, String password) async {
+  Future<UserModel> login(String username, String password) async {
     await Future.delayed(const Duration(seconds: 1));
 
     if (username != 'test' || password != 'test123') {
       throw Exception('Неверные учетные данные');
     }
 
-    return UserResponse(
+    return UserModel(
         id: 1,
         name: 'Test User',
         email: 'test@example.com',
@@ -78,14 +63,14 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<TaskResponse> completeTask(String taskId) async {
+  Future<TaskModel> completeTask(String taskId) async {
     await Future.delayed(const Duration(seconds: 1));
 
     if (taskId.isEmpty) {
       throw Exception('ID задачи не может быть пустым');
     }
 
-    return TaskResponse(
+    return TaskModel(
       id: int.parse(taskId),
       name: 'Завершенная задача',
       reward: 100.0,
@@ -98,14 +83,14 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<LobbyResponse> createLobby(LobbyRequest request) async {
+  Future<LobbyModel> createLobby(LobbyModel request) async {
     await Future.delayed(const Duration(seconds: 1));
 
     if (request.taskId <= 0 || request.shopId <= 0 || request.customerId <= 0) {
       throw Exception('Неверные параметры лобби');
     }
 
-    return LobbyResponse(
+    return LobbyModel(
       id: DateTime.now().millisecondsSinceEpoch,
       taskId: request.taskId,
       shopId: request.shopId,
@@ -114,14 +99,14 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<ProductResponse> createShopItem(ProductRequest request) async {
+  Future<ProductModel> createShopItem(ProductModel request) async {
     await Future.delayed(const Duration(seconds: 1));
 
     if (request.name.isEmpty || request.price <= 0) {
       throw Exception('Название и цена обязательны');
     }
 
-    return ProductResponse(
+    return ProductModel(
       id: DateTime.now().millisecondsSinceEpoch,
       name: request.name,
       description: request.description,
@@ -133,14 +118,14 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<TaskResponse> createTask(TaskRequest request) async {
+  Future<TaskModel> createTask(TaskModel request) async {
     await Future.delayed(const Duration(seconds: 1));
 
     if (request.name.isEmpty || request.reward <= 0) {
       throw Exception('Название и награда обязательны');
     }
 
-    return TaskResponse(
+    return TaskModel(
       id: DateTime.now().millisecondsSinceEpoch,
       name: request.name,
       reward: request.reward,
@@ -153,7 +138,7 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<List<TaskResponse>> getUserTasks(String userId) async {
+  Future<List<TaskModel>> getUserTasks(String userId) async {
     await Future.delayed(const Duration(seconds: 1));
 
     if (userId.isEmpty) {
@@ -161,7 +146,7 @@ class MockApiClient implements ApiInterface {
     }
 
     return [
-      TaskResponse(
+      TaskModel(
         id: 1,
         name: 'Тестовая задача 1',
         reward: 50.0,
@@ -171,7 +156,7 @@ class MockApiClient implements ApiInterface {
         customerId: int.parse(userId),
         state: 'In Progress',
       ),
-      TaskResponse(
+      TaskModel(
         id: 2,
         name: 'Тестовая задача 2',
         reward: 75.0,
@@ -185,14 +170,14 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<UserResponse> updateUserProfile(UserUpdateRequest request) async {
+  Future<UserModel> updateUserProfile(UserModel request) async {
     await Future.delayed(const Duration(seconds: 1));
 
     if (request.name.isEmpty || request.email.isEmpty) {
       throw Exception('Имя и email обязательны');
     }
 
-    return UserResponse(
+    return UserModel(
       id: 0,
       name: request.name,
       email: request.email,
@@ -203,14 +188,14 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<WalletResponse> updateWallet(WalletRequest request) async {
+  Future<WalletModel> updateWallet(WalletModel request) async {
     await Future.delayed(const Duration(seconds: 1));
 
     if (request.customerId <= 0 || request.balance < 0) {
       throw Exception('Неверные параметры кошелька');
     }
 
-    return WalletResponse(
+    return WalletModel(
       id: DateTime.now().millisecondsSinceEpoch,
       customerId: request.customerId,
       lobbyId: request.lobbyId,
