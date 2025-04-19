@@ -1,13 +1,16 @@
-class RegisterRequest {
+class UserUpdateRequest {
   final String name;
   final String email;
   final String password;
+  final DateTime birthdayDate;
   final String login;
+  //TODO: сделать здесь под картинку переменную
 
-  RegisterRequest({
+  UserUpdateRequest({
     required this.name,
     required this.email,
     required this.password,
+    required this.birthdayDate,
     required this.login,
   });
 
@@ -15,6 +18,7 @@ class RegisterRequest {
     // 'Customer_name': name,
     'email': email,
     'password': password,
+    // 'Birthday_date': birthdayDate.toIso8601String(),
     'username': login,
   };
 }

@@ -1,4 +1,4 @@
-import 'package:zadachok/models/product/product_response.dart';
+import 'package:zadachok/models/shop/product/product_response.dart';
 
 class ProductListResponse {
   final List<ProductResponse> products;

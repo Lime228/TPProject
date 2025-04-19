@@ -1,5 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:zadachok/models/lobby/lobby_request.dart';
+import 'package:zadachok/models/lobby/lobby_response.dart';
+import 'package:zadachok/models/shop/product/product_request.dart';
+import 'package:zadachok/models/shop/product/product_response.dart';
+import 'package:zadachok/models/task/task_request.dart';
+import 'package:zadachok/models/task/task_response.dart';
+import 'package:zadachok/models/user/user_update_request.dart';
+import 'package:zadachok/models/wallet/wallet_request.dart';
+import 'package:zadachok/models/wallet/wallet_response.dart';
 import 'api_interface.dart';
 import 'api_endpoints.dart';
 import '../models/user/register_request.dart';
@@ -112,5 +121,47 @@ class ApiClient implements ApiInterface {
 
   void dispose() {
     _client.close();
+  }
+
+  @override
+  Future<TaskResponse> completeTask(String taskId) {
+    // TODO: implement completeTask
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<LobbyResponse> createLobby(LobbyRequest request) {
+    // TODO: implement createLobby
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<ProductResponse> createShopItem(ProductRequest request) {
+    // TODO: implement createShopItem
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<TaskResponse> createTask(TaskRequest request) {
+    // TODO: implement createTask
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<TaskResponse>> getUserTasks(String userId) {
+    // TODO: implement getUserTasks
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<UserResponse> updateUserProfile(UserUpdateRequest request) {
+    // TODO: implement updateUserProfile
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<WalletResponse> updateWallet(WalletRequest request) {
+    // TODO: implement updateWallet
+    throw UnimplementedError();
   }
 }
