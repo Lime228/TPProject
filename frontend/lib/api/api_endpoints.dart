@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 class ApiEndpoints {
   static const String _baseUrl = "https://zadachok.ru:8090";
   static const String _registerPath = "/api/auth/register";
@@ -14,5 +15,15 @@ class ApiEndpoints {
   static String get recoverPasswordUrl => _baseUrl + _recoverPasswordPath;
 
   static String get tasksUrl => _baseUrl + _tasksPath;
+=======
+import 'package:zadachok/api/endpoints_config_parse.dart';
+
+class ApiEndpoints {
+  static String get baseUrl => EndpointsConfigParse.baseUrl;
+  static String get registerUrl => EndpointsConfigParse.baseUrl + EndpointsConfigParse.registerPath;
+  static String get loginUrl => EndpointsConfigParse.baseUrl + EndpointsConfigParse.loginPath;
+  static String get recoverPasswordUrl => EndpointsConfigParse.baseUrl + EndpointsConfigParse.recoverPasswordPath;
+  static String get tasksUrl => EndpointsConfigParse.baseUrl + EndpointsConfigParse.tasksPath;
+>>>>>>> main
 
 }
