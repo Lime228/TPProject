@@ -6,18 +6,21 @@ import 'package:zadachok/routes/main_navigation.dart';
 import 'package:zadachok/screens/password_recovery_screen.dart';
 import 'package:zadachok/screens/register_screen.dart';
 
+import '../api/api_client.dart';
 import '../api/mock_api_client.dart';
+import '../models/user/user_model.dart';
+import '../providers/group_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   final ApiInterface apiClient;
 
   const LoginScreen({
     Key? key,
-    this.apiClient = const MockApiClient(),
+    required this.apiClient, // Убрали значение по умолчанию, сделали обязательным
   }) : super(key: key);
 
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  _LoginScreenState createState() => _LoginScreenState(); // ← Эта строка обязательна!
 }
 
 class _LoginScreenState extends State<LoginScreen> {
@@ -62,33 +65,39 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = null;
     });
 
-    // Имитация задержки сети
-    await Future.delayed(const Duration(seconds: 1));
-
     try {
-      // Проверка тестовых учетных данных
-      if (_usernameController.text == 'admin' &&
-          _passwordController.text == 'admin') {
+      final user = await widget.apiClient.login(
+        _usernameController.text,
+        _passwordController.text,
+      );
 
-        // Авторизация через провайдер
-        Provider.of<AuthProvider>(context, listen: false).login();
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final groupProvider = Provider.of<GroupProvider>(context, listen: false);
 
-        // Переход на главный экран
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
-        );
-      } else {
-        throw Exception('Неверные учетные данные. Попробуйте admin/admin');
+      // Устанавливаем пользователя в GroupProvider
+      groupProvider.setCurrentUser(user.name, isAdmin: user.isAdmin);
+
+      await authProvider.setUser(user);
+
+      // Создаем группу только для админа, если ее нет
+      if (user.isAdmin && !groupProvider.isInGroup) {
+        await groupProvider.createGroup('Администраторы');
       }
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MainNavigationScreen(apiClient: ApiClient()),
+        ),
+      );
     } catch (e) {
       setState(() => _errorMessage = e.toString());
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -97,12 +106,12 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30),
         child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                    const SizedBox(height: 30),
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 30),
                 Image.asset('lib/assets/logo.png', width: 150),
                 const SizedBox(height: 30),
                 const Text(
@@ -160,66 +169,66 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 if (_errorMessage != null)
-            Padding(
-        padding: const EdgeInsets.only(top: 10),
-        child: Text(
-          _errorMessage!,
-          style: const TextStyle(color: Colors.red),
-        ),
-      ),
-      const SizedBox(height: 20),
-      Container(
-        width: _buttonWidth,
-        height: _buttonHeight,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: const [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 6,
-            offset: Offset(0, 4),
-            ),
-            ],
-          ),
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _login,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _colorEnterButton,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25),
-              ),
-              shadowColor: Colors.transparent,
-            ),
-            child: _isLoading
-                ? const CircularProgressIndicator(color: Colors.white)
-                : const Text("Войти", style: _enterStyle),
-          ),
-        ),
-        const SizedBox(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text("Ещё нет аккаунта? "),
-            GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => RegisterScreen(apiClient: widget.apiClient),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                const SizedBox(height: 20),
+                Container(
+                  width: _buttonWidth,
+                  height: _buttonHeight,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(25),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 6,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _login,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _colorEnterButton,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      shadowColor: Colors.transparent,
+                    ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text("Войти", style: _enterStyle),
+                  ),
                 ),
-              ),
-              child: const Text(
-                "Зарегистрироваться",
-                style: TextStyle(color: _colorEnterButton),
-              ),
-            )
-          ],
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Ещё нет аккаунта? "),
+                    GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => RegisterScreen(apiClient: widget.apiClient),
+                        ),
+                      ),
+                      child: const Text(
+                        "Зарегистрироваться",
+                        style: TextStyle(color: _colorEnterButton),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 30),
+              ],
+            ),
+          ),
         ),
-        const SizedBox(height: 30),
-        ],
       ),
-    ),
-    ),
-    ),
     );
   }
 
@@ -239,37 +248,27 @@ class _LoginScreenState extends State<LoginScreen> {
           borderRadius: BorderRadius.circular(_borderRadius),
           boxShadow: const [
             BoxShadow(
-                color: Colors.black26,
-                blurRadius: _shadowBlur,
-                offset: _shadowOffset),
+              color: Colors.black26,
+              blurRadius: 6,
+              offset: Offset(0, 4),
+            ),
           ],
         ),
         child: TextFormField(
           controller: controller,
           obscureText: isPassword ? _obscureText : false,
           decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: _textStyle,
-            filled: true,
-            fillColor: Colors.white,
-            border: const OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(_borderRadius)),
+            contentPadding: _contentPadding,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(_borderRadius),
               borderSide: BorderSide.none,
             ),
-            contentPadding: _contentPadding,
+            hintText: hintText,
             suffixIcon: suffixIcon,
-            errorStyle: const TextStyle(height: 0),
           ),
           validator: validator,
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _usernameController.dispose();
-    _passwordController.dispose();
-    super.dispose();
   }
 }

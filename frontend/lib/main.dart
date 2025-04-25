@@ -3,27 +3,37 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:zadachok/api/api_client.dart';
+import 'package:zadachok/providers/auth_provider.dart';
+import 'package:zadachok/providers/group_provider.dart';
 import 'package:zadachok/providers/settings_provider.dart';
 import 'package:zadachok/providers/task_provider.dart';
-import 'package:zadachok/screens/login_screen.dart';
-import 'providers/auth_provider.dart';
-import 'screens/splash_screen.dart';
+import 'package:zadachok/screens/splash_screen.dart';
+import 'api/mock_api_client.dart';
 
 void main() async {
-  // Обязательная инициализация
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Инициализация локализации для дат
   await initializeDateFormatting('ru');
 
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => TaskProvider(apiClient: ApiClient())),
-        ChangeNotifierProvider(create: (_) => SettingsProvider()..loadSettings()),
-      ],
+      MultiProvider(
+          providers: [
+          ChangeNotifierProvider(create: (_) => GroupProvider()),
+  ChangeNotifierProxyProvider<GroupProvider, AuthProvider>(
+  create: (context) => AuthProvider(
+  groupProvider: Provider.of<GroupProvider>(context, listen: false),
+  ),
+    update: (context, groupProvider, authProvider) =>
+    authProvider ?? AuthProvider(groupProvider: groupProvider),
+  ),
 
+        // Остальные провайдеры
+        ChangeNotifierProvider(
+          create: (_) => TaskProvider(apiClient: MockApiClient()),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SettingsProvider()..loadSettings(),
+        ),
+      ],
       child: const MyApp(),
     ),
   );
@@ -52,8 +62,7 @@ class MyApp extends StatelessWidget {
         Locale('ru'),
         Locale('en'),
       ],
-
-      home: const SplashScreen(), // Начальный экран
+      home: const SplashScreen(),
     );
   }
 }

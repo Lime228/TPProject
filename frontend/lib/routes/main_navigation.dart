@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../api/api_interface.dart';
 import '../providers/auth_provider.dart';
 import '/screens/calendar_screen.dart';
 import '/screens/login_screen.dart';
@@ -8,15 +9,28 @@ import '/screens/shop_screen.dart';
 import '/screens/tasks_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  final ApiInterface apiClient;
+
+  const MainNavigationScreen({
+    super.key,
+    required this.apiClient,
+  });
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int _selectedIndex = 1;
-  int _previousIndex = 1;
+  // Константы навигации
+  static const int DEFAULT_SELECTED_INDEX = 1;
+  static const Color NAV_BAR_SHADOW_COLOR = Colors.black12;
+  static const double NAV_BAR_SHADOW_BLUR = 8.0;
+  static const Offset NAV_BAR_SHADOW_OFFSET = Offset(0, -2);
+  static const Color SELECTED_ITEM_COLOR = Colors.deepPurple;
+  static const Color UNSELECTED_ITEM_COLOR = Colors.grey;
+
+  int _selectedIndex = DEFAULT_SELECTED_INDEX;
+  int _previousIndex = DEFAULT_SELECTED_INDEX;
 
   List<Widget> _getScreens(BuildContext context) {
     final isAuthorized = Provider.of<AuthProvider>(context).isAuthorized;
@@ -25,13 +39,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         const CalendarScreen(key: PageStorageKey('calendar_screen')),
         const ShopScreen(key: PageStorageKey('shop_screen')),
         const TasksScreen(key: PageStorageKey('tasks_screen')),
-        const SettingsScreen(key: PageStorageKey('settings_screen')),
+        SettingsScreen(
+          key: const PageStorageKey('settings_screen'),
+          apiClient: widget.apiClient,
+        ),
       ];
     } else {
       return [
         const CalendarScreen(key: PageStorageKey('calendar_screen')),
-        const LoginScreen(key: PageStorageKey('login_screen')),
-        const SettingsScreen(key: PageStorageKey('settings_screen')),
+        LoginScreen(
+          key: const PageStorageKey('login_screen'),
+          apiClient: widget.apiClient,
+        ),
+        SettingsScreen(
+          key: const PageStorageKey('settings_screen'),
+          apiClient: widget.apiClient,
+        ),
       ];
     }
   }
@@ -86,8 +109,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final screens = _getScreens(context);
     final navItems = _getNavItems(isAuthorized);
 
-    final adjustedIndex = isAuthorized ? _selectedIndex :
-    _selectedIndex >= navItems.length ? navItems.length - 1 : _selectedIndex;
+    final adjustedIndex = isAuthorized
+        ? _selectedIndex
+        : _selectedIndex >= navItems.length
+        ? navItems.length - 1
+        : _selectedIndex;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -100,9 +126,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black12,
-              blurRadius: 8,
-              offset: Offset(0, -2),
+              color: NAV_BAR_SHADOW_COLOR,
+              blurRadius: NAV_BAR_SHADOW_BLUR,
+              offset: NAV_BAR_SHADOW_OFFSET,
             ),
           ],
         ),
@@ -110,8 +136,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           currentIndex: adjustedIndex,
           onTap: _onItemTapped,
           backgroundColor: Colors.white,
-          selectedItemColor: Colors.deepPurple,
-          unselectedItemColor: Colors.grey,
+          selectedItemColor: SELECTED_ITEM_COLOR,
+          unselectedItemColor: UNSELECTED_ITEM_COLOR,
           type: BottomNavigationBarType.fixed,
           elevation: 0,
           items: navItems,

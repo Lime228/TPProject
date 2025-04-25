@@ -28,6 +28,35 @@ class SettingsProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     if (value is bool) await prefs.setBool(key, value);
     if (value is double) await prefs.setDouble(key, value);
-    await loadSettings(); // обновим локальные поля
+
+    switch (key) {
+      case 'notificationsEnabled':
+        notificationsEnabled = value as bool;
+        break;
+      case 'volume':
+        volume = value as double;
+        break;
+      case 'darkTheme':
+        darkTheme = value as bool;
+        break;
+      case 'backgroundMusic':
+        backgroundMusic = value as bool;
+        break;
+      case 'interfaceAnimations':
+        interfaceAnimations = value as bool;
+        break;
+      case 'experimentalFeatures':
+        experimentalFeatures = value as bool;
+        break;
+      case 'autoUpdates':
+        autoUpdates = value as bool;
+        break;
+      case 'locationAccess':
+        locationAccess = value as bool;
+        break;
+    }
+
+    notifyListeners();
   }
+
 }

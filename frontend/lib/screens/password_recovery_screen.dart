@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:zadachok/api/api_interface.dart';
 import 'package:zadachok/api/mock_api_client.dart';
+import '../api/api_client.dart';
+import '../routes/main_navigation.dart';
 import 'login_screen.dart';
-
 
 class PasswordRecoveryScreen extends StatefulWidget {
   final ApiInterface apiClient;
@@ -17,33 +18,39 @@ class PasswordRecoveryScreen extends StatefulWidget {
 }
 
 class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _loginController = TextEditingController();
-  bool _isLoading = false;
-  String? _errorMessage;
+  // Константы дизайна
+  static const double BORDER_RADIUS = 15.0;
+  static const Offset SHADOW_OFFSET = Offset(0, 4);
+  static const double SHADOW_BLUR = 6.0;
+  static const EdgeInsets CONTENT_PADDING =
+  EdgeInsets.symmetric(horizontal: 20, vertical: 15);
+  static const double BUTTON_WIDTH = 200.0;
+  static const double BUTTON_HEIGHT = 44.0;
+  static const double INPUT_WIDTH = 305.0;
+  static const double INPUT_HEIGHT = 41.0;
+  static const Color COLOR_ENTER = Color.fromARGB(100, 110, 68, 255);
+  static const Color COLOR_ENTER_BUTTON = Color.fromARGB(100, 147, 125, 243);
 
-  static const _borderRadius = 15.0;
-  static const _shadowOffset = Offset(0, 4);
-  static const _shadowBlur = 6.0;
-  static const _contentPadding = EdgeInsets.symmetric(horizontal: 20, vertical: 15);
-  static const _inputWidth = 305.0;
-  static const _inputHeight = 41.0;
-  static const _buttonWidth = 200.0;
-  static const _buttonHeight = 44.0;
-  static const _colorEnter = Color.fromARGB(100, 110, 68, 255);
-  static const _colorEnterButton = Color.fromARGB(100, 147, 125, 243);
-  static const _textStyle = TextStyle(
+  // Стили текста
+  static const TextStyle TEXT_STYLE = TextStyle(
     fontSize: 15,
     fontFamily: 'Inter',
     fontWeight: FontWeight.w600,
   );
-  static const _enterStyle = TextStyle(
+
+  static const TextStyle ENTER_STYLE = TextStyle(
     fontSize: 15,
     fontFamily: 'Inter',
     fontWeight: FontWeight.w600,
     color: Colors.white,
   );
+
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _loginController = TextEditingController();
+
+  bool _isLoading = false;
+  String? _errorMessage;
 
   Future<void> _recoverPassword() async {
     if (!_formKey.currentState!.validate()) return;
@@ -65,7 +72,9 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        MaterialPageRoute(
+          builder: (_) => MainNavigationScreen(apiClient: ApiClient()),
+        ),
       );
     } catch (e) {
       setState(() => _errorMessage = e.toString());
@@ -105,14 +114,14 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset('lib/assets/logo.png', width: 150), //TODO: обновить расположение логотипа
+              Image.asset('lib/assets/logo.png', width: 150),
               const SizedBox(height: 30),
               const Text(
                 "Восстановление пароля",
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: _colorEnter,
+                  color: COLOR_ENTER,
                 ),
               ),
               const SizedBox(height: 20),
@@ -136,41 +145,9 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                   ),
                 ),
               const SizedBox(height: 20),
-              Container(
-                width: _buttonWidth,
-                height: _buttonHeight,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(25),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 6,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _recoverPassword,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _colorEnterButton,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    shadowColor: Colors.transparent,
-                  ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Сменить пароль", style: _enterStyle),
-                ),
-              ),
+              _buildActionButton(),
               const SizedBox(height: 20),
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: const Text(
-                  "Вернуться к входу",
-                  style: TextStyle(color: _colorEnterButton),
-                ),
-              )
+              _buildBackToLoginPrompt(),
             ],
           ),
         ),
@@ -184,36 +161,72 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
     required String? Function(String?)? validator,
   }) {
     return SizedBox(
-      width: _inputWidth,
-      height: _inputHeight,
+      width: INPUT_WIDTH,
+      height: INPUT_HEIGHT,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(_borderRadius),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: _shadowBlur,
-              offset: _shadowOffset,
-            ),
-          ],
+          borderRadius: BorderRadius.circular(BORDER_RADIUS),
+          boxShadow: const [BoxShadow(
+            color: Colors.black26,
+            blurRadius: SHADOW_BLUR,
+            offset: SHADOW_OFFSET,
+          )],
         ),
         child: TextFormField(
           controller: controller,
           validator: validator,
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: _textStyle,
+            hintStyle: TEXT_STYLE,
             filled: true,
             fillColor: Colors.white,
             border: const OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(_borderRadius)),
+              borderRadius: BorderRadius.all(Radius.circular(BORDER_RADIUS)),
               borderSide: BorderSide.none,
             ),
-            contentPadding: _contentPadding,
+            contentPadding: CONTENT_PADDING,
             errorStyle: const TextStyle(height: 0),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton() {
+    return Container(
+      width: BUTTON_WIDTH,
+      height: BUTTON_HEIGHT,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: const [BoxShadow(
+          color: Colors.black26,
+          blurRadius: 6,
+          offset: Offset(0, 4),
+        )],
+      ),
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _recoverPassword,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: COLOR_ENTER_BUTTON,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
+          shadowColor: Colors.transparent,
+        ),
+        child: _isLoading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text("Сменить пароль", style: ENTER_STYLE),
+      ),
+    );
+  }
+
+  Widget _buildBackToLoginPrompt() {
+    return GestureDetector(
+      onTap: () => Navigator.pop(context),
+      child: const Text(
+        "Вернуться к входу",
+        style: TextStyle(color: COLOR_ENTER_BUTTON),
       ),
     );
   }

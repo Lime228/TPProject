@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/cupertino.dart';
 import 'package:zadachok/models/user/user_model.dart';
 import '../models/lobby/lobby_model.dart';
 import '../models/shop/product/product_model.dart';
@@ -27,26 +28,45 @@ class MockApiClient implements ApiInterface {
         email: request.email,
         birthdayDate: DateTime.parse('1969-07-20 20:18:04Z'),
         login: request.login,
-        isAdmin: false
+        isAdmin: true
     );
   }
 
   @override
+  @override
   Future<UserModel> login(String username, String password) async {
-    await Future.delayed(const Duration(seconds: 1));
+    // Здесь добавьте логи, чтобы проверить данные
+    print("Login attempt with username: $username, password: $password");
 
-    if (username != 'test' || password != 'test123') {
-      throw Exception('Неверные учетные данные');
+    // Пример ответа
+    await Future.delayed(Duration(seconds: 2));  // имитируем задержку сети
+
+
+    if (username == 'admin' && password == 'admin') {
+      return UserModel(
+        id: 999,
+        name: 'Admin User',
+        email: 'admin@example.com',
+        birthdayDate: DateTime(1980, 1, 1),
+        login: 'admin',
+        isAdmin: true, // Администратор
+      );
     }
+    else {
+      throw Exception('Invalid credentials');
+    }
+  }
 
-    return UserModel(
-        id: 1,
-        name: 'Test User',
-        email: 'test@example.com',
-        birthdayDate: DateTime.parse('1990-01-01'),
-        login: username,
-        isAdmin: false
-    );
+  Future<Map<String, dynamic>> checkGroupMembership(String userId) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Возвращаем пустые данные - группа не присваивается автоматически
+    return {
+      'isMember': false,
+      'isAdmin': false,
+      'groupCode': null,
+      'groupName': null
+    };
   }
 
   @override
@@ -119,19 +139,25 @@ class MockApiClient implements ApiInterface {
 
   @override
   Future<TaskModel> createTask(TaskModel request) async {
-    await Future.delayed(const Duration(seconds: 1));
+    debugPrint('Создаем задачу: ${request.toJson()}'); // Логируем запрос
 
-    if (request.name.isEmpty || request.reward <= 0) {
-      throw Exception('Название и награда обязательны');
+    await Future.delayed(const Duration(seconds: 1)); // Имитация задержки сети
+
+    if (request.name.isEmpty) {
+      throw Exception('Название задачи не может быть пустым');
+    }
+
+    if (request.endPoint.isEmpty) {
+      throw Exception('Дедлайн должен быть указан');
     }
 
     return TaskModel(
       id: DateTime.now().millisecondsSinceEpoch,
       name: request.name,
-      reward: request.reward,
       description: request.description,
-      startPoint: request.startPoint,
+      startPoint: DateTime.now().toIso8601String(),
       endPoint: request.endPoint,
+      reward: request.reward, // Сохраняем переданное значение reward
       customerId: request.customerId,
       state: 'Pending',
     );
@@ -209,9 +235,14 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<void> deleteTask(String taskId) {
-    // TODO: implement deleteTask
-    throw UnimplementedError();
+  Future<void> deleteTask(String taskId) async {
+    debugPrint('Удаление задачи ID: $taskId');
+    await Future.delayed(const Duration(milliseconds: 500)); // Имитация задержки
+
+    if (taskId.isEmpty) {
+      throw Exception('ID задачи не может быть пустым');
+    }
+    // В mock-реализации просто логируем удаление
   }
 
   @override

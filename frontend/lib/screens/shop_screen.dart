@@ -6,12 +6,16 @@ class ShopScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: const Text('Магазин'),
       ),
       body: const Center(
-        child: Text('Раздел в разработке',
-            style: TextStyle(fontSize: 18)),
+        child: Text(
+          'Раздел в разработке',
+          style: TextStyle(fontSize: 18),
+        ),
       ),
     );
   }

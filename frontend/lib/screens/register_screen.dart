@@ -3,6 +3,9 @@ import 'package:zadachok/api/api_interface.dart';
 import 'package:zadachok/models/user/user_model.dart';
 import 'package:zadachok/screens/login_screen.dart';
 
+import '../api/api_client.dart';
+import '../routes/main_navigation.dart';
+
 class RegisterScreen extends StatefulWidget {
   final ApiInterface apiClient;
 
@@ -80,10 +83,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (mounted) {
+        // Переход на MainNavigationScreen после регистрации
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => LoginScreen(apiClient: widget.apiClient),
+            builder: (_) => MainNavigationScreen(apiClient: ApiClient()),
           ),
         );
       }

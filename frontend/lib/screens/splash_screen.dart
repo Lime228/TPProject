@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:zadachok/routes/main_navigation.dart';
 
-
+import '../api/api_client.dart';
+import '../providers/auth_provider.dart';
+import '../providers/group_provider.dart';
+import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,63 +17,86 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
+  // Константы анимации
+  static const Duration LOGO_ANIMATION_DURATION = Duration(milliseconds: 2000);
+  static const Duration TEXT_ANIMATION_DURATION = Duration(milliseconds: 800);
+  static const double LOGO_SIZE = 150.0;
+  static const double TEXT_FONT_SIZE = 28.0;
+
   late AnimationController _logoController;
   late Animation<double> _logoScale;
   late Animation<double> _logoSlide;
-
   late AnimationController _textController;
   late Animation<double> _textOpacity;
+
+  Future<void> _initializeAndAnimate() async {
+    await _initializeApp(); // Добавляем инициализацию здесь
+    _startAnimation();
+  }
+  //NRC1BM
 
   @override
   void initState() {
     super.initState();
+    _initAnimations();
+    _initializeAndAnimate();
+  }
 
-
+  void _initAnimations() {
     _logoController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+      duration: LOGO_ANIMATION_DURATION,
       vsync: this,
     );
 
     _logoScale = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _logoController, curve: const Interval(0.0, 0.3, curve: Curves.easeOutBack)),
+      CurvedAnimation(
+        parent: _logoController,
+        curve: const Interval(0.0, 0.3, curve: Curves.easeOutBack),
+      ),
     );
 
     _logoSlide = Tween<double>(begin: 0.0, end: -152.0).animate(
-      CurvedAnimation(parent: _logoController, curve: const Interval(0.5, 1.0, curve: Curves.easeInOut)),
+      CurvedAnimation(
+        parent: _logoController,
+        curve: const Interval(0.5, 1.0, curve: Curves.easeInOut),
+      ),
     );
 
+
+
     _textController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: TEXT_ANIMATION_DURATION,
       vsync: this,
     );
 
     _textOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(_textController);
+  }
 
-    _startAnimation();
+  Future<void> _initializeApp() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    await authProvider.checkAuth();
+
+    // GroupProvider теперь обновляется через AuthProvider
+    final groupProvider = authProvider.groupProvider;
+    await groupProvider.loadGroupData();
   }
 
   Future<void> _startAnimation() async {
     await _logoController.forward();
-
     await Future.delayed(const Duration(milliseconds: 300));
     await _textController.forward();
     await Future.delayed(const Duration(milliseconds: 1000));
     await _textController.reverse();
     await Future.delayed(const Duration(milliseconds: 500));
 
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
-      );
-    }
-  }
+    if (!mounted) return;
 
-  @override
-  void dispose() {
-    _logoController.dispose();
-    _textController.dispose();
-    super.dispose();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MainNavigationScreen(apiClient: ApiClient()),
+      ),
+    );
   }
 
   @override
@@ -89,8 +116,8 @@ class _SplashScreenState extends State<SplashScreen>
                     scale: _logoScale.value,
                     child: Image.asset(
                       'lib/assets/logo.png',
-                      width: 150,
-                      height: 150,
+                      width: LOGO_SIZE,
+                      height: LOGO_SIZE,
                     ),
                   ),
                   const SizedBox(height: 30),
@@ -99,7 +126,7 @@ class _SplashScreenState extends State<SplashScreen>
                     child: const Text(
                       'ZadachOk',
                       style: TextStyle(
-                        fontSize: 28,
+                        fontSize: TEXT_FONT_SIZE,
                         fontWeight: FontWeight.w600,
                         fontFamily: 'Inter',
                       ),
@@ -112,5 +139,12 @@ class _SplashScreenState extends State<SplashScreen>
         },
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _logoController.dispose();
+    _textController.dispose();
+    super.dispose();
   }
 }
