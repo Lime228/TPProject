@@ -1,4 +1,4 @@
-package ru.zadachok.dto;
+package ru.zadachok.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -11,7 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 public class AuthRequest {
     @NotBlank
-    private String username;
+    private String login;
 
     @NotBlank
     private String password;
