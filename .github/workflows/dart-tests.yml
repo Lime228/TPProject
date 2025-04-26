@@ -43,6 +43,7 @@ jobs:
                 POSTGRES_DB: zadachok_db
               volumes:
                 - postgres_data:/var/lib/postgresql/data
+                - ./backend/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
               healthcheck:
                 test: ["CMD-SHELL", "pg_isready -U zadachok -d zadachok_db"]
                 interval: 5s
@@ -62,7 +63,7 @@ jobs:
                 SPRING_DATASOURCE_USERNAME: zadachok
                 SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD }}
                 JWT_SECRET: ${{ secrets.JWT_SECRET }}
-                SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+                SPRING_JPA_HIBERNATE_DDL_AUTO: update # Изменено с validate на update
               depends_on:
                 db:
                   condition: service_healthy
@@ -87,20 +88,24 @@ jobs:
         working-directory: ./backend/api
         run: mvn clean package -Dspring.profiles.active=ci -DskipTests
 
-      - name: Start and test services
+      - name: Start services
         run: |
-          # Запуск сервисов
           docker-compose -f docker-compose.ci.yml up -d --build
 
-          # Ожидание PostgreSQL
-          echo "🔄 Waiting for PostgreSQL (timeout: ${{ env.POSTGRES_TIMEOUT }}s)..."
+      - name: Initialize database
+        run: |
+          echo "🔄 Waiting for PostgreSQL to be ready..."
           timeout ${{ env.POSTGRES_TIMEOUT }}s bash -c '
             while ! docker-compose -f docker-compose.ci.yml exec db pg_isready -U zadachok -d zadachok_db; do
               echo "⏳ Waiting for PostgreSQL..."
               sleep 5
             done'
-          
-          # Проверка API
+
+          echo "🔍 Verifying database schema..."
+          docker-compose -f docker-compose.ci.yml exec db psql -U zadachok -d zadachok_db -c "\dt tp.*"
+
+      - name: Wait for API
+        run: |
           echo "🔄 Waiting for API to start (timeout: ${{ env.API_TIMEOUT }}s)..."
           timeout ${{ env.API_TIMEOUT }}s bash -c '
             while ! docker-compose -f docker-compose.ci.yml exec api curl -s http://localhost:8081/actuator/health; do
@@ -108,8 +113,7 @@ jobs:
               docker-compose -f docker-compose.ci.yml logs api --tail=20
               sleep 5
             done'
-          
-          echo "✅ Services are up and running!"
+          echo "✅ API is ready!"
 
       - name: Run Dart tests
         working-directory: ./api-tests
@@ -123,4 +127,4 @@ jobs:
         if: always()
         run: |
           docker-compose -f docker-compose.ci.yml down -v
-
+          docker system prune -f
