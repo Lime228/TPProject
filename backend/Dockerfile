@@ -3,9 +3,9 @@ FROM eclipse-temurin:17-jdk-jammy as builder
 
 WORKDIR /app
 
-# Копируем только необходимые файлы для сборки
-COPY backend/api/pom.xml .
-COPY backend/api/src ./src
+# Копируем pom.xml и src из backend/api/
+COPY api/pom.xml .
+COPY api/src ./src
 
 # Собираем приложение (Maven будет автоматически скачан)
 RUN apt-get update && \
