@@ -26,14 +26,16 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     environment:
-      SPRING_PROFILES_ACTIVE: ci
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/zadachok_db?currentSchema=tp
-      SPRING_DATASOURCE_USERNAME: zadachok
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-zadachok}
-      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
-      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
-      SPRING_JPA_SHOW_SQL: true
-      JWT_SECRET: ${JWT_SECRET:-defaultSecret}
+      spring.profiles.active: ci
+      server.address: 0.0.0.0
+      spring.datasource.url: jdbc:postgresql://db:5432/zadachok_db?currentSchema=tp
+      spring.datasource.username: zadachok
+      spring.datasource.password: ${DB_PASSWORD:-zadachok}
+      spring.jpa.hibernate.ddl-auto: validate
+      spring.jpa.properties.hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+      spring.jpa.properties.hibernate.default_schema: tp
+      spring.jpa.show-sql: true
+      jwt.secret: ${JWT_SECRET:-defaultSecret}
     depends_on:
       db:
         condition: service_healthy
