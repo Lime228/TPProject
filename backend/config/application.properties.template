@@ -1,18 +1,53 @@
-# Database
+# ===============================
+# DATABASE CONFIGURATION
+# ===============================
 spring.datasource.url=jdbc:postgresql://db:5432/zadachok_db?currentSchema=tp
 spring.datasource.username=zadachok
-spring.datasource.password=${DB_PASSWORD}
+spring.datasource.password=${DB_PASSWORD:zadachok}
 
-spring.jpa.properties.hibernate.default_schema=tp
+# Hibernate specific properties
 spring.jpa.hibernate.ddl-auto=update
+spring.jpa.properties.hibernate.default_schema=tp
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
 
-# JWT
-jwt.secret=${JWT_SECRET}
-jwt.expiration=86400000
+# Connection pool settings
+spring.datasource.hikari.connection-timeout=30000
+spring.datasource.hikari.maximum-pool-size=5
+spring.datasource.hikari.minimum-idle=2
+spring.datasource.hikari.idle-timeout=10000
+spring.datasource.hikari.max-lifetime=300000
 
-# Server
-server.port=${SERVER_PORT}
+# ===============================
+# JWT CONFIGURATION
+# ===============================
+jwt.secret=${JWT_SECRET:defaultSecretKey}
+jwt.expiration=86400000  # 24 hours in milliseconds
+jwt.header=Authorization
+jwt.prefix=Bearer
+
+# ===============================
+# SERVER CONFIGURATION
+# ===============================
+server.port=${SERVER_PORT:8081}
 server.address=0.0.0.0
+server.servlet.context-path=/
+server.error.include-message=always
+server.error.include-stacktrace=on_param
 
-# Profile
-spring.profiles.active=${SPRING_PROFILES_ACTIVE}
+# ===============================
+# SPRING PROFILE
+# ===============================
+spring.profiles.active=${SPRING_PROFILES_ACTIVE:ci}
+spring.config.activate.on-profile=ci
+spring.jpa.properties.hibernate.ddl-auto=validate
+
+# ===============================
+# LOGGING
+# ===============================
+logging.level.root=INFO
+logging.level.org.springframework=INFO
+logging.level.org.hibernate.SQL=DEBUG
+logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
