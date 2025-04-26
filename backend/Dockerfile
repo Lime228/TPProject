@@ -6,7 +6,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # Копируем JAR-файл
-COPY backend/target/zadachok-api.jar ./app.jar
+COPY backend/api/target/zadachok-api.jar ./app.jar
 
 # Копируем шаблон конфигурации (без секретов)
 COPY backend/config/application.properties.template /app/config/
