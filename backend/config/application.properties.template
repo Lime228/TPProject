@@ -1,9 +1,9 @@
 # ===============================
 # DATABASE CONFIGURATION
 # ===============================
-spring.datasource.url=jdbc:postgresql://db:5432/zadachok_db?currentSchema=tp
-spring.datasource.username=zadachok
-spring.datasource.password=${DB_PASSWORD:zadachok}
+spring.datasource.url=${SPRING_DATASOURCE_URL}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
 
 # Hibernate specific properties
 spring.jpa.hibernate.ddl-auto=update
@@ -42,7 +42,6 @@ server.error.include-stacktrace=on_param
 # ===============================
 spring.profiles.active=${SPRING_PROFILES_ACTIVE:ci}
 spring.config.activate.on-profile=ci
-spring.jpa.properties.hibernate.ddl-auto=validate
 
 # ===============================
 # LOGGING
