@@ -3,15 +3,15 @@ FROM eclipse-temurin:17-jdk-jammy as builder
 WORKDIR /app
 
 # Копируем Maven Wrapper и pom.xml
-COPY api/mvnw .
-COPY api/.mvn ./.mvn
-COPY api/pom.xml .
+COPY backend/api/mvnw .
+COPY backend/api/.mvn ./.mvn
+COPY backend/api/pom.xml .
 
 # Скачиваем зависимости
 RUN chmod +x mvnw && ./mvnw dependency:go-offline
 
 # Копируем исходный код
-COPY api/src ./src
+COPY backend/api/src ./src
 
 # Собираем приложение
 RUN ./mvnw clean package -DskipTests
