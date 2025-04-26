@@ -13,9 +13,6 @@ RUN chmod +x mvnw && ./mvnw dependency:go-offline
 # Копируем исходный код
 COPY ./api/src ./src
 
-# Собираем приложение
-RUN ./mvn clean package -DskipTests
-
 # Final stage
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
