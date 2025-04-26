@@ -2,6 +2,8 @@
 spring.datasource.url=${SPRING_DATASOURCE_URL}
 spring.datasource.username=${SPRING_DATASOURCE_USERNAME}
 spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
+spring.jpa.properties.hibernate.default_schema=tp
+spring.jpa.hibernate.ddl-auto=update
 
 # JWT
 jwt.secret=${JWT_SECRET}
