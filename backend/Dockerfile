@@ -3,15 +3,15 @@ FROM eclipse-temurin:17-jdk-jammy as builder
 WORKDIR /app
 
 # Копируем Maven Wrapper и pom.xml
-COPY backend/api/mvnw .
-COPY backend/api/.mvn ./.mvn
-COPY backend/api/pom.xml .
+COPY ./api/mvnw .
+COPY ./api/.mvn ./.mvn
+COPY ./api/pom.xml .
 
 # Скачиваем зависимости
 RUN chmod +x mvnw && ./mvnw dependency:go-offline
 
 # Копируем исходный код
-COPY backend/api/src ./src
+COPY ./api/src ./src
 
 # Собираем приложение
 RUN ./mvnw clean package -DskipTests
@@ -28,9 +28,8 @@ RUN apt-get update && \
 # Копируем собранный JAR
 COPY --from=builder /app/target/*.jar app.jar
 
-# Создаем и копируем конфигурацию
-RUN mkdir -p /app/config
-COPY backend/config/application.properties.template /app/config/
+# Копируем конфигурацию
+COPY ./config/application.properties.template /app/config/
 
 # Настройки по умолчанию
 ENV SPRING_PROFILES_ACTIVE=default \
