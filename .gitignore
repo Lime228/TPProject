@@ -31,3 +31,7 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# CI/CD
+docker-compose.ci.yml
+/backend/config/ci-application.properties
