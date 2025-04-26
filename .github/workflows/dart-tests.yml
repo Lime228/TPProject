@@ -20,9 +20,13 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: 'maven'  # Кэширование Maven-зависимостей
+      - name: Verify project structure
+        run: |
+          ls -la
+          ls -la backend/
 
       - name: Build API
-        working-directory: ./backend
+        working-directory: ./backend/api
         run: mvn clean package  # Используем системный Maven вместо mvnw
 
       - name: Prepare environment
