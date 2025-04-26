@@ -11,6 +11,8 @@ on:
 env:
   API_PORT: 8081
   DOCKER_COMPOSE_VERSION: "2.23.0"
+  POSTGRES_TIMEOUT: 60
+  API_TIMEOUT: 180
 
 jobs:
   test:
@@ -31,7 +33,7 @@ jobs:
         run: |
           cat <<EOF > docker-compose.ci.yml
           version: '3.8'
-          
+
           services:
             db:
               image: postgres:17
@@ -45,24 +47,31 @@ jobs:
                 test: ["CMD-SHELL", "pg_isready -U zadachok -d zadachok_db"]
                 interval: 5s
                 timeout: 5s
-                retries: 5
+                retries: 10
 
             api:
               build:
-                context: .
-                dockerfile: backend/Dockerfile
+                context: ./backend
+                dockerfile: Dockerfile
               ports:
                 - "${{ env.API_PORT }}:8081"
               environment:
                 SPRING_PROFILES_ACTIVE: ci
-                SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/zadachok_db
+                SERVER_ADDRESS: 0.0.0.0
+                SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/zadachok_db?currentSchema=tp
                 SPRING_DATASOURCE_USERNAME: zadachok
                 SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD }}
                 JWT_SECRET: ${{ secrets.JWT_SECRET }}
+                SPRING_JPA_HIBERNATE_DDL_AUTO: validate
               depends_on:
                 db:
                   condition: service_healthy
-          
+              healthcheck:
+                test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1"]
+                interval: 10s
+                timeout: 5s
+                retries: 5
+
           volumes:
             postgres_data:
           EOF
@@ -82,18 +91,25 @@ jobs:
         run: |
           # Запуск сервисов
           docker-compose -f docker-compose.ci.yml up -d --build
+
+          # Ожидание PostgreSQL
+          echo "🔄 Waiting for PostgreSQL (timeout: ${{ env.POSTGRES_TIMEOUT }}s)..."
+          timeout ${{ env.POSTGRES_TIMEOUT }}s bash -c '
+            while ! docker-compose -f docker-compose.ci.yml exec db pg_isready -U zadachok -d zadachok_db; do
+              echo "⏳ Waiting for PostgreSQL..."
+              sleep 5
+            done'
           
-          # Ожидание БД
-          echo "Waiting for PostgreSQL..."
-          timeout 120s bash -c 'until docker-compose -f docker-compose.ci.yml exec db pg_isready -U zadachok -d zadachok_db; do sleep 5; echo "Waiting..."; done'
+          # Проверка API
+          echo "🔄 Waiting for API to start (timeout: ${{ env.API_TIMEOUT }}s)..."
+          timeout ${{ env.API_TIMEOUT }}s bash -c '
+            while ! docker-compose -f docker-compose.ci.yml exec api curl -s http://localhost:8081/actuator/health; do
+              echo "⏳ API not ready yet..."
+              docker-compose -f docker-compose.ci.yml logs api --tail=20
+              sleep 5
+            done'
           
-          # Проверка API через logs
-          echo "Checking API startup..."
-          timeout 300s bash -c 'until docker-compose -f docker-compose.ci.yml logs api | grep "Started Application"; do sleep 5; echo "Waiting..."; done'
-          
-          # Проверка healthcheck
-          echo "Testing API healthcheck..."
-          curl -sSf --retry 5 --retry-delay 5 http://localhost:${{ env.API_PORT }}/actuator/health
+          echo "✅ Services are up and running!"
 
       - name: Run Dart tests
         working-directory: ./api-tests
@@ -102,3 +118,8 @@ jobs:
         run: |
           dart pub get
           dart test
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker-compose -f docker-compose.ci.yml down -v
