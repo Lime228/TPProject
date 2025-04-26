@@ -40,7 +40,7 @@ jobs:
       - name: Prepare environment
         run: |
           mkdir -p backend/config
-          cat <<EOF > backend/config/application-ci.properties
+          cat <<EOF > backend/config/application.properties.template
           spring.datasource.url=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
           spring.datasource.username=${DB_USER}
           spring.datasource.password=${{ secrets.DB_PASSWORD}}
