@@ -33,14 +33,11 @@ jobs:
           ls -la
           ls -la backend/
 
-      - name: Build API
+      - name: Prepare application properties
         working-directory: ./backend/api
-        run: mvn clean package
-
-      - name: Prepare environment
         run: |
-          mkdir -p backend/config
-          cat <<EOF > backend/config/application.properties.template
+          mkdir -p src/main/resources
+          cat <<EOF > src/main/resources/application-ci.properties
           spring.datasource.url=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
           spring.datasource.username=${DB_USER}
           spring.datasource.password=${{ secrets.DB_PASSWORD}}
@@ -49,8 +46,32 @@ jobs:
           jwt.expiration=86400000
           
           server.port=${API_PORT}
+          
+          spring.jpa.hibernate.ddl-auto=update
+          spring.jpa.show-sql=true
+          spring.jpa.properties.hibernate.format_sql=true
+          
           spring.config.activate.on-profile=ci
           EOF
+          
+          # Для тестов используем H2
+          mkdir -p src/test/resources
+          cat <<EOF > src/test/resources/application-test.properties
+          spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+          spring.datasource.driver-class-name=org.h2.Driver
+          spring.datasource.username=sa
+          spring.datasource.password=
+          
+          jwt.secret=test-secret
+          jwt.expiration=86400000
+          
+          spring.h2.console.enabled=true
+          spring.jpa.hibernate.ddl-auto=create-drop
+          EOF
+
+      - name: Build API with tests
+        working-directory: ./backend/api
+        run: mvn clean package -Dspring.profiles.active=ci
 
       - name: Start services
         run: |
@@ -63,7 +84,7 @@ jobs:
         with:
           version: "3.4.0"
 
-      - name: Run tests
+      - name: Run Dart tests
         working-directory: ./api-tests
         env:
           API_URL: "http://localhost:${{ env.API_PORT }}"
