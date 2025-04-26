@@ -15,14 +15,14 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
 
       # Установка Docker
       - name: Set up Docker
         uses: docker/setup-buildx-action@v2
-        
+
       - name: Install Docker Compose
         run: |
           sudo curl -L "https://github.com/docker/compose/releases/download/v${{ env.DOCKER_COMPOSE_VERSION }}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
@@ -36,12 +36,7 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
-      # Проверка (можно удалить после отладки)
-      - name: Verify generated file
-        run: |
-          cat docker-compose.ci.yml | grep -v password  # Безопасный вывод для логов
-
-      # Остальные шаги
+      # Установка Java и Maven
       - name: Set up JDK and Maven
         uses: actions/setup-java@v3
         with:
@@ -49,22 +44,34 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      # Сборка приложения
       - name: Build API
         working-directory: ./backend/api
         run: mvn clean package -Dspring.profiles.active=ci -DskipTests
 
-      - name: Start services
+      # Запуск сервисов и проверка
+      - name: Start and verify services
         run: |
+          # Запуск контейнеров
           docker-compose -f docker-compose.ci.yml up -d --build
           
+          # Проверка PostgreSQL
           echo "Waiting for PostgreSQL..."
-          timeout 120s bash -c 'until docker-compose -f docker-compose.ci.yml exec db pg_isready; do sleep 5; echo "Waiting..."; done'
+          timeout 120s bash -c 'until docker-compose -f docker-compose.ci.yml exec db pg_isready -U zadachok -d zadachok_db; do sleep 5; echo "Waiting..."; done'
           
-          echo "Waiting for API to start..."
-          timeout 300s bash -c 'until curl -sSf http://localhost:${API_PORT}/actuator/health >/dev/null; do sleep 5; echo "Waiting..."; done'
+          # Проверка API изнутри сети Docker
+          echo "Checking API from inside Docker network..."
+          docker-compose -f docker-compose.ci.yml run --rm curl curl -s http://api:8081/actuator/health
           
-          docker-compose -f docker-compose.ci.yml logs api
+          # Альтернативная проверка через logs
+          echo "API logs:"
+          docker-compose -f docker-compose.ci.yml logs api --tail=50
+          
+          # Проверка проброса порта (для хоста)
+          echo "Checking port mapping..."
+          docker-compose -f docker-compose.ci.yml ps
 
+      # Запуск Dart тестов
       - name: Run Dart tests
         working-directory: ./api-tests
         env:
