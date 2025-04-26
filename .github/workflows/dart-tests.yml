@@ -8,6 +8,13 @@ on:
       - '.github/workflows/dart-tests.yml'
       - 'docker-compose.ci.yml'
 
+env:
+  DB_USER: zadachok
+  DB_NAME: zadachok_db
+  DB_HOST: db
+  DB_PORT: 5432
+  API_PORT: 8081
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -19,7 +26,8 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'maven'  # Кэширование Maven-зависимостей
+          cache: 'maven'
+
       - name: Verify project structure
         run: |
           ls -la
@@ -27,19 +35,28 @@ jobs:
 
       - name: Build API
         working-directory: ./backend/api
-        run: mvn clean package  # Используем системный Maven вместо mvnw
+        run: mvn clean package
 
       - name: Prepare environment
         run: |
           mkdir -p backend/config
-          echo "spring.datasource.url=jdbc:postgresql://db:5432/zadachok_db" > backend/config/application-ci.properties
-          echo "spring.datasource.username=zadachok" >> backend/config/application-ci.properties
-          echo "spring.datasource.password=secret123" >> backend/config/application-ci.properties
+          cat <<EOF > backend/config/application-ci.properties
+          spring.datasource.url=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+          spring.datasource.username=${DB_USER}
+          spring.datasource.password=${{ secrets.DB_PASSWORD}}
+          
+          jwt.secret=${{ secrets.JWT_SECRET}}
+          jwt.expiration=86400000
+          
+          server.port=${API_PORT}
+          spring.config.activate.on-profile=ci
+          EOF
 
       - name: Start services
         run: |
           docker-compose -f docker-compose.ci.yml up -d --build
-          timeout 120s bash -c 'until curl -s http://localhost:8081/actuator/health | grep -q "UP"; do sleep 5; done'
+          echo "Waiting for API to start..."
+          timeout 120s bash -c 'until curl -s http://localhost:${API_PORT}/actuator/health | grep -q "UP"; do sleep 5; echo "Retrying..."; done'
 
       - name: Set up Dart
         uses: dart-lang/setup-dart@v1
@@ -49,7 +66,7 @@ jobs:
       - name: Run tests
         working-directory: ./api-tests
         env:
-          API_URL: "http://localhost:8081"
+          API_URL: "http://localhost:${{ env.API_PORT }}"
         run: |
           dart pub get
           dart test

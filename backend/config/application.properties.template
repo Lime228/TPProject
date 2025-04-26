@@ -1,0 +1,14 @@
+# Database
+spring.datasource.url=${SPRING_DATASOURCE_URL}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
+
+# JWT
+jwt.secret=${JWT_SECRET}
+jwt.expiration=86400000
+
+# Server
+server.port=${SERVER_PORT}
+
+# Profile
+spring.profiles.active=${SPRING_PROFILES_ACTIVE}
