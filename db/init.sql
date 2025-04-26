@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS tp.customer (
 
 CREATE TABLE IF NOT EXISTS tp.shop (
     shop_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    product_id integer[]
+    product_id text[]  -- Изменено на text[]
 );
 
 CREATE TABLE IF NOT EXISTS tp.task (
@@ -47,8 +47,8 @@ CREATE TABLE IF NOT EXISTS tp.product (
 CREATE TABLE IF NOT EXISTS tp.lobby (
     lobby_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     shop_id integer NOT NULL REFERENCES tp.shop(shop_id),
-    task_id integer[],
-    customer_id integer[] NOT NULL
+    task_id text[],  -- Изменено на text[]
+    customer_id text[] NOT NULL  -- Изменено на text[]
 );
 
 CREATE TABLE IF NOT EXISTS tp.taskmanager (
