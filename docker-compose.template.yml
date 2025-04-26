@@ -23,6 +23,8 @@ services:
         condition: service_healthy
 
   db:
+    container_name: db
+    hostname: db
     image: postgres:17
     environment:
       POSTGRES_USER: zadachok

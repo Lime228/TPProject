@@ -1,7 +1,8 @@
 # Database
-spring.datasource.url=jdbc:postgresql://db:5432/zadachok_db
-spring.datasource.username=${SPRING_DATASOURCE_USERNAME}
-spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
+spring.datasource.url=jdbc:postgresql://db:5432/zadachok_db?currentSchema=tp
+spring.datasource.username=zadachok
+spring.datasource.password=${DB_PASSWORD}
+
 spring.jpa.properties.hibernate.default_schema=tp
 spring.jpa.hibernate.ddl-auto=update
 
