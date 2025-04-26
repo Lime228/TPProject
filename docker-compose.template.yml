@@ -3,63 +3,47 @@ version: '3.8'
 services:
   db:
     container_name: tpproject-db
-    hostname: db
     image: postgres:17
     environment:
       POSTGRES_USER: zadachok
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-zadachok}  # Значение по умолчанию
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-zadachok}
       POSTGRES_DB: zadachok_db
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db/init.sql:/docker-entrypoint-initdb.d/10-init.sql
-    ports:
-      - "5432:5432"  # Для отладки
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U zadachok -d zadachok_db"]
       interval: 5s
       timeout: 5s
       retries: 10
-    restart: unless-stopped
+    ports:
+      - "5432:5432"
 
   api:
     container_name: tpproject-api
     build:
       context: ./backend
       dockerfile: Dockerfile
-    ports:
-      - "8081:8081"
     environment:
       SPRING_PROFILES_ACTIVE: ci
-      SERVER_PORT: 8081
-      SERVER_ADDRESS: 0.0.0.0
-      
-      # DB Configuration
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/zadachok_db?currentSchema=tp
       SPRING_DATASOURCE_USERNAME: zadachok
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-zadachok}
-      
-      # Hibernate Configuration
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_JPA_SHOW_SQL: true
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
-      SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: tp
-      
-      # JWT Configuration
-      JWT_SECRET: ${JWT_SECRET:-defaultSecretKey}
-      
-      # Connection Pool
-      SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: 30000
-      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 5
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_SHOW_SQL: true
+      JWT_SECRET: ${JWT_SECRET:-defaultSecret}
     depends_on:
       db:
         condition: service_healthy
+    ports:
+      - "8081:8081"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
 
 volumes:
   postgres_data:
