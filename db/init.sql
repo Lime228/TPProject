@@ -1,2 +1,3 @@
 CREATE SCHEMA IF NOT EXISTS tp;
 GRANT ALL PRIVILEGES ON SCHEMA tp TO zadachok;
+ALTER ROLE zadachok SET search_path TO tp,public;

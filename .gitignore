@@ -35,3 +35,4 @@ google-services.json
 # CI/CD
 docker-compose.ci.yml
 /backend/config/ci-application.properties
+backend/target/
