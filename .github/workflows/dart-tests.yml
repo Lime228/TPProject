@@ -71,7 +71,7 @@ jobs:
 
       - name: Build API with tests
         working-directory: ./backend/api
-        run: mvnw clean package -Dspring.profiles.active=ci -DskipTests
+        run: mvn clean package -Dspring.profiles.active=ci -DskipTests
 
       - name: Start services
         run: |
