@@ -19,7 +19,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Установка Docker
       - name: Set up Docker
         uses: docker/setup-buildx-action@v2
 
@@ -28,7 +27,6 @@ jobs:
           sudo curl -L "https://github.com/docker/compose/releases/download/v${{ env.DOCKER_COMPOSE_VERSION }}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
 
-      # Генерация docker-compose.ci.yml с curl сервисом
       - name: Generate docker-compose file
         run: |
           cat <<EOF > docker-compose.ci.yml
@@ -43,7 +41,6 @@ jobs:
                 POSTGRES_DB: zadachok_db
               volumes:
                 - postgres_data:/var/lib/postgresql/data
-                - ./db/init.sql:/docker-entrypoint-initdb.d/10-init.sql
               healthcheck:
                 test: ["CMD-SHELL", "pg_isready -U zadachok -d zadachok_db"]
                 interval: 5s
@@ -65,17 +62,11 @@ jobs:
               depends_on:
                 db:
                   condition: service_healthy
-
-            curl:
-              image: curlimages/curl
-              network_mode: service:api
-              command: sleep infinity
           
           volumes:
             postgres_data:
           EOF
 
-      # Установка Java и Maven
       - name: Set up JDK and Maven
         uses: actions/setup-java@v3
         with:
@@ -83,31 +74,27 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # Сборка приложения
       - name: Build API
         working-directory: ./backend/api
         run: mvn clean package -Dspring.profiles.active=ci -DskipTests
 
-      # Запуск и проверка сервисов
-      - name: Start and verify services
+      - name: Start and test services
         run: |
-          # Запуск контейнеров
+          # Запуск сервисов
           docker-compose -f docker-compose.ci.yml up -d --build
           
-          # Ожидание PostgreSQL
+          # Ожидание БД
           echo "Waiting for PostgreSQL..."
           timeout 120s bash -c 'until docker-compose -f docker-compose.ci.yml exec db pg_isready -U zadachok -d zadachok_db; do sleep 5; echo "Waiting..."; done'
           
-          # Проверка API изнутри сети
-          echo "Checking API health..."
-          docker-compose -f docker-compose.ci.yml exec api curl -s http://localhost:8081/actuator/health || \
-            (docker-compose -f docker-compose.ci.yml logs api; exit 1)
+          # Проверка API через logs
+          echo "Checking API startup..."
+          timeout 300s bash -c 'until docker-compose -f docker-compose.ci.yml logs api | grep "Started Application"; do sleep 5; echo "Waiting..."; done'
           
-          # Проверка доступности с хоста
-          echo "Checking host access..."
+          # Проверка healthcheck
+          echo "Testing API healthcheck..."
           curl -sSf --retry 5 --retry-delay 5 http://localhost:${{ env.API_PORT }}/actuator/health
 
-      # Запуск Dart тестов
       - name: Run Dart tests
         working-directory: ./api-tests
         env:

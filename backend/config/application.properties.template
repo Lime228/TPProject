@@ -12,6 +12,7 @@ jwt.expiration=86400000
 
 # Server
 server.port=${SERVER_PORT}
+server.address=0.0.0.0
 
 # Profile
 spring.profiles.active=${SPRING_PROFILES_ACTIVE}
