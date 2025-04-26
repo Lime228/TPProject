@@ -13,21 +13,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        
-      - name: Set up JDK 17
+
+      - name: Set up JDK and Maven
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'maven'  # Кэширование Maven-зависимостей
 
       - name: Build API
         working-directory: ./backend
-        run: ./mvnw clean package
+        run: mvn clean package  # Используем системный Maven вместо mvnw
 
       - name: Prepare environment
         run: |
           mkdir -p backend/config
-          cp backend/config/ci-application.properties backend/config/application-ci.properties
+          echo "spring.datasource.url=jdbc:postgresql://db:5432/zadachok_db" > backend/config/application-ci.properties
+          echo "spring.datasource.username=zadachok" >> backend/config/application-ci.properties
+          echo "spring.datasource.password=secret123" >> backend/config/application-ci.properties
 
       - name: Start services
         run: |
