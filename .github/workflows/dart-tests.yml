@@ -18,8 +18,26 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: ${{ env.DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB: ${{ env.DB_NAME }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
 
       - name: Set up JDK and Maven
         uses: actions/setup-java@v3
@@ -28,17 +46,12 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Verify project structure
-        run: |
-          ls -la
-          ls -la backend/
-
       - name: Prepare application properties
         working-directory: ./backend/api
         run: |
           mkdir -p src/main/resources
           cat <<EOF > src/main/resources/application-ci.properties
-          spring.datasource.url=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+          spring.datasource.url=jdbc:postgresql://localhost:${DB_PORT}/${DB_NAME}
           spring.datasource.username=${DB_USER}
           spring.datasource.password=${{ secrets.DB_PASSWORD}}
           
@@ -49,31 +62,14 @@ jobs:
           
           spring.jpa.hibernate.ddl-auto=update
           spring.jpa.show-sql=true
-          spring.jpa.properties.hibernate.format_sql=true
-          
           spring.config.activate.on-profile=ci
           EOF
-          
-          # Для тестов используем H2
-          mkdir -p src/test/resources
-          cat <<EOF > src/test/resources/application-test.properties
-          spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
-          spring.datasource.driver-class-name=org.h2.Driver
-          spring.datasource.username=sa
-          spring.datasource.password=
-          
-          jwt.secret=test-secret
-          jwt.expiration=86400000
-          
-          spring.h2.console.enabled=true
-          spring.jpa.hibernate.ddl-auto=create-drop
-          EOF
 
-      - name: Build API with tests
+      - name: Build API
         working-directory: ./backend/api
         run: mvn clean package -Dspring.profiles.active=ci -DskipTests
 
-      - name: Start services
+      - name: Start API service
         run: |
           docker-compose -f docker-compose.ci.yml up -d --build
           echo "Waiting for API to start..."
