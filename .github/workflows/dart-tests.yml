@@ -1,0 +1,48 @@
+name: API Tests
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - 'api-tests/**'
+      - '.github/workflows/dart-tests.yml'
+      - 'docker-compose.ci.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build API
+        working-directory: ./backend
+        run: ./mvnw clean package
+
+      - name: Prepare environment
+        run: |
+          mkdir -p backend/config
+          cp backend/config/ci-application.properties backend/config/application-ci.properties
+
+      - name: Start services
+        run: |
+          docker-compose -f docker-compose.ci.yml up -d --build
+          timeout 120s bash -c 'until curl -s http://localhost:8081/actuator/health | grep -q "UP"; do sleep 5; done'
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          version: "3.4.0"
+
+      - name: Run tests
+        working-directory: ./api-tests
+        env:
+          API_URL: "http://localhost:8081"
+        run: |
+          dart pub get
+          dart test

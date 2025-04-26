@@ -1,0 +1,19 @@
+name: zadachok_api_tests
+description: A sample command-line application.
+version: 1.0.0
+# repository: https://github.com/my_org/my_repo
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+# Add regular dependencies here.
+dependencies:
+  http: ^1.1.0  # Для простых запросов
+  dio: ^5.3.0   # Для сложных сценариев (можно оставить, если используете)
+  test: ^1.24.0  # Перенесено из dev_dependencies (нужно для CI)
+
+dev_dependencies:
+  lints: ^5.0.0
+  mockito: ^5.4.0  # Если нужно мокирование (опционально)
+
+
