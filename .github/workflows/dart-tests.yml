@@ -11,33 +11,33 @@ on:
 env:
   DB_USER: zadachok
   DB_NAME: zadachok_db
-  DB_HOST: db
+  DB_HOST: db  # Оставляем как 'db' для docker-compose сети
   DB_PORT: 5432
   API_PORT: 8081
+  DOCKER_COMPOSE_VERSION: "2.23.0"
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:13
-        env:
-          POSTGRES_USER: ${{ env.DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          POSTGRES_DB: ${{ env.DB_NAME }}
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
+    
     steps:
       - uses: actions/checkout@v4
 
+      # Установка Docker и Docker Compose
       - name: Set up Docker
         uses: docker/setup-buildx-action@v2
+        
+      - name: Install Docker Compose
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/download/v${{ env.DOCKER_COMPOSE_VERSION }}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
+
+      - name: Verify Docker setup
+        run: |
+          docker --version
+          docker-compose --version
+          docker info
 
       - name: Set up JDK and Maven
         uses: actions/setup-java@v3
@@ -51,7 +51,7 @@ jobs:
         run: |
           mkdir -p src/main/resources
           cat <<EOF > src/main/resources/application-ci.properties
-          spring.datasource.url=jdbc:postgresql://localhost:${DB_PORT}/${DB_NAME}
+          spring.datasource.url=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
           spring.datasource.username=${DB_USER}
           spring.datasource.password=${{ secrets.DB_PASSWORD}}
           
@@ -69,11 +69,18 @@ jobs:
         working-directory: ./backend/api
         run: mvn clean package -Dspring.profiles.active=ci -DskipTests
 
-      - name: Start API service
+      - name: Start services
         run: |
           docker-compose -f docker-compose.ci.yml up -d --build
+          
+          echo "Waiting for PostgreSQL..."
+          timeout 120s bash -c 'until docker-compose -f docker-compose.ci.yml exec db pg_isready; do sleep 5; echo "Waiting..."; done'
+          
           echo "Waiting for API to start..."
-          timeout 120s bash -c 'until curl -s http://localhost:${API_PORT}/actuator/health | grep -q "UP"; do sleep 5; echo "Retrying..."; done'
+          timeout 300s bash -c 'until curl -sSf http://localhost:${API_PORT}/actuator/health >/dev/null; do sleep 5; echo "Waiting..."; done'
+          
+          docker-compose -f docker-compose.ci.yml ps
+          docker-compose -f docker-compose.ci.yml logs api
 
       - name: Set up Dart
         uses: dart-lang/setup-dart@v1
