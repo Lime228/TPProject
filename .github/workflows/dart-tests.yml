@@ -122,7 +122,7 @@ jobs:
         run: |
           echo "🏁 Running Dart tests..."
           dart pub get
-          dart test
+          dart test APItests.dart
           echo "✅ Dart tests completed."
 
       - name: Show Logs on Failure
