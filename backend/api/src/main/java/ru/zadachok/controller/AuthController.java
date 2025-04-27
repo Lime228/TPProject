@@ -1,37 +1,34 @@
 package ru.zadachok.controller;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 import ru.zadachok.config.JwtTokenProvider;
-import ru.zadachok.dto.AuthRequest;
-import ru.zadachok.dto.RegisterRequest;
-import ru.zadachok.dto.UserDto;
-import ru.zadachok.exception.UserAlreadyExistsException;
-import ru.zadachok.service.UserService;
-
+import ru.zadachok.request.AuthRequest;
+import ru.zadachok.dto.CustomerDto;
+import ru.zadachok.exception.CustomerAlreadyExistsException;
+import ru.zadachok.service.CustomerService;
+import ru.zadachok.request.RegisterRequest;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
-    private final UserService userService;
+    private final CustomerService customerService;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
-            UserDto user = userService.register(request);
+            CustomerDto user = customerService.register(request);
             return ResponseEntity.ok(user);
-        } catch (UserAlreadyExistsException e) {
+        } catch (CustomerAlreadyExistsException e) {
             return ResponseEntity.badRequest().body(
                     Map.of("error", e.getMessage())
             );
@@ -43,7 +40,7 @@ public class AuthController {
         try {
             Authentication auth = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            request.getUsername(),
+                            request.getLogin(),
                             request.getPassword()
                     )
             );
@@ -56,6 +53,8 @@ public class AuthController {
             );
         }
     }
+
+
 //    @PostMapping("/login")
 //    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
 //        try {

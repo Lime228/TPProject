@@ -1,4 +1,4 @@
-package ru.zadachok.dto;
+package ru.zadachok.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -14,7 +14,7 @@ import lombok.*;
 public class RegisterRequest {
     @NotBlank
     @Size(min = 3, max = 20)
-    private String username;
+    private String login;
 
     @NotBlank
     @Size(min = 6, max = 40)
@@ -22,5 +22,5 @@ public class RegisterRequest {
 
     @NotBlank
     @Email
-    private String email;
+    private String customer_email;
 }

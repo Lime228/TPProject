@@ -12,7 +12,7 @@ import java.sql.Date;
 import java.util.List;
 
 @Entity
-@Table(name = "\"Customer\"", schema = "\"TP\"")  // Указываем схему и таблицу
+@Table(name = "\"customer\"", schema = "\"tp\"")  // Указываем схему и таблицу
 @Data
 @Builder
 @NoArgsConstructor
@@ -21,31 +21,31 @@ public class Customer implements UserDetails {  // Для интеграции �
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "\"Customer_ID\"")
-    private Integer id;
+    @Column(name = "\"customer_id\"")
+    private Integer customer_ID;
 
-    @Column(name = "\"Customer_name\"", nullable = false)
-    private String name;
+    @Column(name = "\"customer_name\"", nullable = false)
+    private String customer_name;
 
-    @Column(name = "\"Customer_email\"", nullable = false, unique = true)
-    private String email;
+    @Column(name = "\"customer_email\"", nullable = false, unique = true)
+    private String customer_email;
 
-    @Column(name = "\"Password\"", nullable = false)
+    @Column(name = "\"password\"", nullable = false)
     private String password;
 
-    @Column(name = "\"Birthday_date\"")
-    private Date birthday;
+    @Column(name = "\"birthday_date\"")
+    private Date birthday_date;
 
-    @Column(name = "\"Login\"", nullable = false, unique = true)
+    @Column(name = "\"login\"", nullable = false, unique = true)
     private String login;
 
-    @Column(name = "\"Admin\"", nullable = false)
-    private boolean isAdmin;
+    @Column(name = "\"admin\"", nullable = false)
+    private boolean admin;
 
     // Для Spring Security
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(isAdmin ? "ROLE_ADMIN" : "ROLE_USER"));
+        return List.of(new SimpleGrantedAuthority(admin ? "ROLE_ADMIN" : "ROLE_USER"));
     }
 
     @Override
