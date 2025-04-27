@@ -23,7 +23,7 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> login(String username, String password) async {
     try {
-      // Используем напрямую MockApiClient вместо apiClient
+
       final user = await MockApiClient().login(username, password);
 
       _user = user;
@@ -35,7 +35,7 @@ class AuthProvider with ChangeNotifier {
       await prefs.setBool('isAdmin', _isAdmin);
       await prefs.setString('user', jsonEncode(user.toJson()));
 
-      // Устанавливаем пользователя без автоматического создания группы
+
       groupProvider.setCurrentUser(user.name, isAdmin: user.isAdmin);
 
       notifyListeners();
@@ -58,7 +58,7 @@ class AuthProvider with ChangeNotifier {
           groupProvider.setCurrentUser(_user!.name, isAdmin: _isAdmin);
         } catch (e) {
           debugPrint('Ошибка парсинга userJson: $e');
-          await logout(); // сброс при ошибке
+          await logout();
         }
       }
 
@@ -84,7 +84,7 @@ class AuthProvider with ChangeNotifier {
     await prefs.setBool('isAdmin', _isAdmin);
     await prefs.setString('user', jsonEncode(user.toJson()));
 
-    // Устанавливаем текущего пользователя в группе
+
     groupProvider.setCurrentUser(user.name, isAdmin: user.isAdmin);
 
     notifyListeners();

@@ -20,7 +20,7 @@ class TaskProvider with ChangeNotifier {
   bool get isLoadingTaskDeletion => _isLoadingTaskDeletion;
   String? get error => _error;
 
-  // Новый метод для получения задач по дате
+
   List<TaskModel> getTasksForDate(DateTime date) {
     return _tasks.where((task) {
       final taskDate = DateTime.parse(task.endPoint).toLocal();
@@ -30,7 +30,7 @@ class TaskProvider with ChangeNotifier {
     }).toList();
   }
 
-  // Новый метод для получения общего количества звёзд за день
+
   double getTotalStarsForDate(DateTime date) {
     return getTasksForDate(date).fold(0, (sum, task) => sum + task.reward);
   }
@@ -63,9 +63,9 @@ class TaskProvider with ChangeNotifier {
         throw Exception('Только администратор может создавать задачи');
       }
 
-      debugPrint('Создание задачи с reward: ${task.reward}'); // Добавлено логирование
+      debugPrint('Создание задачи с reward: ${task.reward}');
       final newTask = await apiClient.createTask(task);
-      debugPrint('Получена задача с reward: ${newTask.reward}'); // Добавлено логирование
+      debugPrint('Получена задача с reward: ${newTask.reward}');
 
       _tasks.add(newTask);
       notifyListeners();
@@ -127,7 +127,7 @@ class TaskProvider with ChangeNotifier {
     try {
       final index = _tasks.indexWhere((t) => t.id == task.id);
       if (index != -1) {
-        // Проверка награды при обновлении
+
         if (task.reward < 0) {
           throw Exception('Награда не может быть отрицательной');
         }

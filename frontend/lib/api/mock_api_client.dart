@@ -118,24 +118,7 @@ class MockApiClient implements ApiInterface {
     );
   }
 
-  @override
-  Future<ProductModel> createShopItem(ProductModel request) async {
-    await Future.delayed(const Duration(seconds: 1));
 
-    if (request.name.isEmpty || request.price <= 0) {
-      throw Exception('Название и цена обязательны');
-    }
-
-    return ProductModel(
-      id: DateTime.now().millisecondsSinceEpoch,
-      name: request.name,
-      description: request.description,
-      photo: request.photo,
-      state: 'Available',
-      price: request.price,
-      customerId: request.customerId,
-    );
-  }
 
   @override
   Future<TaskModel> createTask(TaskModel request) async {
@@ -249,5 +232,28 @@ class MockApiClient implements ApiInterface {
   Future<TaskModel> updateTask(TaskModel task) {
     // TODO: implement updateTask
     throw UnimplementedError();
+  }
+
+  @override
+  Future<List<ProductModel>> getShopItems() async {
+    await Future.delayed(const Duration(seconds: 1));
+    return []; // Начнем с пустого списка
+  }
+
+  @override
+  Future<ProductModel> createShopItem(ProductModel request) async {
+    await Future.delayed(const Duration(seconds: 1));
+    return request; // Просто возвращаем переданный товар
+  }
+
+  @override
+  Future<ProductModel> updateShopItem(ProductModel request) async {
+    await Future.delayed(const Duration(seconds: 1));
+    return request; // Возвращаем обновленный товар
+  }
+
+  @override
+  Future<void> deleteShopItem(String itemId) async {
+    await Future.delayed(const Duration(seconds: 1));
   }
 }

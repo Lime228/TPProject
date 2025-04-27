@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:zadachok/api/api_interface.dart';
 import 'package:zadachok/models/user/user_model.dart';
+import 'package:zadachok/routes/main_navigation.dart';
 import 'package:zadachok/screens/login_screen.dart';
-
-import '../api/api_client.dart';
-import '../routes/main_navigation.dart';
 
 class RegisterScreen extends StatefulWidget {
   final ApiInterface apiClient;
@@ -15,30 +13,31 @@ class RegisterScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _RegisterScreenState createState() => _RegisterScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  // Константы дизайна
-  static const double BORDER_RADIUS = 15.0;
-  static const Offset SHADOW_OFFSET = Offset(0, 4);
-  static const double SHADOW_BLUR = 6.0;
-  static const EdgeInsets CONTENT_PADDING = EdgeInsets.symmetric(horizontal: 20, vertical: 15);
-  static const double BUTTON_WIDTH = 200.0;
-  static const double BUTTON_HEIGHT = 44.0;
-  static const double INPUT_WIDTH = 305.0;
-  static const double INPUT_HEIGHT = 41.0;
-  static const Color COLOR_ENTER = Color.fromARGB(100, 110, 68, 255);
-  static const Color COLOR_ENTER_BUTTON = Color.fromARGB(100, 147, 125, 243);
 
-  // Стили текста
-  static const TextStyle TEXT_STYLE = TextStyle(
+  static const double borderRadius = 15.0;
+  static const Offset shadowOffset = Offset(0, 4);
+  static const double shadowBlur = 6.0;
+  static const EdgeInsets contentPadding =
+  EdgeInsets.symmetric(horizontal: 20, vertical: 15);
+  static const double buttonWidth = 200.0;
+  static const double buttonHeight = 44.0;
+  static const double inputWidth = 305.0;
+  static const double inputHeight = 41.0;
+  static const Color colorEnter = Color.fromARGB(100, 110, 68, 255);
+  static const Color colorEnterButton = Color.fromARGB(100, 147, 125, 243);
+
+
+  static const TextStyle textStyle = TextStyle(
     fontSize: 15,
     fontFamily: 'Inter',
     fontWeight: FontWeight.w600,
   );
 
-  static const TextStyle ENTER_STYLE = TextStyle(
+  static const TextStyle enterStyle = TextStyle(
     fontSize: 15,
     fontFamily: 'Inter',
     fontWeight: FontWeight.w600,
@@ -53,6 +52,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscureText = true;
   String? _errorMessage;
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
 
   void _togglePasswordVisibility() => setState(() => _obscureText = !_obscureText);
 
@@ -69,12 +76,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         UserModel(
           password: _passwordController.text,
           email: _emailController.text,
-          name: '', // Можно добавить поле для имени, если нужно
+          name: '',
           login: _usernameController.text,
-          birthdayDate: DateTime.parse('1990-01-01'), // Дефолтная дата
+          birthdayDate: DateTime.parse('1990-01-01'),
         ),
       );
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Успешная регистрация! ID: ${user.id}'),
@@ -82,15 +90,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       );
 
-      if (mounted) {
-        // Переход на MainNavigationScreen после регистрации
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => MainNavigationScreen(apiClient: ApiClient()),
-          ),
-        );
-      }
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const MainNavigationScreen(),
+        ),
+      );
     } catch (e) {
       String errorMessage = 'Ошибка регистрации';
       if (e.toString().contains('email') || e.toString().contains('почт')) {
@@ -101,9 +106,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         errorMessage = 'Заполните все поля';
       }
 
-      setState(() => _errorMessage = errorMessage);
+      if (mounted) {
+        setState(() => _errorMessage = errorMessage);
+      }
     } finally {
-      widget.apiClient.dispose();
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -114,124 +120,92 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 40),
-                Image.asset('lib/assets/logo.png', width: 150),
-                const SizedBox(height: 30),
-                const Text(
-                  "Регистрация",
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: COLOR_ENTER,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _buildInputField(
-                  hintText: 'Логин',
-                  controller: _usernameController,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Введите логин';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 10),
-                _buildInputField(
-                  hintText: 'Почта',
-                  controller: _emailController,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Введите email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Некорректный email';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 10),
-                _buildInputField(
-                  hintText: 'Пароль',
-                  controller: _passwordController,
-                  isPassword: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Введите пароль';
-                    }
-                    if (value.length < 6) {
-                      return 'Пароль должен быть не менее 6 символов';
-                    }
-                    return null;
-                  },
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureText ? Icons.visibility_off : Icons.visibility,
-                      color: Colors.grey,
-                    ),
-                    onPressed: _togglePasswordVisibility,
-                  ),
-                ),
-                if (_errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: Text(
-                      _errorMessage!,
-                      style: const TextStyle(color: Colors.red),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 30),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height -
+                  MediaQuery.of(context).padding.vertical,
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 40),
+                  Image.asset('lib/assets/logo.png', width: 150),
+                  const SizedBox(height: 30),
+                  const Text(
+                    "Регистрация",
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: colorEnter,
                     ),
                   ),
-                const SizedBox(height: 20),
-                Container(
-                  width: BUTTON_WIDTH,
-                  height: BUTTON_HEIGHT,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 6,
-                        offset: Offset(0, 4),
+                  const SizedBox(height: 20),
+                  _buildInputField(
+                    hintText: 'Логин',
+                    controller: _usernameController,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Введите логин';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _buildInputField(
+                    hintText: 'Почта',
+                    controller: _emailController,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Введите email';
+                      }
+                      if (!value.contains('@')) {
+                        return 'Некорректный email';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _buildInputField(
+                    hintText: 'Пароль',
+                    controller: _passwordController,
+                    isPassword: true,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Введите пароль';
+                      }
+                      if (value.length < 6) {
+                        return 'Пароль должен быть не менее 6 символов';
+                      }
+                      return null;
+                    },
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureText ? Icons.visibility_off : Icons.visibility,
+                        color: Colors.grey,
                       ),
-                    ],
-                  ),
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _register,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: COLOR_ENTER_BUTTON,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      shadowColor: Colors.transparent,
+                      onPressed: _togglePasswordVisibility,
                     ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text("Зарегистрироваться", style: ENTER_STYLE),
                   ),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text("Уже есть аккаунт? "),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: const Text(
-                        "Войти",
-                        style: TextStyle(color: COLOR_ENTER_BUTTON),
+                  if (_errorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: Colors.red),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 40),
-              ],
+                  const SizedBox(height: 20),
+                  _buildRegisterButton(),
+                  const SizedBox(height: 20),
+                  _buildLoginPrompt(),
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
           ),
         ),
@@ -247,17 +221,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     String? Function(String?)? validator,
   }) {
     return SizedBox(
-      width: INPUT_WIDTH,
-      height: INPUT_HEIGHT,
+      width: inputWidth,
+      height: inputHeight,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(BORDER_RADIUS),
+          borderRadius: BorderRadius.circular(borderRadius),
           boxShadow: const [
             BoxShadow(
               color: Colors.black26,
-              blurRadius: SHADOW_BLUR,
-              offset: SHADOW_OFFSET,
+              blurRadius: shadowBlur,
+              offset: shadowOffset,
             ),
           ],
         ),
@@ -266,14 +240,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
           obscureText: isPassword ? _obscureText : false,
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: TEXT_STYLE,
+            hintStyle: textStyle,
             filled: true,
             fillColor: Colors.white,
             border: const OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(BORDER_RADIUS)),
+              borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
               borderSide: BorderSide.none,
             ),
-            contentPadding: CONTENT_PADDING,
+            contentPadding: contentPadding,
             suffixIcon: suffixIcon,
             errorStyle: const TextStyle(height: 0),
           ),
@@ -283,11 +257,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  @override
-  void dispose() {
-    _usernameController.dispose();
-    _passwordController.dispose();
-    _emailController.dispose();
-    super.dispose();
+  Widget _buildRegisterButton() {
+    return Container(
+      width: buttonWidth,
+      height: buttonHeight,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 6,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _register,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: colorEnterButton,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
+          shadowColor: Colors.transparent,
+        ),
+        child: _isLoading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text("Зарегистрироваться", style: enterStyle),
+      ),
+    );
+  }
+
+  Widget _buildLoginPrompt() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Text("Уже есть аккаунт? "),
+        GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: const Text(
+            "Войти",
+            style: TextStyle(color: colorEnterButton),
+          ),
+        ),
+      ],
+    );
   }
 }

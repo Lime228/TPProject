@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:zadachok/models/lobby/lobby_model.dart';
 import '../models/shop/product/product_model.dart';
@@ -10,47 +9,38 @@ import 'api_interface.dart';
 import 'api_endpoints.dart';
 
 class ApiClient implements ApiInterface {
-  // Изменено: теперь клиент создается при каждом запросе
-  http.Client get _client => http.Client();
+  final http.Client _client;
   final String _baseUrl;
 
-  ApiClient({String? baseUrl}) : _baseUrl = baseUrl ?? ApiEndpoints.baseUrl;
+  ApiClient({http.Client? client, String? baseUrl})
+      : _client = client ?? http.Client(),
+        _baseUrl = baseUrl ?? ApiEndpoints.baseUrl;
 
   @override
   Future<UserModel> register(UserModel request) async {
-    final client = _client; // Получаем новый клиент
-    try {
-      final url = Uri.parse(ApiEndpoints.registerUrl);
-      debugPrint('Register request to: $url');
-      debugPrint('Request body: ${request.toJson()}');
+    final url = Uri.parse(ApiEndpoints.registerUrl);
 
-      final response = await client.post(
+    try {
+      final response = await _client.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: json.encode(request.toJson()),
       ).timeout(const Duration(seconds: 10));
 
-      debugPrint('Register response: ${response.statusCode} ${response.body}');
       return _handleResponse(response);
     } on http.ClientException catch (e) {
-      debugPrint('Register client error: ${e.message}');
       throw Exception('Ошибка подключения: ${e.message}');
     } on Exception catch (e) {
-      debugPrint('Register error: $e');
-      throw Exception('Ошибка регистрации: $e');
-    } finally {
-      client.close(); // Закрываем клиент после использования
+      throw Exception('Ошибка: $e');
     }
   }
 
   @override
   Future<UserModel> login(String username, String password) async {
-    final client = _client;
-    try {
-      final url = Uri.parse(ApiEndpoints.loginUrl);
-      debugPrint('Login request to: $url');
+    final url = Uri.parse(ApiEndpoints.loginUrl);
 
-      final response = await client.post(
+    try {
+      final response = await _client.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
@@ -59,27 +49,22 @@ class ApiClient implements ApiInterface {
         }),
       ).timeout(const Duration(seconds: 10));
 
-      debugPrint('Login response: ${response.statusCode}');
       return _handleResponse(response);
     } on http.ClientException catch (e) {
-      debugPrint('Login client error: ${e.message}');
       throw Exception('Ошибка подключения: ${e.message}');
     } on Exception catch (e) {
-      debugPrint('Login error: $e');
-      throw Exception('Ошибка входа: $e');
-    } finally {
-      client.close();
+      throw Exception('Ошибка: $e');
     }
   }
 
-  @override
-  Future<void> recoverPassword({required String email, required String login}) async {
-    final client = _client;
-    try {
-      final url = Uri.parse(ApiEndpoints.recoverPasswordUrl);
-      debugPrint('Recover password request to: $url');
 
-      final response = await client.post(
+
+  @override
+  Future<void> recoverPassword({required String email,required String login}) async {
+    final url = Uri.parse(ApiEndpoints.recoverPasswordUrl);
+
+    try {
+      final response = await _client.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
@@ -88,16 +73,11 @@ class ApiClient implements ApiInterface {
         }),
       ).timeout(const Duration(seconds: 10));
 
-      debugPrint('Recover password response: ${response.statusCode}');
       _handlePasswordRecoveryResponse(response);
     } on http.ClientException catch (e) {
-      debugPrint('Recover password client error: ${e.message}');
       throw Exception('Ошибка подключения: ${e.message}');
     } on Exception catch (e) {
-      debugPrint('Recover password error: $e');
-      throw Exception('Ошибка восстановления пароля: $e');
-    } finally {
-      client.close();
+      throw Exception('Ошибка: $e');
     }
   }
 
@@ -135,6 +115,7 @@ class ApiClient implements ApiInterface {
 
   @override
   void dispose() {
+    _client.close();
   }
 
   @override
@@ -150,9 +131,78 @@ class ApiClient implements ApiInterface {
   }
 
   @override
-  Future<ProductModel> createShopItem(ProductModel request) {
-    // TODO: implement createShopItem
-    throw UnimplementedError();
+  Future<ProductModel> createShopItem(ProductModel request) async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/shop/items');
+
+    try {
+      final response = await _client.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(request.toJson()),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 201) {
+        return ProductModel.fromJson(json.decode(response.body));
+      } else {
+        throw Exception('Failed to create item: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error creating shop item: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<List<ProductModel>> getShopItems() async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/shop/items');
+
+    try {
+      final response = await _client.get(url).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body);
+        return jsonList.map((json) => ProductModel.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load shop items: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error getting shop items: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<ProductModel> updateShopItem(ProductModel request) async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/shop/items/${request.id}');
+
+    try {
+      final response = await _client.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(request.toJson()),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return ProductModel.fromJson(json.decode(response.body));
+      } else {
+        throw Exception('Failed to update item: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error updating shop item: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<void> deleteShopItem(String itemId) async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/shop/items/$itemId');
+
+    try {
+      final response = await _client.delete(url).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception('Failed to delete item: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error deleting shop item: ${e.toString()}');
+    }
   }
 
   @override
@@ -174,14 +224,20 @@ class ApiClient implements ApiInterface {
   }
 
   @override
+  Future<WalletModel> updateWallet(WalletModel request) {
+    // TODO: implement updateWallet
+    throw UnimplementedError();
+  }
+
+  @override
   Future<void> deleteTask(String taskId) {
     // TODO: implement deleteTask
     throw UnimplementedError();
   }
 
   @override
-  Future<WalletModel> updateWallet(WalletModel request) {
-    // TODO: implement updateWallet
+  Future<TaskModel> updateTask(TaskModel task) {
+    // TODO: implement updateTask
     throw UnimplementedError();
   }
 }

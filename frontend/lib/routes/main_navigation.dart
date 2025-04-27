@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../api/api_interface.dart';
 import '../providers/auth_provider.dart';
 import '/screens/calendar_screen.dart';
 import '/screens/login_screen.dart';
@@ -9,19 +8,14 @@ import '/screens/shop_screen.dart';
 import '/screens/tasks_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
-  final ApiInterface apiClient;
-
-  const MainNavigationScreen({
-    super.key,
-    required this.apiClient,
-  });
+  const MainNavigationScreen({super.key});
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  // Константы навигации
+
   static const int DEFAULT_SELECTED_INDEX = 1;
   static const Color NAV_BAR_SHADOW_COLOR = Colors.black12;
   static const double NAV_BAR_SHADOW_BLUR = 8.0;
@@ -39,22 +33,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         const CalendarScreen(key: PageStorageKey('calendar_screen')),
         const ShopScreen(key: PageStorageKey('shop_screen')),
         const TasksScreen(key: PageStorageKey('tasks_screen')),
-        SettingsScreen(
-          key: const PageStorageKey('settings_screen'),
-          apiClient: widget.apiClient,
-        ),
+        const SettingsScreen(key: PageStorageKey('settings_screen')),
       ];
     } else {
       return [
         const CalendarScreen(key: PageStorageKey('calendar_screen')),
-        LoginScreen(
-          key: const PageStorageKey('login_screen'),
-          apiClient: widget.apiClient,
-        ),
-        SettingsScreen(
-          key: const PageStorageKey('settings_screen'),
-          apiClient: widget.apiClient,
-        ),
+        const LoginScreen(key: PageStorageKey('login_screen')),
+        const SettingsScreen(key: PageStorageKey('settings_screen')),
       ];
     }
   }

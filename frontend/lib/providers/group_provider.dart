@@ -42,7 +42,7 @@ class GroupProvider with ChangeNotifier {
     _groupCode = _generateRandomCode();
     _members = [_currentUser!];
 
-    await saveGroupData(); // Сохраняем при создании
+    await saveGroupData();
     notifyListeners();
   }
 
@@ -64,11 +64,11 @@ class GroupProvider with ChangeNotifier {
       if (_members.isEmpty) {
         _groupCode = null;
         _groupName = null;
-        clearGroupData(); // Очищаем SharedPreferences
+        clearGroupData();
       } else {
-        saveGroupData(); // Сохраняем обновлённый список
+        saveGroupData();
       }
-      notifyListeners(); // Уведомляем слушателей
+      notifyListeners();
     }
   }
 
@@ -103,7 +103,7 @@ class GroupProvider with ChangeNotifier {
 
 
 
-  // Удалить участника (только владелец)
+
   void removeMember(String name) {
     if (!isOwner) return;
 

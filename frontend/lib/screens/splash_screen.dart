@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zadachok/routes/main_navigation.dart';
 
-import '../api/api_client.dart';
 import '../providers/auth_provider.dart';
 import '../providers/group_provider.dart';
 import 'login_screen.dart';
@@ -17,7 +16,6 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-  // Константы анимации
   static const Duration LOGO_ANIMATION_DURATION = Duration(milliseconds: 2000);
   static const Duration TEXT_ANIMATION_DURATION = Duration(milliseconds: 800);
   static const double LOGO_SIZE = 150.0;
@@ -30,10 +28,10 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _textOpacity;
 
   Future<void> _initializeAndAnimate() async {
-    await _initializeApp(); // Добавляем инициализацию здесь
+    await _initializeApp();
     _startAnimation();
   }
-  //NRC1BM
+
 
   @override
   void initState() {
@@ -76,7 +74,7 @@ class _SplashScreenState extends State<SplashScreen>
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await authProvider.checkAuth();
 
-    // GroupProvider теперь обновляется через AuthProvider
+
     final groupProvider = authProvider.groupProvider;
     await groupProvider.loadGroupData();
   }
@@ -93,9 +91,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (_) => MainNavigationScreen(apiClient: ApiClient()),
-      ),
+      MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
     );
   }
 

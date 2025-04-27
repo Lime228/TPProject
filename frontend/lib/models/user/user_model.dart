@@ -45,15 +45,12 @@ class UserModel implements BaseRequest<UserModel>, BaseResponse {
 
   @override
   Map<String, dynamic> toJson() => {
-    // if (id != 0) 'id': id,
-    // 'name': name,
-    // 'email': email,
-    // 'birthdayDate': birthdayDate.toIso8601String(),
-    // 'login': login,
-    // 'isAdmin': isAdmin,
-    'login': login,
-    'password': password,
+    if (id != 0) 'id': id,
+    'name': name,
     'email': email,
+    'birthdayDate': birthdayDate.toIso8601String(),
+    'login': login,
+    'isAdmin': isAdmin,
   };
 
   @override

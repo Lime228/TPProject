@@ -5,10 +5,7 @@ import 'package:zadachok/providers/auth_provider.dart';
 import 'package:zadachok/routes/main_navigation.dart';
 import 'package:zadachok/screens/password_recovery_screen.dart';
 import 'package:zadachok/screens/register_screen.dart';
-
-import '../api/api_client.dart';
 import '../api/mock_api_client.dart';
-import '../models/user/user_model.dart';
 import '../providers/group_provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -16,11 +13,11 @@ class LoginScreen extends StatefulWidget {
 
   const LoginScreen({
     Key? key,
-    required this.apiClient, // Убрали значение по умолчанию, сделали обязательным
+    this.apiClient = const MockApiClient(),
   }) : super(key: key);
 
   @override
-  _LoginScreenState createState() => _LoginScreenState(); // ← Эта строка обязательна!
+  _LoginScreenState createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
@@ -74,21 +71,16 @@ class _LoginScreenState extends State<LoginScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final groupProvider = Provider.of<GroupProvider>(context, listen: false);
 
-      // Устанавливаем пользователя в GroupProvider
       groupProvider.setCurrentUser(user.name, isAdmin: user.isAdmin);
-
       await authProvider.setUser(user);
 
-      // Создаем группу только для админа, если ее нет
       if (user.isAdmin && !groupProvider.isInGroup) {
         await groupProvider.createGroup('Администраторы');
       }
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => MainNavigationScreen(apiClient: ApiClient()),
-        ),
+        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
       );
     } catch (e) {
       setState(() => _errorMessage = e.toString());
@@ -96,8 +88,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -111,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 30),
+                const SizedBox(height: 151),
                 Image.asset('lib/assets/logo.png', width: 150),
                 const SizedBox(height: 30),
                 const Text(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class CustomRouteTransitions {
-  // Константы анимации
+
   static const double SLIDE_BEGIN_OFFSET = 1.0;
   static const double SLIDE_END_OFFSET = 0.0;
   static const double SCALE_BEGIN = 0.5;

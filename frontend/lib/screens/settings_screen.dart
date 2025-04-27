@@ -8,23 +8,14 @@ import 'package:zadachok/providers/settings_provider.dart';
 import 'package:zadachok/providers/group_provider.dart';
 import 'package:zadachok/routes/main_navigation.dart';
 
-import '../api/api_client.dart';
-import '../api/api_interface.dart';
-
 class SettingsScreen extends StatefulWidget {
-  final ApiInterface apiClient;
-
-  const SettingsScreen({
-    super.key,
-    required this.apiClient,
-  });
+  const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState(); // ← Эта строка обязательна!
+  State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  // Константы дизайна
   static const double BLOCK_WIDTH = 352.0;
   static const double BLOCK_PADDING = 15.0;
   static const double BLOCK_BORDER_RADIUS = 15.0;
@@ -201,47 +192,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildNameFields() {
     return Expanded(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           const Text('Имя', style: TextStyle(fontSize: 12, color: Color(0xFF666666))),
-          const SizedBox(height: 4),
-          SizedBox(
-            width: 156,
-            height: 31,
-            child: TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  borderSide: const BorderSide(color: Colors.grey),
-                ),
-              ),
+      const SizedBox(height: 8),
+      Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+            ],
+          ),
+          child: TextField(
+            controller: _nameController,
+            onChanged: (value) {
+              Provider.of<SettingsProvider>(context, listen: false)
+                  .updateUserData(name: value);
+            },
+            decoration: const InputDecoration(
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              border: InputBorder.none,
+              hintText: 'Введите имя',
             ),
           ),
-          const SizedBox(height: 10),
-          const Text('Фамилия', style: TextStyle(fontSize: 12, color: Color(0xFF666666))),
-          const SizedBox(height: 4),
-          SizedBox(
-            width: 156,
-            height: 31,
-            child: TextField(
-              controller: _surnameController,
-              decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  borderSide: const BorderSide(color: Colors.grey),
-                ),
+        ),
+        const SizedBox(height: 16),
+        const Text('Фамилия', style: TextStyle(fontSize: 12, color: Color(0xFF666666))),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 8,
+                offset: Offset(0, 4),
               ),
+            ],
+          ),
+          child: TextField(
+            controller: _surnameController,
+            onChanged: (value) {
+              Provider.of<SettingsProvider>(context, listen: false)
+                  .updateUserData(surname: value);
+            },
+            decoration: const InputDecoration(
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              border: InputBorder.none,
+              hintText: 'Введите фамилию',
             ),
           ),
+        ),
         ],
       ),
     );
@@ -427,9 +434,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onPressed: () {
                 authProvider.logout();
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(
-                    builder: (_) => MainNavigationScreen(apiClient: widget.apiClient),
-                  ),
+                  MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
                       (route) => false,
                 );
               },
@@ -468,11 +473,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: TextButton(
               onPressed: () {
                 authProvider.logout();
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => MainNavigationScreen(apiClient: ApiClient()),
-                  ),
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
                 );
               },
               child: const Text(

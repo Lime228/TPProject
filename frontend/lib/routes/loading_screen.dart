@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class LoadingScreen extends StatelessWidget {
-  // Константы дизайна
+
   static const double BLUR_SIGMA_X = 5.0;
   static const double BLUR_SIGMA_Y = 5.0;
   static const double BACKGROUND_OPACITY = 0.5;
