@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS tp.customer (
 -- Òàáëèöà shop
 CREATE TABLE IF NOT EXISTS tp.shop (
     shop_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    product_id text[] NOT NULL DEFAULT '{}'
+    product_id varchar NOT NULL DEFAULT '{}'
 );
 
 -- Òàáëèöà task
