@@ -7,7 +7,7 @@ void main() {
   const registerUrl = '$baseUrl/api/auth/register';
   const loginUrl = '$baseUrl/api/auth/login';
   const createLobbyUrl = '$baseUrl/api/lobby/create';
-  const healthCheckUrl = '$baseUrl/actuator/health';
+  const healthCheckUrl = '$baseUrl';
 
   // Генерируем уникальные тестовые данные
   final timestamp = DateTime.now().millisecondsSinceEpoch;
