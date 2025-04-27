@@ -16,7 +16,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Integer> {
     @Query("SELECT c FROM Customer c WHERE c.customer_email = :email")
     Optional<Customer> findByEmail(@Param("email") String email);
 
-    // Проверка существования логина (поле login в Customer)
+    // Проверка существования логина (поле login в Custom)
     boolean existsByLogin(String login);
 
     // Проверка существования email (поле customer_email в Customer)
