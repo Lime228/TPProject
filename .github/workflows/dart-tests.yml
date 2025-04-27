@@ -29,101 +29,47 @@ jobs:
           sudo curl -L "https://github.com/docker/compose/releases/download/v${{ env.DOCKER_COMPOSE_VERSION }}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
 
-      - name: Verify init.sql exists
+      - name: Check db/init.sql exists
         run: |
-          ls -la db/init.sql
-          head -n 10 db/init.sql
+          test -f db/init.sql || (echo "❌ db/init.sql not found!" && exit 1)
 
-      - name: Generate docker-compose file
-        run: |
-          echo "version: '3.8'" > docker-compose.ci.yml
-          echo "services:" >> docker-compose.ci.yml
-          echo "  db:" >> docker-compose.ci.yml
-          echo "    image: postgres:17" >> docker-compose.ci.yml
-          echo "    environment:" >> docker-compose.ci.yml
-          echo "      POSTGRES_USER: zadachok" >> docker-compose.ci.yml
-          echo "      POSTGRES_PASSWORD: ${SECRET_DB_PASSWORD}" >> docker-compose.ci.yml
-          echo "      POSTGRES_DB: zadachok_db" >> docker-compose.ci.yml
-          echo "      POSTGRES_INITDB_ARGS: '--encoding=UTF8'" >> docker-compose.ci.yml
-          echo "    volumes:" >> docker-compose.ci.yml
-          echo "      - postgres_data:/var/lib/postgresql/data" >> docker-compose.ci.yml
-          echo "      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql" >> docker-compose.ci.yml
-          echo "    healthcheck:" >> docker-compose.ci.yml
-          echo "      test: ['CMD-SHELL', 'pg_isready -U zadachok -d zadachok_db']" >> docker-compose.ci.yml
-          echo "      interval: 5s" >> docker-compose.ci.yml
-          echo "      timeout: 5s" >> docker-compose.ci.yml
-          echo "      retries: 10" >> docker-compose.ci.yml
-          echo "    ports:" >> docker-compose.ci.yml
-          echo "      - '5432:5432'" >> docker-compose.ci.yml
-          echo "  api:" >> docker-compose.ci.yml
-          echo "    build:" >> docker-compose.ci.yml
-          echo "      context: ./backend" >> docker-compose.ci.yml
-          echo "      dockerfile: Dockerfile" >> docker-compose.ci.yml
-          echo "    ports:" >> docker-compose.ci.yml
-          echo "      - '${{ env.API_PORT }}:8081'" >> docker-compose.ci.yml
-          echo "    environment:" >> docker-compose.ci.yml
-          echo "      SPRING_PROFILES_ACTIVE: ci" >> docker-compose.ci.yml
-          echo "      SERVER_ADDRESS: 0.0.0.0" >> docker-compose.ci.yml
-          echo "      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/zadachok_db?currentSchema=tp" >> docker-compose.ci.yml
-          echo "      SPRING_DATASOURCE_USERNAME: zadachok" >> docker-compose.ci.yml
-          echo "      SPRING_DATASOURCE_PASSWORD: ${SECRET_DB_PASSWORD}" >> docker-compose.ci.yml
-          echo "      JWT_SECRET: ${SECRET_JWT_SECRET}" >> docker-compose.ci.yml
-          echo "      SPRING_JPA_HIBERNATE_DDL_AUTO: validate" >> docker-compose.ci.yml
-          echo "      SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: tp" >> docker-compose.ci.yml
-          echo "    depends_on:" >> docker-compose.ci.yml
-          echo "      db:" >> docker-compose.ci.yml
-          echo "        condition: service_healthy" >> docker-compose.ci.yml
-          echo "    healthcheck:" >> docker-compose.ci.yml
-          echo "      test: ['CMD-SHELL', 'curl -f http://localhost:8081/actuator/health || exit 1']" >> docker-compose.ci.yml
-          echo "      interval: 10s" >> docker-compose.ci.yml
-          echo "      timeout: 5s" >> docker-compose.ci.yml
-          echo "      retries: 5" >> docker-compose.ci.yml
-          echo "volumes:" >> docker-compose.ci.yml
-          echo "  postgres_data:" >> docker-compose.ci.yml
-
-      - name: Set up JDK and Maven
+      - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'maven'
 
       - name: Build API
         working-directory: ./backend/api
         run: mvn clean package -Dspring.profiles.active=ci -DskipTests
 
-      - name: Start services with debug
+      - name: Start Docker Compose
         run: |
-          docker-compose -f docker-compose.ci.yml up -d --build
-          docker-compose -f docker-compose.ci.yml logs -f db > db.log 2>&1 & 
-          sleep 15
+          docker-compose -f docker-compose.template.yml up -d --build
 
-      - name: Check database initialization
+      - name: Wait for PostgreSQL
         run: |
-          echo "=== Database logs ==="
-          cat db.log || echo "No logs available"
-          echo "=== Checking tables ==="
-          docker-compose -f docker-compose.ci.yml exec db psql -U zadachok -d zadachok_db -c "\dt tp.*" || echo "Failed to check tables"
-          echo "=== Checking init script execution ==="
-          docker-compose -f docker-compose.ci.yml exec db ls -la /docker-entrypoint-initdb.d/
-
-      - name: Wait for services
-        run: |
-          echo "🔄 Waiting for PostgreSQL..."
+          echo "Waiting for PostgreSQL to be ready..."
           timeout ${{ env.POSTGRES_TIMEOUT }}s bash -c '
-            while ! docker-compose -f docker-compose.ci.yml exec db pg_isready -U zadachok; do
-              echo "⏳ Waiting for PostgreSQL..."
-              sleep 5
-            done'
-          echo "🔄 Waiting for API..."
-          timeout ${{ env.API_TIMEOUT }}s bash -c '
-            while ! docker-compose -f docker-compose.ci.yml exec api curl -s http://localhost:8081/actuator/health; do
-              echo "⏳ API not ready yet..."
-              docker-compose -f docker-compose.ci.yml logs api --tail=20
-              sleep 5
-            done'
+          until docker-compose exec db pg_isready -U zadachok -d zadachok_db; do
+            sleep 5
+          done'
+        
+      - name: Check Database Initialization
+        run: |
+          docker-compose exec db psql -U zadachok -d zadachok_db -c "\dt tp.*" || echo "❌ Failed to check tables"
+          docker-compose exec db ls -la /docker-entrypoint-initdb.d/
 
-      - name: Run Dart tests
+      - name: Wait for API
+        run: |
+          echo "Waiting for API to be healthy..."
+          timeout ${{ env.API_TIMEOUT }}s bash -c '
+          until docker-compose exec api curl -sf http://localhost:8081/actuator/health; do
+            docker-compose logs --tail=20 api
+            sleep 5
+          done'
+
+      - name: Run Dart Tests
         working-directory: ./api-tests
         env:
           API_URL: "http://localhost:${{ env.API_PORT }}"
@@ -131,8 +77,16 @@ jobs:
           dart pub get
           dart test
 
+      - name: Show Logs on Failure
+        if: failure()
+        run: |
+          echo "🚨 Database logs:"
+          docker-compose logs db || echo "No db logs"
+          echo "🚨 API logs:"
+          docker-compose logs api || echo "No api logs"
+
       - name: Cleanup
         if: always()
         run: |
-          docker-compose -f docker-compose.ci.yml down -v
+          docker-compose down -v
           docker system prune -f
