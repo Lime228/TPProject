@@ -51,7 +51,8 @@ jobs:
         run: |
           echo "Waiting for PostgreSQL to be ready..."
           timeout ${{ env.POSTGRES_TIMEOUT }}s bash -c '
-          until docker-compose exec db pg_isready -U zadachok -d zadachok_db; do
+          until docker run --network container:$(docker-compose ps -q db) --rm postgres:17 pg_isready -U zadachok -d zadachok_db; do
+            echo "⏳ Waiting for PostgreSQL..."
             sleep 5
           done'
         
