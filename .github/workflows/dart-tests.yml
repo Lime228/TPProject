@@ -54,24 +54,25 @@ jobs:
         run: |
           echo "Waiting for PostgreSQL to be ready..."
           timeout ${{ env.POSTGRES_TIMEOUT }}s bash -c '
-          until pg_isready -h localhost -p 5432 -U zadachok -d zadachok_db; do
-            echo "⏳ PostgreSQL not ready yet..."
-            sleep 5
-          done'
-        
+            until docker-compose -f docker-compose.template.yml exec db pg_isready -U zadachok; do
+              echo "⏳ PostgreSQL not ready yet..."
+              sleep 5
+            done'
+
       - name: Check Database Initialization
         run: |
-          docker-compose exec db psql -U zadachok -d zadachok_db -c "\dt tp.*" || echo "❌ Failed to check tables"
-          docker-compose exec db ls -la /docker-entrypoint-initdb.d/
+          docker-compose -f docker-compose.template.yml exec db psql -U zadachok -d zadachok_db -c "\dt tp.*" || echo "❌ Failed to check tables"
+          docker-compose -f docker-compose.template.yml exec db ls -la /docker-entrypoint-initdb.d/
 
       - name: Wait for API
         run: |
           echo "Waiting for API to be healthy..."
           timeout ${{ env.API_TIMEOUT }}s bash -c '
-          until docker-compose exec api curl -sf http://localhost:8081/actuator/health; do
-            docker-compose logs --tail=20 api
-            sleep 5
-          done'
+            until docker-compose -f docker-compose.template.yml exec api curl -sf http://localhost:8081/actuator/health; do
+              echo "⏳ API not ready yet..."
+              docker-compose -f docker-compose.template.yml logs --tail=20 api
+              sleep 5
+            done'
 
       - name: Run Dart Tests
         working-directory: ./api-tests
@@ -85,12 +86,13 @@ jobs:
         if: failure()
         run: |
           echo "🚨 Database logs:"
-          docker-compose logs db || echo "No db logs"
+          docker-compose -f docker-compose.template.yml logs db || echo "No db logs"
           echo "🚨 API logs:"
-          docker-compose logs api || echo "No api logs"
+          docker-compose -f docker-compose.template.yml logs api || echo "No api logs"
 
       - name: Cleanup
         if: always()
         run: |
-          docker-compose down -v
+          docker-compose -f docker-compose.template.yml down -v
           docker system prune -f
+
