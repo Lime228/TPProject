@@ -36,6 +36,7 @@ services:
       spring.jpa.properties.hibernate.default_schema: tp
       spring.jpa.show-sql: true
       jwt.secret: ${JWT_SECRET:-defaultSecret}
+      jwt.expiration=3600
     depends_on:
       db:
         condition: service_healthy
