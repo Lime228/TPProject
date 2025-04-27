@@ -52,8 +52,8 @@ jobs:
 
       - name: Start Docker Compose
         env:
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          DB_PASSWORD: zadachok
+          JWT_SECRET: defaultSecret
         run: |
           echo "🐳 Starting Docker containers..."
           docker-compose -f docker-compose.template.yml up -d --build
@@ -84,7 +84,7 @@ jobs:
 
       - name: Check Database Initialization
         env:
-          PGPASSWORD: ${{ secrets.DB_PASSWORD }}
+          PGPASSWORD: zadachok
         run: |
           echo "🔎 Checking database tables..."
           if psql -h localhost -U zadachok -d zadachok_db -c "\dt tp.*"; then
