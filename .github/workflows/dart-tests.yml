@@ -100,12 +100,9 @@ jobs:
         run: |
           echo "⏳ Waiting for API to become healthy..."
           timeout ${API_TIMEOUT}s bash -c '
-          until curl -sf http://localhost:${{ env.API_PORT }}/api; do
-            echo "⏳ API not ready yet, retrying in 5 seconds..."
-            docker-compose -f docker-compose.template.yml logs --tail=20 api
-            sleep 5
-          done'
-          echo "✅ API is healthy."
+          docker-compose -f docker-compose.template.yml logs --tail=20 api
+          sleep 15
+          docker-compose -f docker-compose.template.yml logs --tail=20 api
 
       - name: Run Dart Tests
         working-directory: ./api-tests
