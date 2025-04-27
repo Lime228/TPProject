@@ -13,8 +13,6 @@ env:
   DOCKER_COMPOSE_VERSION: "2.23.0"
   POSTGRES_TIMEOUT: 120
   API_TIMEOUT: 180
-  DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-  JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
 jobs:
   test:
@@ -33,7 +31,11 @@ jobs:
 
       - name: Check db/init.sql exists
         run: |
-          test -f db/init.sql || (echo "❌ db/init.sql not found!" && exit 1)
+          if [ ! -f db/init.sql ]; then
+            echo "❌ db/init.sql not found!"
+            exit 1
+          fi
+          echo "✅ Found db/init.sql"
 
       - name: Set up JDK
         uses: actions/setup-java@v3
@@ -43,56 +45,86 @@ jobs:
 
       - name: Build API
         working-directory: ./backend/api
-        run: mvn clean package -Dspring.profiles.active=ci -DskipTests
+        run: |
+          echo "🏗 Building API..."
+          mvn clean package -Dspring.profiles.active=ci -DskipTests
+          echo "✅ API build completed."
 
       - name: Start Docker Compose
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: |
+          echo "🐳 Starting Docker containers..."
           docker-compose -f docker-compose.template.yml up -d --build
+          echo "✅ Docker containers started."
 
       - name: Install Postgres client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+        run: |
+          echo "📦 Installing PostgreSQL client..."
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          echo "✅ PostgreSQL client installed."
 
       - name: Wait for PostgreSQL
+        env:
+          POSTGRES_TIMEOUT: ${{ env.POSTGRES_TIMEOUT }}
         run: |
-          echo "Waiting for PostgreSQL to be ready..."
-          timeout ${{ env.POSTGRES_TIMEOUT }}s bash -c '
+          echo "⏳ Waiting for PostgreSQL to be ready..."
+          timeout ${POSTGRES_TIMEOUT}s bash -c '
           until pg_isready -h localhost -p 5432 -U zadachok -d zadachok_db; do
-            echo "⏳ PostgreSQL not ready yet..."
+            echo "⏳ PostgreSQL is not ready yet, waiting 5 seconds..."
             sleep 5
           done'
+          echo "✅ PostgreSQL is ready."
 
       - name: Check Database Initialization
+        env:
+          PGPASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
-          echo "Checking tables..."
-          PGPASSWORD=${{ env.DB_PASSWORD }} psql -h localhost -U zadachok -d zadachok_db -c "\dt tp.*" || echo "❌ Failed to check tables"
+          echo "🔎 Checking database tables..."
+          if psql -h localhost -U zadachok -d zadachok_db -c "\dt tp.*"; then
+            echo "✅ Database tables found."
+          else
+            echo "❌ Failed to check tables."
+            exit 1
+          fi
 
       - name: Wait for API
+        env:
+          API_TIMEOUT: ${{ env.API_TIMEOUT }}
         run: |
-          echo "Waiting for API to be healthy..."
-          timeout ${{ env.API_TIMEOUT }}s bash -c '
-          until curl -sf http://localhost:8081/actuator/health; do
+          echo "⏳ Waiting for API to become healthy..."
+          timeout ${API_TIMEOUT}s bash -c '
+          until curl -sf http://localhost:${{ env.API_PORT }}/actuator/health; do
+            echo "⏳ API not ready yet, retrying in 5 seconds..."
             docker-compose logs --tail=20 api
             sleep 5
           done'
+          echo "✅ API is healthy."
 
       - name: Run Dart Tests
         working-directory: ./api-tests
         env:
           API_URL: "http://localhost:${{ env.API_PORT }}"
         run: |
+          echo "🏁 Running Dart tests..."
           dart pub get
           dart test
+          echo "✅ Dart tests completed."
 
       - name: Show Logs on Failure
         if: failure()
         run: |
           echo "🚨 Database logs:"
-          docker-compose logs db || echo "No db logs"
+          docker-compose logs db || echo "No db logs available."
           echo "🚨 API logs:"
-          docker-compose logs api || echo "No api logs"
+          docker-compose logs api || echo "No api logs available."
 
       - name: Cleanup
         if: always()
         run: |
+          echo "🧹 Cleaning up Docker containers..."
           docker-compose down -v
           docker system prune -f
+          echo "✅ Cleanup completed."
