@@ -43,6 +43,16 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Install Dart SDK
+        run: |
+          echo "📦 Installing Dart SDK..."
+          sudo apt update -y
+          sudo apt install -y apt-transport-https
+          sudo sh -c 'wget -qO- https://storage.googleapis.com/download.dartlang.org/linux/debian/dart_stable.list > /etc/apt/sources.list.d/dart_stable.list'
+          sudo apt update -y
+          sudo apt install -y dart
+          echo "✅ Dart SDK installed."
+
       - name: Build API
         working-directory: ./backend/api
         run: |
