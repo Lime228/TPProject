@@ -133,5 +133,3 @@ jobs:
           docker-compose -f docker-compose.template.yml down -v
           docker system prune -f
           echo "✅ Cleanup completed."
-
-
