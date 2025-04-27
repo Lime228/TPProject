@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS tp.lobby (
     lobby_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     shop_id integer NOT NULL REFERENCES tp.shop(shop_id),
     task_id text[] NOT NULL DEFAULT '{}',
-    customer_id integer[] NOT NULL DEFAULT '{}'
+    customer_id varchar NOT NULL DEFAULT '{}'
 );
 
 -- Òàáëèöà taskmanager
