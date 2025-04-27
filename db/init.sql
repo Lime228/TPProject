@@ -1,11 +1,11 @@
 -- init_db.sql
--- Полная инициализация базы данных с обработкой ошибок
+-- ГЏГ®Г«Г­Г Гї ГЁГ­ГЁГ¶ГЁГ Г«ГЁГ§Г Г¶ГЁГї ГЎГ Г§Г» Г¤Г Г­Г­Г»Гµ Г± Г®ГЎГ°Г ГЎГ®ГІГЄГ®Г© Г®ГёГЁГЎГ®ГЄ
 
--- Устанавливаем параметры для чистого выполнения
+-- Г“Г±ГІГ Г­Г ГўГ«ГЁГўГ ГҐГ¬ ГЇГ Г°Г Г¬ГҐГІГ°Г» Г¤Г«Гї Г·ГЁГ±ГІГ®ГЈГ® ГўГ»ГЇГ®Г«Г­ГҐГ­ГЁГї
 SET client_min_messages TO WARNING;
 \set ON_ERROR_STOP on
 
--- Создаем пользователя если не существует
+-- Г‘Г®Г§Г¤Г ГҐГ¬ ГЇГ®Г«ГјГ§Г®ГўГ ГІГҐГ«Гї ГҐГ±Г«ГЁ Г­ГҐ Г±ГіГ№ГҐГ±ГІГўГіГҐГІ
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'zadachok') THEN
@@ -16,18 +16,18 @@ BEGIN
 END
 $$;
 
--- Создаем базу данных если не существует
+-- Г‘Г®Г§Г¤Г ГҐГ¬ ГЎГ Г§Гі Г¤Г Г­Г­Г»Гµ ГҐГ±Г«ГЁ Г­ГҐ Г±ГіГ№ГҐГ±ГІГўГіГҐГІ
 SELECT 'CREATE DATABASE zadachok_db WITH OWNER zadachok ENCODING ''UTF8'' LC_COLLATE ''en_US.utf8'' LC_CTYPE ''en_US.utf8'''
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'zadachok_db')\gexec
 
--- Подключаемся к созданной базе данных
+-- ГЏГ®Г¤ГЄГ«ГѕГ·Г ГҐГ¬Г±Гї ГЄ Г±Г®Г§Г¤Г Г­Г­Г®Г© ГЎГ Г§ГҐ Г¤Г Г­Г­Г»Гµ
 \c zadachok_db
 
--- Создаем схему если не существует
+-- Г‘Г®Г§Г¤Г ГҐГ¬ Г±ГµГҐГ¬Гі ГҐГ±Г«ГЁ Г­ГҐ Г±ГіГ№ГҐГ±ГІГўГіГҐГІ
 CREATE SCHEMA IF NOT EXISTS tp;
 GRANT ALL PRIVILEGES ON SCHEMA tp TO zadachok;
 
--- Таблица customer
+-- Г’Г ГЎГ«ГЁГ¶Г  customer
 CREATE TABLE IF NOT EXISTS tp.customer (
     customer_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     customer_name varchar(255),
@@ -38,25 +38,25 @@ CREATE TABLE IF NOT EXISTS tp.customer (
     admin boolean DEFAULT false
 );
 
--- Таблица shop
+-- Г’Г ГЎГ«ГЁГ¶Г  shop
 CREATE TABLE IF NOT EXISTS tp.shop (
     shop_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     product_id text[] NOT NULL DEFAULT '{}'
 );
 
--- Таблица task
+-- Г’Г ГЎГ«ГЁГ¶Г  task
 CREATE TABLE IF NOT EXISTS tp.task (
     task_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     task_name varchar(255),
     reward integer NOT NULL DEFAULT 0,
     description text,
-    start_point timestamp,
-    end_point timestamp,
+    start_point date,
+    end_point date,
     customer_id integer NOT NULL REFERENCES tp.customer(customer_id),
     task_state boolean DEFAULT false
 );
 
--- Таблица product
+-- Г’Г ГЎГ«ГЁГ¶Г  product
 CREATE TABLE IF NOT EXISTS tp.product (
     product_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     product_name varchar(255),
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS tp.product (
     description text
 );
 
--- Таблица lobby
+-- Г’Г ГЎГ«ГЁГ¶Г  lobby
 CREATE TABLE IF NOT EXISTS tp.lobby (
     lobby_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     shop_id integer NOT NULL REFERENCES tp.shop(shop_id),
@@ -75,14 +75,14 @@ CREATE TABLE IF NOT EXISTS tp.lobby (
     customer_id text[] NOT NULL DEFAULT '{}'
 );
 
--- Таблица taskmanager
+-- Г’Г ГЎГ«ГЁГ¶Г  taskmanager
 CREATE TABLE IF NOT EXISTS tp.taskmanager (
     task_lobby_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     lobby_id integer REFERENCES tp.lobby(lobby_id),
     task_id integer REFERENCES tp.task(task_id)
 );
 
--- Таблица wallet
+-- Г’Г ГЎГ«ГЁГ¶Г  wallet
 CREATE TABLE IF NOT EXISTS tp.wallet (
     wallet_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     customer_id integer REFERENCES tp.customer(customer_id),
@@ -90,19 +90,19 @@ CREATE TABLE IF NOT EXISTS tp.wallet (
     balance integer NOT NULL DEFAULT 0
 );
 
--- Настройка прав
+-- ГЌГ Г±ГІГ°Г®Г©ГЄГ  ГЇГ°Г Гў
 ALTER DEFAULT PRIVILEGES IN SCHEMA tp GRANT ALL PRIVILEGES ON TABLES TO zadachok;
 ALTER DEFAULT PRIVILEGES IN SCHEMA tp GRANT ALL PRIVILEGES ON SEQUENCES TO zadachok;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA tp TO zadachok;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA tp TO zadachok;
 
--- Настраиваем путь поиска
+-- ГЌГ Г±ГІГ°Г ГЁГўГ ГҐГ¬ ГЇГіГІГј ГЇГ®ГЁГ±ГЄГ 
 ALTER ROLE zadachok SET search_path TO tp, public;
 
--- Создаем индексы для улучшения производительности
+-- Г‘Г®Г§Г¤Г ГҐГ¬ ГЁГ­Г¤ГҐГЄГ±Г» Г¤Г«Гї ГіГ«ГіГ·ГёГҐГ­ГЁГї ГЇГ°Г®ГЁГ§ГўГ®Г¤ГЁГІГҐГ«ГјГ­Г®Г±ГІГЁ
 CREATE INDEX IF NOT EXISTS idx_customer_login ON tp.customer(login);
 CREATE INDEX IF NOT EXISTS idx_task_customer ON tp.task(customer_id);
 CREATE INDEX IF NOT EXISTS idx_product_customer ON tp.product(customer_id);
 
--- Финализация
+-- Г”ГЁГ­Г Г«ГЁГ§Г Г¶ГЁГї
 VACUUM ANALYZE;
