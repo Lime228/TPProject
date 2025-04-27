@@ -103,6 +103,7 @@ jobs:
           docker-compose -f docker-compose.template.yml logs --tail=20 api
           sleep 15
           docker-compose -f docker-compose.template.yml logs --tail=20 api
+          '
 
       - name: Run Dart Tests
         working-directory: ./api-tests
