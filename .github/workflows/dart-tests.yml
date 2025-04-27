@@ -66,17 +66,21 @@ jobs:
           sudo apt-get install -y postgresql-client
           echo "✅ PostgreSQL client installed."
 
-      - name: Wait for PostgreSQL
-        env:
-          POSTGRES_TIMEOUT: ${{ env.POSTGRES_TIMEOUT }}
+      - name: Wait for Database Health
         run: |
-          echo "⏳ Waiting for PostgreSQL to be ready..."
-          timeout ${POSTGRES_TIMEOUT}s bash -c '
-          until pg_isready -h localhost -p 5432 -U zadachok -d zadachok_db; do
-            echo "⏳ PostgreSQL is not ready yet, waiting 5 seconds..."
+          echo "⏳ Waiting for Database container to become healthy..."
+          ATTEMPTS=0
+          until [ "$(docker inspect -f '{{.State.Health.Status}}' tpproject-db)" == "healthy" ]; do
+            if [ $ATTEMPTS -ge 20 ]; then
+              echo "❌ Database did not become healthy in time."
+              docker-compose logs db
+              exit 1
+            fi
+            echo "⏳ Database not healthy yet, waiting 5 seconds..."
             sleep 5
-          done'
-          echo "✅ PostgreSQL is ready."
+            ATTEMPTS=$((ATTEMPTS+1))
+          done
+          echo "✅ Database container is healthy."
 
       - name: Check Database Initialization
         env:
