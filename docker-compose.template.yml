@@ -28,6 +28,7 @@ services:
     environment:
       spring.profiles.active: ci
       server.address: 0.0.0.0
+      server.port: 8081
       spring.datasource.url: jdbc:postgresql://db:5432/zadachok_db?currentSchema=tp
       spring.datasource.username: zadachok
       spring.datasource.password: ${DB_PASSWORD:-zadachok}
