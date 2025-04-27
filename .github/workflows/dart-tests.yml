@@ -102,7 +102,7 @@ jobs:
           timeout ${API_TIMEOUT}s bash -c '
           until curl -sf http://localhost:${{ env.API_PORT }}/actuator/health; do
             echo "⏳ API not ready yet, retrying in 5 seconds..."
-            docker-compose logs --tail=20 api
+            docker-compose -f docker-compose.template.yml logs --tail=20 api
             sleep 5
           done'
           echo "✅ API is healthy."
@@ -121,14 +121,16 @@ jobs:
         if: failure()
         run: |
           echo "🚨 Database logs:"
-          docker-compose logs db || echo "No db logs available."
+          docker-compose -f docker-compose.template.yml logs db || echo "No db logs available."
           echo "🚨 API logs:"
-          docker-compose logs api || echo "No api logs available."
+          docker-compose -f docker-compose.template.yml logs api || echo "No api logs available."
+
 
       - name: Cleanup
         if: always()
         run: |
           echo "🧹 Cleaning up Docker containers..."
-          docker-compose down -v
+          docker-compose -f docker-compose.template.yml down -v
           docker system prune -f
           echo "✅ Cleanup completed."
+
