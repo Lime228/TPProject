@@ -10,7 +10,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateLobbyRequest {
-    @JsonProperty("creatorID")  // Входящее поле в JSON будет "login"
+    @JsonProperty("creatorID")  // Входящее поле в JSON будет "creatorID"
     @NotBlank
     private Integer creatorId;  // ID пользователя, инициирующего создание
 }
