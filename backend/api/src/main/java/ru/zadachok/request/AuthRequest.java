@@ -15,7 +15,7 @@ public class AuthRequest {
     @NotBlank
     private String login;
 
-    @JsonProperty("password")  // Входящее поле в JSON будет "login"
+    @JsonProperty("password")  // Входящее поле в JSON будет "password"
     @NotBlank
     private String password;
 }
