@@ -72,44 +72,44 @@ void main() {
       }
     });
 
-    //ВКЛЮЧИТЬ ПОСЛЕ ПОЧИНКИ ЛОББИ
+    ВКЛЮЧИТЬ ПОСЛЕ ПОЧИНКИ ЛОББИ
     
-    // test('3. Создание нового лобби', () async {
-    //   print('Попытка создания лобби...');
+    test('3. Создание нового лобби', () async {
+      print('Попытка создания лобби...');
 
-    //   final requestData = {
-    //     'creatorID': testCreatorId,
-    //   };
+      final requestData = {
+        'creatorID': testCreatorId,
+      };
 
-    //   print('Отправляемые данные: ${jsonEncode(requestData)}');
+      print('Отправляемые данные: ${jsonEncode(requestData)}');
 
-    //   final response = await http.post(
-    //     Uri.parse(createLobbyUrl),
-    //     headers: {'Content-Type': 'application/json'},
-    //     body: jsonEncode(requestData),
-    //   );
+      final response = await http.post(
+        Uri.parse(createLobbyUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestData),
+      );
 
-    //   print('Статус код: ${response.statusCode}');
-    //   print('Ответ сервера: ${response.body}');
+      print('Статус код: ${response.statusCode}');
+      print('Ответ сервера: ${response.body}');
 
-    //   expect(response.statusCode, 200,
-    //       reason: 'Ожидался статус 200 (Успешное создание лобби)');
+      expect(response.statusCode, 200,
+          reason: 'Ожидался статус 200 (Успешное создание лобби)');
 
-    //   if (response.statusCode == 200) {
-    //     final lobbyData = jsonDecode(response.body);
-    //     expect(lobbyData['creatorId'], testCreatorId,
-    //         reason: 'ID создателя должно соответствовать отправленному');
-    //     expect(lobbyData['id'], isNotNull,
-    //         reason: 'ID лобби не должен быть null');
+      if (response.statusCode == 200) {
+        final lobbyData = jsonDecode(response.body);
+        expect(lobbyData['creatorId'], testCreatorId,
+            reason: 'ID создателя должно соответствовать отправленному');
+        expect(lobbyData['id'], isNotNull,
+            reason: 'ID лобби не должен быть null');
 
-    //     print('Создано новое лобби:');
-    //     print('ID: ${lobbyData['id']}');
-    //     print('ID создателя: ${lobbyData['creatorId']}');
-    //     print('Лобби успешно создано\n');
-    //   } else {
-    //     print('Ошибка при создании лобби\n');
-    //   }
-    // });
+        print('Создано новое лобби:');
+        print('ID: ${lobbyData['id']}');
+        print('ID создателя: ${lobbyData['creatorId']}');
+        print('Лобби успешно создано\n');
+      } else {
+        print('Ошибка при создании лобби\n');
+      }
+    });
   });
 
   tearDownAll(() {
