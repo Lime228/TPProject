@@ -22,7 +22,7 @@ public class RegisterRequest {
     @Size(min = 6, max = 40)
     private String password;
 
-    @JsonProperty("customer_email")  // Тут ты меняешь отображение
+    @JsonProperty("email")  // Тут ты меняешь отображение
     @NotBlank
     @Email
     private String customer_email;
