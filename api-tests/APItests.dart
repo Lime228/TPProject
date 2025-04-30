@@ -124,7 +124,7 @@ void main() {
       print('Попытка добавления пользователя в лобби...');
 
       final requestData = {
-        'lobbyid': createdLobbyId,
+        'lobbyid': 1,
         'customerid': testCustomerId,
       };
 
