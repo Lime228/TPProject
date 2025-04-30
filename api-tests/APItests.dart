@@ -7,6 +7,8 @@ void main() {
   const registerUrl = '$baseUrl/api/auth/register';
   const loginUrl = '$baseUrl/api/auth/login';
   const createLobbyUrl = '$baseUrl/api/lobby/create';
+  const addUserLobbyUrl = '$baseUrl/api/lobby/add';
+  const removeUserLobbyUrl = '$baseUrl/api/lobby/remove';
   const healthCheckUrl = '$baseUrl';
 
   // Генерируем уникальные тестовые данные
@@ -110,12 +112,90 @@ void main() {
             reason: 'Первый customerId должен быть равен 1');
     
         print('Создано новое лобби:');
-        print('ID: ${lobbyData['id']}');
-        print('ID создателя: ${lobbyData['creatorId']}');
-        print('Первый customerId: $firstCustomerId');
+        print('ID: ${lobbyData['lobbyId']}');
+        print('ID создателя: $firstCustomerId');
         print('Лобби успешно создано\n');
       } else {
         print('Ошибка при создании лобби\n');
+      }
+    });
+    test('4. Добавление пользователя в лобби', () async {
+      print('Попытка добавления пользователя в лобби...');
+
+      final requestData = {
+        'lobbyid': createdLobbyId,
+        'customerid': testCustomerId,
+      };
+
+      print('Отправляемые данные: ${jsonEncode(requestData)}');
+
+      final response = await http.post(
+        Uri.parse(addUserLobbyUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestData),
+      );
+
+      print('Статус код: ${response.statusCode}');
+      print('Ответ сервера: ${response.body}');
+
+      expect(response.statusCode, 200,
+          reason: 'Ожидался статус 200 (Успешное добавление пользователя)');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        
+        expect(responseData['lobbyId'], equals(createdLobbyId),
+            reason: 'ID лобби должен соответствовать переданному');
+        
+        expect(responseData['customerId'], contains(testCustomerId),
+            reason: 'Список customerId должен содержать добавленного пользователя');
+
+        print('Пользователь успешно добавлен в лобби:');
+        print('ID лобби: ${responseData['lobbyId']}');
+        print('Добавленный customerId: $testCustomerId');
+        print('Текущий список customerId: ${responseData['customerId']}\n');
+      } else {
+        print('Ошибка при добавлении пользователя в лобби\n');
+      }
+    });
+
+    test('5. Удаление пользователя из лобби', () async {
+      print('Попытка удаления пользователя из лобби...');
+
+      final requestData = {
+        'lobbyid': createdLobbyId,
+        'customerid': testCustomerId,
+      };
+
+      print('Отправляемые данные: ${jsonEncode(requestData)}');
+
+      final response = await http.post(
+        Uri.parse(removeUserLobbyUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestData),
+      );
+
+      print('Статус код: ${response.statusCode}');
+      print('Ответ сервера: ${response.body}');
+
+      expect(response.statusCode, 200,
+          reason: 'Ожидался статус 200 (Успешное удаление пользователя)');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        
+        expect(responseData['lobbyId'], equals(createdLobbyId),
+            reason: 'ID лобби должен соответствовать переданному');
+        
+        expect(responseData['customerId'], isNot(contains(testCustomerId)),
+            reason: 'Список customerId не должен содержать удаленного пользователя');
+
+        print('Пользователь успешно удален из лобби:');
+        print('ID лобби: ${responseData['lobbyId']}');
+        print('Удаленный customerId: $testCustomerId');
+        print('Текущий список customerId: ${responseData['customerId']}\n');
+      } else {
+        print('Ошибка при удалении пользователя из лобби\n');
       }
     });
   });
