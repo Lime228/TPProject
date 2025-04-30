@@ -110,6 +110,28 @@ void main() {
     });
   });
 
+test('4. Добавление участника в лобби', () async {
+      final requestData = {
+        'lobbyId': createdLobbyId,
+        'customerId': testJoinerId,
+      };
+
+      final response = await http.post(
+        Uri.parse(addToLobbyUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestData),
+      );
+
+      print('Ответ на добавление: ${response.body}');
+      expect(response.statusCode, 200);
+
+      final updatedLobby = jsonDecode(response.body);
+      final customerIds = List<int>.from(updatedLobby['customerId']);
+      expect(customerIds, contains(testJoinerId),
+          reason: 'ID нового участника должен быть в списке');
+    });
+  });
+
   tearDownAll(() {
     print('Тестирование завершено');
   });
