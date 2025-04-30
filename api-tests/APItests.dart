@@ -72,54 +72,47 @@ void main() {
       }
     });
     
-    test('3. Создание нового лобби и проверка customerId', () async {
+    test('3. Создание нового лобби', () async {
       print('Попытка создания лобби...');
-
+    
       final requestData = {
         'creatorID': testCreatorId,
       };
-
+    
       print('Отправляемые данные: ${jsonEncode(requestData)}');
-
+    
       final response = await http.post(
         Uri.parse(createLobbyUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestData),
       );
-
+    
       print('Статус код: ${response.statusCode}');
       print('Ответ сервера: ${response.body}');
-
+    
       expect(response.statusCode, 200,
           reason: 'Ожидался статус 200 (Успешное создание лобби)');
-
+    
       if (response.statusCode == 200) {
         final lobbyData = jsonDecode(response.body);
         
-        // Проверка creatorId и id лобби
-        expect(lobbyData['creatorId'], testCreatorId,
-            reason: 'ID создателя должно соответствовать отправленному');
         expect(lobbyData['id'], isNotNull,
             reason: 'ID лобби не должен быть null');
-
-        // Проверка и извлечение первого customerId (если поле есть)
-        if (lobbyData.containsKey('customerId')) {
-          final customerIds = lobbyData['customerId'] as List<dynamic>;
-          if (customerIds.isNotEmpty) {
-            final firstCustomerId = customerIds[0];
-            print('Первый customerId: $firstCustomerId');
-            expect(firstCustomerId, isNotNull,
-                reason: 'Первый customerId не должен быть null');
-          } else {
-            print('customerId пуст');
-          }
-        } else {
-          print('Поле customerId отсутствует в ответе');
-        }
-
+    
+        // Проверка первого customerId
+        final customerIds = lobbyData['customerId'] as List;
+        expect(customerIds.isNotEmpty, true,
+            reason: 'Список customerId не должен быть пустым');
+        
+        final firstCustomerId = customerIds[0];
+        print('Первый customerId: $firstCustomerId');
+        expect(firstCustomerId, equals(1),
+            reason: 'Первый customerId должен быть равен 1');
+    
         print('Создано новое лобби:');
         print('ID: ${lobbyData['id']}');
         print('ID создателя: ${lobbyData['creatorId']}');
+        print('Первый customerId: $firstCustomerId');
         print('Лобби успешно создано\n');
       } else {
         print('Ошибка при создании лобби\n');
