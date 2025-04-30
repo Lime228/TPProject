@@ -72,7 +72,7 @@ void main() {
       }
     });
     
-    test('3. Создание нового лобби', () async {
+    test('3. Создание нового лобби и проверка customerId', () async {
       print('Попытка создания лобби...');
 
       final requestData = {
@@ -95,10 +95,27 @@ void main() {
 
       if (response.statusCode == 200) {
         final lobbyData = jsonDecode(response.body);
+        
+        // Проверка creatorId и id лобби
         expect(lobbyData['creatorId'], testCreatorId,
             reason: 'ID создателя должно соответствовать отправленному');
         expect(lobbyData['id'], isNotNull,
             reason: 'ID лобби не должен быть null');
+
+        // Проверка и извлечение первого customerId (если поле есть)
+        if (lobbyData.containsKey('customerId')) {
+          final customerIds = lobbyData['customerId'] as List<dynamic>;
+          if (customerIds.isNotEmpty) {
+            final firstCustomerId = customerIds[0];
+            print('Первый customerId: $firstCustomerId');
+            expect(firstCustomerId, isNotNull,
+                reason: 'Первый customerId не должен быть null');
+          } else {
+            print('customerId пуст');
+          }
+        } else {
+          print('Поле customerId отсутствует в ответе');
+        }
 
         print('Создано новое лобби:');
         print('ID: ${lobbyData['id']}');
