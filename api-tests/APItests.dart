@@ -96,7 +96,7 @@ void main() {
       if (response.statusCode == 200) {
         final lobbyData = jsonDecode(response.body);
         
-        expect(lobbyData['id'], isNotNull,
+        expect(lobbyData['lobbyId'], isNotNull,
             reason: 'ID лобби не должен быть null');
     
         // Проверка первого customerId
