@@ -17,6 +17,7 @@ void main() {
   final testEmail = 'test_$timestamp@example.com';
   const testPassword = 'TestPassword123!';
   const testCreatorId = 1;
+  const testCustomerId = 2;
 
   // Переменные для хранения состояния между тестами
   late String authToken;
@@ -163,7 +164,7 @@ void main() {
       print('Попытка удаления пользователя из лобби...');
 
       final requestData = {
-        'lobbyid': createdLobbyId,
+        'lobbyid': 1,
         'customerid': testCustomerId,
       };
 
