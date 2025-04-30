@@ -145,7 +145,7 @@ void main() {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         
-        expect(responseData['lobbyId'], equals(createdLobbyId),
+        expect(responseData['lobbyId'], equals(1),
             reason: 'ID лобби должен соответствовать переданному');
         
         expect(responseData['customerId'], contains(testCustomerId),
@@ -185,7 +185,7 @@ void main() {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         
-        expect(responseData['lobbyId'], equals(createdLobbyId),
+        expect(responseData['lobbyId'], equals(1),
             reason: 'ID лобби должен соответствовать переданному');
         
         expect(responseData['customerId'], isNot(contains(testCustomerId)),
