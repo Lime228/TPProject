@@ -4,6 +4,7 @@ package ru.zadachok.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.zadachok.request.AddInLobbyRequest;
 import ru.zadachok.request.CreateLobbyRequest;
 import ru.zadachok.model.Lobby;
 import ru.zadachok.service.LobbyService;
@@ -19,5 +20,11 @@ public class LobbyController {
     public ResponseEntity<Lobby> createLobby(@RequestBody CreateLobbyRequest request) {
         Lobby createdLobby = lobbyService.createLobby(request);
         return ResponseEntity.ok(createdLobby);
+    }
+
+    @PostMapping("/add")
+    public ResponseEntity<Lobby> addCustomerToLobby(@RequestBody AddInLobbyRequest request) {
+        Lobby updatedLobby = lobbyService.addCustomerToLobby(request);
+        return ResponseEntity.ok(updatedLobby);
     }
 }
