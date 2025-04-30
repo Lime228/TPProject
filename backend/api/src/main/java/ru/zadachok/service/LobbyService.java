@@ -9,6 +9,11 @@ import ru.zadachok.model.Lobby;
 import ru.zadachok.model.Shop;
 import ru.zadachok.repository.LobbyRepository;
 import ru.zadachok.repository.ShopRepository;
+import ru.zadachok.request.RemoveFromLobbyRequest;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -55,4 +60,20 @@ public class LobbyService {
         lobby.setCustomerId(updatedCustomers);
         return lobbyRepository.save(lobby);
     }
+    public Lobby removeCustomerFromLobby(RemoveFromLobbyRequest request) {
+        Lobby lobby = lobbyRepository.findById(request.getLobbyId())
+                .orElseThrow(() -> new IllegalArgumentException("Lobby not found"));
+
+        Integer[] oldCustomerIds = lobby.getCustomerId();
+        List<Integer> updatedList = new ArrayList<>(Arrays.asList(oldCustomerIds));
+
+        boolean removed = updatedList.removeIf(id -> id.equals(request.getCustomerId()));
+        if (!removed) {
+            throw new IllegalArgumentException("Customer not in lobby");
+        }
+
+        lobby.setCustomerId(updatedList.toArray(new Integer[0]));
+        return lobbyRepository.save(lobby);
+    }
+
 }

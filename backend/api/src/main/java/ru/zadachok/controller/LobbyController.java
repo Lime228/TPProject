@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.zadachok.request.AddInLobbyRequest;
 import ru.zadachok.request.CreateLobbyRequest;
 import ru.zadachok.model.Lobby;
+import ru.zadachok.request.RemoveFromLobbyRequest;
 import ru.zadachok.service.LobbyService;
 
 @RestController
@@ -27,4 +28,11 @@ public class LobbyController {
         Lobby updatedLobby = lobbyService.addCustomerToLobby(request);
         return ResponseEntity.ok(updatedLobby);
     }
+
+    @PostMapping("/remove")
+    public ResponseEntity<Lobby> removeCustomerFromLobby(@RequestBody RemoveFromLobbyRequest request) {
+        Lobby updatedLobby = lobbyService.removeCustomerFromLobby(request);
+        return ResponseEntity.ok(updatedLobby);
+    }
+
 }
