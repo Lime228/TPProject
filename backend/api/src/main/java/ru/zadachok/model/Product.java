@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "\"Product\"", schema = "\"tp\"")
+@Table(name = "\"product\"", schema = "\"tp\"")
 @Data
 @Builder
 @NoArgsConstructor
@@ -27,7 +27,7 @@ public class Product {
     private byte[] photo;
 
     @Column(name = "\"product_state\"", nullable = false)
-    private boolean state;
+    private Boolean state;
 
     @Column(name = "\"price\"", nullable = false)
     private Integer price;

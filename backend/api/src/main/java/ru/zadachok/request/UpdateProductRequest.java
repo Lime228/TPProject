@@ -27,7 +27,7 @@ public class UpdateProductRequest {
     private byte[] photo;
     @JsonProperty("state")  // Входящее поле в JSON будет "state" (состояние продукта(работает или нет))
     @NotBlank
-    private boolean state;
+    private Boolean state;
     @JsonProperty("price")  // Входящее поле в JSON будет "price" (цена продукта)
     @NotBlank
     private Integer price;
