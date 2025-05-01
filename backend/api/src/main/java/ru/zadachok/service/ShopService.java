@@ -8,6 +8,7 @@ import ru.zadachok.model.Shop;
 import ru.zadachok.repository.CustomerRepository;
 import ru.zadachok.repository.ProductRepository;
 import ru.zadachok.repository.ShopRepository;
+import ru.zadachok.request.DeleteProductRequest;
 import ru.zadachok.request.ProductCreateRequest;
 
 import java.util.ArrayList;
@@ -49,4 +50,21 @@ public class ShopService {
 
         return savedProduct;
     }
+    // service/ShopService.java
+    public void deleteProduct(DeleteProductRequest request) {
+        Shop shop = shopRepository.findById(request.getShopId())
+                .orElseThrow(() -> new RuntimeException("Магазин не найден"));
+
+        // Удалим productId из списка в магазине
+        List<Integer> ids = new ArrayList<>(Arrays.asList(shop.getProductId()));
+        if (!ids.remove(request.getProductId())) {
+            throw new RuntimeException("Продукт не найден в списке магазина");
+        }
+        shop.setProductId(ids.toArray(new Integer[0]));
+        shopRepository.save(shop);
+
+        // Удалим сам продукт из таблицы Product
+        productRepository.deleteById(request.getProductId());
+    }
+
 }

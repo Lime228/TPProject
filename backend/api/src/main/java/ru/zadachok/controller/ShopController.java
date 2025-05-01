@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.zadachok.model.Product;
+import ru.zadachok.request.DeleteProductRequest;
 import ru.zadachok.request.ProductCreateRequest;
 import ru.zadachok.service.ShopService;
 
@@ -14,9 +15,16 @@ public class ShopController {
 
     private final ShopService shopService;
 
-    @PostMapping("/product")
+    @PostMapping("/product/create")
     public ResponseEntity<Product> createProduct(@RequestBody ProductCreateRequest request) {
         Product createdProduct = shopService.createProductForShop(request);
         return ResponseEntity.ok(createdProduct);
     }
+    // controller/ShopController.java
+    @PostMapping("/product/delete")
+    public ResponseEntity<String> deleteProduct(@RequestBody DeleteProductRequest request) {
+        shopService.deleteProduct(request);
+        return ResponseEntity.ok("Продукт удалён успешно");
+    }
+
 }
