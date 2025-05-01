@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.zadachok.model.Product;
 import ru.zadachok.request.DeleteProductRequest;
 import ru.zadachok.request.ProductCreateRequest;
+import ru.zadachok.request.UpdateProductRequest;
 import ru.zadachok.service.ShopService;
 
 @RestController
@@ -25,6 +26,11 @@ public class ShopController {
     public ResponseEntity<String> deleteProduct(@RequestBody DeleteProductRequest request) {
         shopService.deleteProduct(request);
         return ResponseEntity.ok("Продукт удалён успешно");
+    }
+    @PostMapping("/product/update")
+    public ResponseEntity<Product> updateProduct(@RequestBody UpdateProductRequest request) {
+        Product updatedProduct = shopService.updateProduct(request);
+        return ResponseEntity.ok(updatedProduct);
     }
 
 }

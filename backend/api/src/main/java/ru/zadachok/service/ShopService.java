@@ -10,6 +10,7 @@ import ru.zadachok.repository.ProductRepository;
 import ru.zadachok.repository.ShopRepository;
 import ru.zadachok.request.DeleteProductRequest;
 import ru.zadachok.request.ProductCreateRequest;
+import ru.zadachok.request.UpdateProductRequest;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,6 +66,18 @@ public class ShopService {
 
         // Удалим сам продукт из таблицы Product
         productRepository.deleteById(request.getProductId());
+    }
+    public Product updateProduct(UpdateProductRequest request) {
+        Product product = productRepository.findById(request.getProductId())
+                .orElseThrow(() -> new RuntimeException("Продукт не найден"));
+
+        if (request.getName() != null) product.setName(request.getName());
+        if (request.getDescription() != null) product.setDescription(request.getDescription());
+        if (request.getPhoto() != null) product.setPhoto(request.getPhoto());
+        if (request.getState() != null) product.setState(request.getState());
+        if (request.getPrice() != null) product.setPrice(request.getPrice());
+
+        return productRepository.save(product);
     }
 
 }
