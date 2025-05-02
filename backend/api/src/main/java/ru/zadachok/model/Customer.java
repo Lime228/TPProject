@@ -39,6 +39,9 @@ public class Customer implements UserDetails {  // Для интеграции �
     @Column(name = "\"login\"", nullable = false, unique = true)
     private String login;
 
+    @Column(name = "\"customer_photo\"")
+    private byte[] customer_photo;
+
     @Column(name = "\"admin\"", nullable = false)
     private boolean admin;
 

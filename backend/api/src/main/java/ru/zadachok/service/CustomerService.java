@@ -32,8 +32,9 @@ public class CustomerService {
                 .customer_name(request.getLogin())
                 .customer_email(request.getCustomer_email())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .login(request.getLogin())  // login = Customer_name
-                .admin(false)                // По умолчанию не админ
+                .login(request.getLogin())
+                .admin(false)
+                .customer_photo(null) // <-- можно явно, можно вообще не писать
                 .build();
 
         // Сохраняем через JPA
@@ -41,13 +42,15 @@ public class CustomerService {
 
         // Конвертируем в DTO
         return CustomerDto.builder()
-                .customer_ID(customer.getCustomer_ID().longValue())  // Конвертируем Integer в Long
-                .login(customer.getLogin())
-                .customer_email(customer.getCustomer_email())
-                .admin(customer.isAdmin() ? "ADMIN" : "USER")  // Определяем isAdmin
-                .birthday_date(customer.getBirthday_date())  // Добавляем, если нужно
-                .login(customer.getLogin())        // Добавляем, если нужно
+                .customer_ID(savedCustomer.getCustomer_ID().longValue())
+                .login(savedCustomer.getLogin())
+                .customer_email(savedCustomer.getCustomer_email())
+                .admin(savedCustomer.isAdmin() ? "ADMIN" : "USER")
+                .birthday_date(savedCustomer.getBirthday_date())
+                .customer_name(savedCustomer.getCustomer_name())
+                .customer_photo(savedCustomer.getCustomer_photo())  // напрямую byte[]
                 .build();
+
     }
 
     public UserDetails loadCustomerByCustomername(String login) throws UsernameNotFoundException {

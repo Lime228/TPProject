@@ -15,5 +15,6 @@ public class CustomerDto {
     private String customer_email;
     private String admin;      // "USER" или "ADMIN" (на основе isAdmin из Customer)
     private Date birthday_date;    // Добавляем, если нужно (было в Customer)
+    private byte[] customer_photo;
     private String customer_name;     // Добавляем, если нужно отдельно от username
 }
