@@ -207,7 +207,7 @@ void main() {
         'name': 'TEST TASK',
         'reward': 100,
         'description': 'Ogo, chto eto? Eto je opisanie!',
-        'startdate': '2025-05-2',
+        'startdate': '2025-05-02',
         'enddate': '2025-05-20',
         'lobbyid': 1,
         'creatorid': 1,
