@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS tp.customer (
     customer_email varchar(255),
     password varchar(255) NOT NULL,
     birthday_date date,
+    customer_photo bytea,
     login varchar(255) NOT NULL UNIQUE,
     admin boolean DEFAULT false
 );
@@ -73,13 +74,6 @@ CREATE TABLE IF NOT EXISTS tp.lobby (
     shop_id integer NOT NULL REFERENCES tp.shop(shop_id),
     task_id varchar NOT NULL DEFAULT '{}',
     customer_id varchar NOT NULL DEFAULT '{}'
-);
-
--- Òàáëèöà taskmanager
-CREATE TABLE IF NOT EXISTS tp.taskmanager (
-    task_lobby_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    lobby_id integer REFERENCES tp.lobby(lobby_id),
-    task_id integer REFERENCES tp.task(task_id)
 );
 
 -- Òàáëèöà wallet
