@@ -34,7 +34,7 @@ public class CustomerService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .login(request.getLogin())
                 .admin(false)
-                .customer_photo(null) // <-- можно явно, можно вообще не писать
+                .customer_photo(null)
                 .build();
 
         // Сохраняем через JPA
