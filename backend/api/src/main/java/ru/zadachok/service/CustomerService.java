@@ -48,7 +48,7 @@ public class CustomerService {
                 .admin(savedCustomer.isAdmin() ? "ADMIN" : "USER")
                 .birthday_date(savedCustomer.getBirthday_date())
                 .customer_name(savedCustomer.getCustomer_name())
-                .customer_photo(savedCustomer.getCustomer_photo())  // напрямую byte[]
+                .customer_photo(savedCustomer.getCustomer_photo())  // byte[]
                 .build();
 
     }
