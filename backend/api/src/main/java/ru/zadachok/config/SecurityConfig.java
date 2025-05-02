@@ -32,6 +32,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/lobby/**",
+                                "/api/task/**",
                                 "/"
                         ).permitAll()
                         .anyRequest().authenticated()
