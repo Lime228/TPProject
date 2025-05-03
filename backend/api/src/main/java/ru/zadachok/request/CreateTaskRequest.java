@@ -27,7 +27,7 @@ public class CreateTaskRequest {
     @JsonProperty("lobbyid") // ID лобби, к которому привязывается задача
     @NotNull
     private Integer lobbyId;
-    @JsonProperty("customerrid") // ID пользователя, который создает задачу
+    @JsonProperty("customerid") // ID пользователя, который создает задачу
     @NotNull
     private Integer customerID;
 }
