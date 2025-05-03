@@ -30,7 +30,7 @@ public class TaskService {
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .isActive(true)
-                .customerId(request.getCustomerId)
+                .customerId(request.getCustomerId())
                 .build();
 
         Task savedTask = taskRepository.save(task);
