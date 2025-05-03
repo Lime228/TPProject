@@ -34,4 +34,7 @@ public class Task {
 
     @Column(name = "\"task_state\"", nullable = false)
     private Boolean isActive;
+
+    @Column(name = "\"customer_id\"", nullable = false)
+    private Integer customerId;
 }
