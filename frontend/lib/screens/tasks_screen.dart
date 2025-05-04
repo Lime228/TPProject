@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/cupertino.dart' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -6,6 +8,7 @@ import '../providers/auth_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/task_provider.dart';
 import '../providers/group_provider.dart';
+import 'dart:ui' as ui;
 
 
 class TaskScreenConstants {
@@ -20,6 +23,10 @@ class TaskScreenConstants {
   static const double headerHeight = 100.0;
   static const double headerBottomRadius = 40.0;
   static const EdgeInsets headerPadding = EdgeInsets.fromLTRB(24, 15, 24, 10);
+  static const double searchBarHeight = 50.0;
+  static const Color searchBarColor = Color(0xFFF5F5F5);
+  static const Color sortButtonColor = Color(0xFF937DF3);
+  static const double searchSortWidth = 352.0;
 }
 
 class TasksScreen extends StatefulWidget {
@@ -37,6 +44,8 @@ class _TasksScreenState extends State<TasksScreen> {
   late final _groupNameController = TextEditingController();
   late final _joinCodeController = TextEditingController();
   late final _rewardController = TextEditingController(text: '0');
+  final _searchController = TextEditingController();
+
 
 
   bool _isLoading = false;
@@ -45,6 +54,7 @@ class _TasksScreenState extends State<TasksScreen> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     _titleController.dispose();
     _descController.dispose();
     _groupNameController.dispose();
@@ -278,15 +288,124 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
+  Widget _buildSearchAndSortBar() {
+    return Container(
+      width: TaskScreenConstants.searchSortWidth,
+      height: 27,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            width: TaskScreenConstants.searchSortWidth / 2,
+            height: 27,
+            decoration: BoxDecoration(
+              color: TaskScreenConstants.sortButtonColor,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: PopupMenuButton<String>(
+              offset: const Offset(0, 30),
+              onSelected: (value) {
+                Provider.of<TaskProvider>(context, listen: false)
+                    .sortTasks(option: value);
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem<String>(
+                  value: 'date',
+                  child: Text('По дате окончания'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'completed',
+                  child: Text('Только выполненные'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'pending',
+                  child: Text('Только невыполненные'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'default',
+                  child: Text('Обычная сортировка'),
+                ),
+              ],
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.sort, color: Colors.white, size: 16),
+                  SizedBox(width: 5),
+                  Text('Сортировка',
+                      style: TextStyle(color: Colors.white, fontSize: 12)),
+                ],
+              ),
+            ),
+          ),
+
+
+          Expanded(
+            child: Container(
+              height: 27,
+              decoration: BoxDecoration(
+                color: const Color(0xFFC1FFEB),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                children: [
+                  const Icon(Icons.search,
+                      color: TaskScreenConstants.primaryColor, size: 16),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      style: const TextStyle(
+                          fontSize: 12,
+                          color: TaskScreenConstants.primaryColor),
+                      decoration: const InputDecoration(
+                        hintText: 'Поиск задач...',
+                        border: InputBorder.none,
+                        isDense: true,
+                      ),
+                      onChanged: (value) {
+                        Provider.of<TaskProvider>(context, listen: false)
+                            .searchTasks(value);
+                      },
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close,
+                        color: Colors.grey[600], size: 16),
+                    onPressed: () {
+                      _searchController.clear();
+                      Provider.of<TaskProvider>(context, listen: false)
+                          .resetFilters();
+                      FocusScope.of(context).unfocus();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
 
   Widget _buildTasksList() {
-    final tasks = Provider.of<TaskProvider>(context).tasks;
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: tasks.length,
-      itemBuilder: (ctx, i) => _buildTaskCard(tasks[i]),
+    return Column(
+      children: [
+        _buildSearchAndSortBar(),
+        Expanded(
+          child: Consumer<TaskProvider>(
+            builder: (context, taskProvider, child) {
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: taskProvider.filteredTasks.length,
+                itemBuilder: (ctx, i) => _buildTaskCard(taskProvider.filteredTasks[i]),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -316,7 +435,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 border: Border.all(
                   color: task.state == 'Completed'
                       ? Colors.green
-                      : theme.colorScheme.primary,
+                      : TaskScreenConstants.primaryColor,
                   width: 2,
                 ),
               ),
@@ -326,87 +445,161 @@ class _TasksScreenState extends State<TasksScreen> {
             ),
           ),
 
+
           Expanded(
             child: InkWell(
               onTap: () => _showEditTaskDialog(task),
               borderRadius: BorderRadius.circular(12),
-              child: Card(
-                elevation: TaskScreenConstants.cardElevation,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: TaskScreenConstants.cardPadding,
-                  child: Stack(
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+              child: Stack(
+                children: [
 
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  task.name,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    decoration: task.state == 'Completed'
-                                        ? TextDecoration.lineThrough
-                                        : null,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (task.state == 'Completed')
-                                const Icon(Icons.verified,
-                                    color: Colors.green,
-                                    size: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                      color: task.state == 'Completed'
+                          ? const Color(0xFFD9FFF3)
+                          : Colors.white,
+                    ),
+                  ),
+
+
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 100,
+                    child: ClipPath(
+                      clipper: _DiagonalClipper(),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              const Color(0xFFCCC1FF).withOpacity(0.7),
+                              const Color(0xFF6E44FF),
                             ],
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF6E44FF).withOpacity(0.3),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                              offset: const Offset(-5, 0),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
 
-                          if (task.description.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                task.description,
-                                style: theme.textTheme.bodySmall,
+
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+
+                        Expanded(
+                          flex: 7,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                task.name,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: TaskScreenConstants.primaryColor,
+                                  decoration: task.state == 'Completed'
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          const Spacer(),
-
-                          Row(
-                            children: [
-                              if (startPoint != null)
-                                Text(
-                                  DateFormat('dd.MM.yyyy').format(startPoint),
-                                  style: theme.textTheme.labelSmall,
-                                ),
-                              const Spacer(),
-                              if (endPoint != null)
-                                Text(
-                                  DateFormat('dd.MM.yyyy').format(endPoint),
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: isOverdue ? Colors.red : Colors.green,
-                                    fontWeight: FontWeight.bold,
+                              if (task.description.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    task.description,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey[700],
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                             ],
                           ),
-                        ],
-                      ),
-
-                      if (task.reward > 0)
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: _buildRewardBadge(task.reward),
                         ),
-                    ],
+
+
+                        Expanded(
+                          flex: 3,
+                          child: Stack(
+                            children: [
+
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    if (endPoint != null)
+                                      Text(
+                                        'До ${DateFormat('dd.MM').format(endPoint)}',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: isOverdue
+                                              ? Colors.red[400]
+                                              : Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    if (startPoint != null)
+                                      Text(
+                                        'С ${DateFormat('dd.MM').format(startPoint)}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.white.withOpacity(0.8),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              if (task.reward > 0)
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: _buildRewardBadge(task.reward),
+                                ),
+                              if (task.state == 'Completed')
+                                const Positioned(
+                                  bottom: 20,
+                                  right: 0,
+                                  child: Icon(
+                                    Icons.verified,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
@@ -416,11 +609,12 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
 
+
   Widget _buildRewardBadge(double reward) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.amber.withOpacity(0.2),
+        color: Colors.white.withOpacity(0.9),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -430,7 +624,11 @@ class _TasksScreenState extends State<TasksScreen> {
           const SizedBox(width: 2),
           Text(
             reward.toStringAsFixed(reward.truncateToDouble() == reward ? 0 : 1),
-            style: const TextStyle(fontSize: 12, color: Colors.amber),
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.black87,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -441,29 +639,79 @@ class _TasksScreenState extends State<TasksScreen> {
   Widget _buildTaskForm() {
     final theme = Theme.of(context);
 
-    return Card(
-      margin: const EdgeInsets.all(16),
-      elevation: 8,
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16.0),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text(
+                      'Отмена',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                  const Text(
+                    'Новая задача',
+                    style: TextStyle(
+                      color: TaskScreenConstants.primaryColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _isLoading ? null : _validateAndAddTask,
+                    child: const Text(
+                      'Готово',
+                      style: TextStyle(
+                        color: TaskScreenConstants.primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Название задачи'),
+                decoration: const InputDecoration(
+                  labelText: 'Название задачи',
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) =>
                 value?.isEmpty ?? true ? 'Введите название задачи' : null,
               ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _descController,
-                decoration: const InputDecoration(labelText: 'Описание'),
+                decoration: const InputDecoration(
+                  labelText: 'Описание',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
               ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _rewardController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Количество звёзд'),
+                decoration: const InputDecoration(
+                  labelText: 'Количество звёзд',
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Введите количество';
                   if (double.tryParse(value) == null) return 'Введите число';
@@ -478,26 +726,23 @@ class _TasksScreenState extends State<TasksScreen> {
                       _deadline == null
                           ? 'Выберите дедлайн'
                           : 'Дедлайн: ${DateFormat('dd.MM.yyyy').format(_deadline!)}',
+                      style: const TextStyle(fontSize: 14),
                     ),
                   ),
                   TextButton(
                     onPressed: () => _selectDeadline(context),
-                    child: const Text('Выбрать дату'),
+                    child: const Text(
+                      'Выбрать дату',
+                      style: TextStyle(color: TaskScreenConstants.primaryColor),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _isLoading
-                    ? null
-                    : () => _validateAndAddTask(),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 48),
+              if (_isLoading)
+                const Padding(
+                  padding: EdgeInsets.only(top: 16),
+                  child: Center(child: CircularProgressIndicator()),
                 ),
-                child: _isLoading
-                    ? const CircularProgressIndicator()
-                    : const Text('Создать задачу'),
-              ),
             ],
           ),
         ),
@@ -514,7 +759,7 @@ class _TasksScreenState extends State<TasksScreen> {
 
     if (!group.isOwner) {
       return FloatingActionButton(
-        onPressed: () => _showNonOwnerSnackbar(),
+        onPressed: _showNonOwnerSnackbar,
         child: const Icon(Icons.add),
         backgroundColor: Colors.grey,
         tooltip: 'Доступно только администратору',
@@ -522,9 +767,9 @@ class _TasksScreenState extends State<TasksScreen> {
     }
 
     return FloatingActionButton(
-      onPressed: () => setState(() => _isFormVisible = !_isFormVisible),
+      onPressed: _showAddTaskDialog,
       backgroundColor: TaskScreenConstants.primaryColor,
-      child: Icon(_isFormVisible ? Icons.close : Icons.add),
+      child: const Icon(Icons.add, color: Colors.white),
     );
   }
 
@@ -552,6 +797,7 @@ class _TasksScreenState extends State<TasksScreen> {
       _addTask();
     }
   }
+
 
   Future<void> _addTask() async {
     if (_deadline == null) {
@@ -592,6 +838,13 @@ class _TasksScreenState extends State<TasksScreen> {
       _deadline = null;
       _isFormVisible = false;
     });
+  }
+
+  void _showAddTaskDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => _buildTaskForm(),
+    );
   }
 
   Future<void> _completeTask(TaskProvider taskProvider, int taskId) async {
@@ -1009,4 +1262,19 @@ class _TasksScreenState extends State<TasksScreen> {
       ),
     );
   }
+}
+class _DiagonalClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.moveTo(size.width * 0.3, 0);
+    path.lineTo(size.width, 0);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
