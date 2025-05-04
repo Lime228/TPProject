@@ -94,7 +94,7 @@ class MockApiClient implements ApiInterface {
       id: int.parse(taskId),
       name: 'Завершенная задача',
       reward: 100.0,
-      description: 'Описание завершенной задачи',
+      description: '',
       startPoint: 'Начальная точка',
       endPoint: 'Конечная точка',
       customerId: 1,
