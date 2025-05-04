@@ -34,12 +34,12 @@ class UserModel implements BaseRequest<UserModel>, BaseResponse {
   // Для ответа
   factory UserModel.fromResponse(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'],
+      id: json['id'] ?? 0,
       name: json['name'],
       email: json['email'],
       birthdayDate: DateTime.parse(json['birthdayDate']),
       login: json['login'],
-      isAdmin: json['isAdmin'],
+      isAdmin: json['isAdmin'] ?? false,
     );
   }
 
@@ -55,7 +55,6 @@ class UserModel implements BaseRequest<UserModel>, BaseResponse {
 
   @override
   UserModel fromJson(Map<String, dynamic> json) {
-    // TODO: implement fromJson
-    throw UnimplementedError();
+    return UserModel.fromResponse(json);
   }
 }

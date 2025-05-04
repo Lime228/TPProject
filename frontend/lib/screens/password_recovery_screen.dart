@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:zadachok/api/api_interface.dart';
 import 'package:zadachok/api/mock_api_client.dart';
+import '../routes/main_navigation.dart';
 import 'login_screen.dart';
-
 
 class PasswordRecoveryScreen extends StatefulWidget {
   final ApiInterface apiClient;
@@ -13,37 +13,50 @@ class PasswordRecoveryScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _PasswordRecoveryScreenState createState() => _PasswordRecoveryScreenState();
+  State<PasswordRecoveryScreen> createState() => _PasswordRecoveryScreenState();
 }
 
 class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _loginController = TextEditingController();
-  bool _isLoading = false;
-  String? _errorMessage;
 
-  static const _borderRadius = 15.0;
-  static const _shadowOffset = Offset(0, 4);
-  static const _shadowBlur = 6.0;
-  static const _contentPadding = EdgeInsets.symmetric(horizontal: 20, vertical: 15);
-  static const _inputWidth = 305.0;
-  static const _inputHeight = 41.0;
-  static const _buttonWidth = 200.0;
-  static const _buttonHeight = 44.0;
-  static const _colorEnter = Color.fromARGB(100, 110, 68, 255);
-  static const _colorEnterButton = Color.fromARGB(100, 147, 125, 243);
-  static const _textStyle = TextStyle(
+  static const double borderRadius = 15.0;
+  static const Offset shadowOffset = Offset(0, 4);
+  static const double shadowBlur = 6.0;
+  static const EdgeInsets contentPadding =
+  EdgeInsets.symmetric(horizontal: 20, vertical: 15);
+  static const double buttonWidth = 200.0;
+  static const double buttonHeight = 44.0;
+  static const double inputWidth = 305.0;
+  static const double inputHeight = 41.0;
+  static const Color colorEnter = Color.fromARGB(100, 110, 68, 255);
+  static const Color colorEnterButton = Color.fromARGB(100, 147, 125, 243);
+
+
+  static const TextStyle textStyle = TextStyle(
     fontSize: 15,
     fontFamily: 'Inter',
     fontWeight: FontWeight.w600,
   );
-  static const _enterStyle = TextStyle(
+
+  static const TextStyle enterStyle = TextStyle(
     fontSize: 15,
     fontFamily: 'Inter',
     fontWeight: FontWeight.w600,
     color: Colors.white,
   );
+
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _loginController = TextEditingController();
+
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _loginController.dispose();
+    super.dispose();
+  }
 
   Future<void> _recoverPassword() async {
     if (!_formKey.currentState!.validate()) return;
@@ -59,18 +72,20 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
         login: _loginController.text,
       );
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Новый пароль отправлен на вашу почту')),
       );
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
       );
     } catch (e) {
+      if (!mounted) return;
       setState(() => _errorMessage = e.toString());
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -98,80 +113,56 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset('lib/assets/logo.png', width: 150), //TODO: обновить расположение логотипа
-              const SizedBox(height: 30),
-              const Text(
-                "Восстановление пароля",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: _colorEnter,
-                ),
-              ),
-              const SizedBox(height: 20),
-              _buildInputField(
-                hintText: 'Логин',
-                controller: _loginController,
-                validator: _validateLogin,
-              ),
-              const SizedBox(height: 10),
-              _buildInputField(
-                hintText: 'Почта',
-                controller: _emailController,
-                validator: _validateEmail,
-              ),
-              if (_errorMessage != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Text(
-                    _errorMessage!,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ),
-              const SizedBox(height: 20),
-              Container(
-                width: _buttonWidth,
-                height: _buttonHeight,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(25),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 6,
-                      offset: Offset(0, 4),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 30),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height -
+                  MediaQuery.of(context).padding.vertical,
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset('lib/assets/logo.png', width: 150),
+                  const SizedBox(height: 30),
+                  const Text(
+                    "Восстановление пароля",
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: colorEnter,
                     ),
-                  ],
-                ),
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _recoverPassword,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _colorEnterButton,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    shadowColor: Colors.transparent,
                   ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Сменить пароль", style: _enterStyle),
-                ),
+                  const SizedBox(height: 20),
+                  _buildInputField(
+                    hintText: 'Логин',
+                    controller: _loginController,
+                    validator: _validateLogin,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildInputField(
+                    hintText: 'Почта',
+                    controller: _emailController,
+                    validator: _validateEmail,
+                  ),
+                  if (_errorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  const SizedBox(height: 20),
+                  _buildActionButton(),
+                  const SizedBox(height: 20),
+                  _buildBackToLoginPrompt(),
+                ],
               ),
-              const SizedBox(height: 20),
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: const Text(
-                  "Вернуться к входу",
-                  style: TextStyle(color: _colorEnterButton),
-                ),
-              )
-            ],
+            ),
           ),
         ),
       ),
@@ -184,18 +175,18 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
     required String? Function(String?)? validator,
   }) {
     return SizedBox(
-      width: _inputWidth,
-      height: _inputHeight,
+      width: inputWidth,
+      height: inputHeight,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(_borderRadius),
+          borderRadius: BorderRadius.circular(borderRadius),
           boxShadow: const [
             BoxShadow(
               color: Colors.black26,
-              blurRadius: _shadowBlur,
-              offset: _shadowOffset,
-            ),
+              blurRadius: shadowBlur,
+              offset: shadowOffset,
+            )
           ],
         ),
         child: TextFormField(
@@ -203,17 +194,57 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
           validator: validator,
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: _textStyle,
+            hintStyle: textStyle,
             filled: true,
             fillColor: Colors.white,
             border: const OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(_borderRadius)),
+              borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
               borderSide: BorderSide.none,
             ),
-            contentPadding: _contentPadding,
+            contentPadding: contentPadding,
             errorStyle: const TextStyle(height: 0),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton() {
+    return Container(
+      width: buttonWidth,
+      height: buttonHeight,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 6,
+            offset: Offset(0, 4),
+          )
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _recoverPassword,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: colorEnterButton,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
+          shadowColor: Colors.transparent,
+        ),
+        child: _isLoading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text("Сменить пароль", style: enterStyle),
+      ),
+    );
+  }
+
+  Widget _buildBackToLoginPrompt() {
+    return GestureDetector(
+      onTap: () => Navigator.pop(context),
+      child: const Text(
+        "Вернуться к входу",
+        style: TextStyle(color: colorEnterButton),
       ),
     );
   }

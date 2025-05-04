@@ -1,5 +1,61 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:zadachok/models/task/task_model.dart';
+import '../providers/auth_provider.dart';
+import '../providers/group_provider.dart';
+import '../providers/task_provider.dart';
+
+
+class CalendarStyles {
+  static const double headerHeight = 100.0;
+  static const double monthHeaderHeight = 62.0;
+  static const double calendarHeight = 242.0;
+  static const double dayLabelFontSize = 25.0;
+  static const double dayNumberFontSize = 25.0;
+  static const double monthNameFontSize = 24.0;
+  static const double yearFontSize = 35.0;
+  static const double taskTitleFontSize = 18.0;
+  static const double taskDescriptionFontSize = 14.0;
+
+  static const Color primaryColor = Color(0xFF937DF3);
+  static const Color secondaryColor = Color(0xFF6E44FF);
+  static const Color monthHeaderColor = Color(0xFFCCC1FF);
+  static const Color dayLabelColor = Color(0xFF937DF3);
+  static const Color dayNumberColor = Color(0xFF666666);
+  static const Color selectedDayColor = Colors.white;
+  static const Color todayBorderColor = Color(0xFFCCC1FF);
+  static const Color taskOverdueColor = Colors.red;
+  static const Color taskOnTimeColor = Colors.green;
+
+  static const BorderRadius headerBorderRadius = BorderRadius.only(
+    bottomLeft: Radius.circular(40),
+    bottomRight: Radius.circular(40),
+  );
+
+  static const EdgeInsets headerPadding = EdgeInsets.fromLTRB(24, 15, 24, 10);
+  static const EdgeInsets calendarPadding = EdgeInsets.all(16);
+  static const EdgeInsets taskCardPadding = EdgeInsets.all(12);
+  static const EdgeInsets monthPickerPadding = EdgeInsets.all(16);
+
+  static const BoxShadow headerShadow = BoxShadow(
+    color: Colors.black26,
+    blurRadius: 12,
+    offset: Offset(0, 6),
+  );
+
+  static const BoxShadow calendarShadow = BoxShadow(
+    color: Colors.black26,
+    blurRadius: 12,
+    offset: Offset(0, 6),
+  );
+
+  static const BoxShadow monthHeaderShadow = BoxShadow(
+    color: Colors.black12,
+    blurRadius: 10,
+    offset: Offset(0, 5),
+  );
+}
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -9,320 +65,406 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
-  DateTime selectedDate = DateTime.now();
-  bool showMonthPicker = false;
 
-  void _selectMonth(int month) {
-    setState(() {
-      selectedDate = DateTime(selectedDate.year, month);
-      showMonthPicker = false;
-    });
-  }
-
-  List<Widget> _buildDayLabels() {
-    const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-    return days
-        .map((day) => Center(
-      child: Text(
-        day,
-        style: const TextStyle(
-          color: Color(0xFF937DF3),
-          fontWeight: FontWeight.bold,
-          fontSize: 25,
-        ),
-      ),
-    ))
-        .toList();
-  }
-
-  List<Widget> _buildCalendarDays(DateTime month) {
-    final firstDayOfMonth = DateTime(month.year, month.month, 1);
-    final lastDayOfMonth = DateTime(month.year, month.month + 1, 0);
-    final startWeekday = (firstDayOfMonth.weekday + 6) % 7;
-    final totalDays = lastDayOfMonth.day;
-    final List<Widget> dayWidgets = [];
-
-    for (int i = 0; i < startWeekday; i++) {
-      dayWidgets.add(Container());
-    }
-
-    for (int day = 1; day <= totalDays; day++) {
-      final date = DateTime(month.year, month.month, day);
-      final isToday = DateTime.now().day == day &&
-          DateTime.now().month == month.month &&
-          DateTime.now().year == month.year;
-      final isSelected = selectedDate.day == day &&
-          selectedDate.month == month.month &&
-          selectedDate.year == month.year;
-
-      BoxDecoration decoration = const BoxDecoration();
-      TextStyle textStyle =
-      const TextStyle(color: Color(0xFF666666), fontSize: 25);
-
-      if (isToday && !isSelected) {
-        decoration = BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Color(0xFFCCC1FF), width: 2),
-        );
-        textStyle = const TextStyle(
-          color: Color(0xFFCCC1FF),
-          fontWeight: FontWeight.bold,
-          fontSize: 25,
-        );
-      } else if (isSelected) {
-        decoration = BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-              color: Color(0xFFCCC1FF),
-              width: 2,
-              style: BorderStyle.solid),
-        );
-        textStyle = const TextStyle(
-          color: Color(0xFF666666),
-          fontWeight: FontWeight.bold,
-          fontSize: 25,
-        );
-      } else if (isToday && isSelected) {
-        decoration = const BoxDecoration(
-          shape: BoxShape.circle,
-          color: Color(0xFFCCC1FF),
-        );
-        textStyle = const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 25,
-        );
-      }
-
-      dayWidgets.add(GestureDetector(
-        onTap: () {
-          setState(() {
-            selectedDate = date;
-          });
-        },
-        child: Container(
-          alignment: Alignment.center,
-          decoration: decoration,
-          child: Text(
-            '$day',
-            style: textStyle,
-          ),
-        ),
-      ));
-    }
-
-    return dayWidgets;
-  }
+  DateTime _selectedDate = DateTime.now();
+  bool _showMonthPicker = false;
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final currentYear = selectedDate.year;
-    final currentMonth =
-    toBeginningOfSentenceCase(DateFormat.MMMM('ru').format(selectedDate));
-
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              const SizedBox(height: 0),
-              Padding(
-                padding: EdgeInsets.zero,
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      showMonthPicker = !showMonthPicker;
-                    });
-                  },
-                  child: Container(
-                    width: screenWidth,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF937DF3),
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(40),
-                        bottomRight: Radius.circular(40),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 12,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    padding:
-                    const EdgeInsets.only(left: 24, right: 24, top: 35),
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '$currentYear',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 50,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Icon(
-                          showMonthPicker
-                              ? Icons.keyboard_arrow_up
-                              : Icons.keyboard_arrow_down,
-                          color: Colors.white,
-                          size: 36,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              if (!showMonthPicker) ...[
-                Container(
-                  width: 352,
-                  height: 62,
-                  margin: EdgeInsets.zero,
-                  padding: const EdgeInsets.only(left: 16),
-                  alignment: Alignment.centerLeft,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFCCC1FF),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
+      body: _buildMainContent(),
+    );
+  }
 
-                  //TODO: слепить блок с календарем и с месяцев наложением в один блок
-                  child: Text(
-                    currentMonth,
-                    style: const TextStyle(
-                      color: Color(0xFF6E44FF),
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  width: 352,
-                  height: 242,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: _buildDayLabels(),
-                      ),
-                      const SizedBox(height: 8),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: GridView.count(
-                            shrinkWrap: true,
-                            crossAxisCount: 7,
-                            mainAxisSpacing: 8,
-                            crossAxisSpacing: 8,
-                            physics: const NeverScrollableScrollPhysics(),
-                            children: _buildCalendarDays(selectedDate),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Заглушка для задач
-                Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: const [
-                        Text(
-                          'Упс(',
-                          style: TextStyle(
-                            fontSize: 17,
-                            color: Color(0xFF666666),
-                          ),
-                        ),
-                        Text(
-                          'Свои задачи можно просматривать',
-                          style: TextStyle(
-                            fontSize: 17,
-                            color: Color(0xFF666666),
-                          ),
-                        ),
-                        Text(
-                          'только авторизовавшись',
-                          style: TextStyle(
-                            fontSize: 17,
-                            color: Color(0xFF666666),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                //  Здесь после авторизации отобразятся карточки задач
-                // TODO: если пользователь авторизован, подгрузить задачи из API и отобразить карточки:
-                //  Вызов API для получения TaskByCustomerResponse
-                //  Отображение списка задач с названием, дедлайном и описанием
-              ] else ...[
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: GridView.count(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      children: List.generate(12, (index) {
-                        final monthName = toBeginningOfSentenceCase(
-                            DateFormat.MMMM('ru')
-                                .format(DateTime(currentYear, index + 1)));
-                        return GestureDetector(
-                          onTap: () => _selectMonth(index + 1),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.deepPurple[50],
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              monthName!,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.deepPurple,
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
-                ),
-              ],
-            ],
+  Widget _buildMainContent() {
+    return Column(
+      children: [
+
+        _buildYearHeader(),
+        const SizedBox(height: 12),
+
+
+        Expanded(
+          child: _buildCalendarContentWithAuthCheck(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCalendarContentWithAuthCheck() {
+    final auth = Provider.of<AuthProvider>(context);
+    final group = Provider.of<GroupProvider>(context);
+
+    if (_showMonthPicker) {
+      return _buildMonthPicker(_selectedDate.year);
+    }
+
+    return Column(
+      children: [
+
+        _buildMonthHeader(),
+        const SizedBox(height: 0),
+
+
+        _buildCalendarGrid(),
+        const SizedBox(height: 12),
+
+
+        Expanded(
+          child: auth.isAuthenticated && group.isInGroup
+              ? _buildTaskList()
+              : _buildUnauthorizedTaskMessage(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildYearHeader() {
+    return Container(
+      width: double.infinity,
+      height: CalendarStyles.headerHeight,
+      decoration: BoxDecoration(
+        color: CalendarStyles.primaryColor,
+        borderRadius: CalendarStyles.headerBorderRadius,
+        boxShadow: [CalendarStyles.headerShadow],
+      ),
+      padding: CalendarStyles.headerPadding,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            '${_selectedDate.year}',
+            style: const TextStyle(
+              fontSize: CalendarStyles.yearFontSize,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          IconButton(
+            icon: Icon(
+              _showMonthPicker ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+              color: Colors.white,
+              size: 30,
+            ),
+            onPressed: () => setState(() => _showMonthPicker = !_showMonthPicker),
           ),
         ],
       ),
     );
   }
 
+  Widget _buildMonthHeader() {
+    final currentMonth = toBeginningOfSentenceCase(DateFormat.MMMM('ru').format(_selectedDate));
+
+    return Container(
+      height: CalendarStyles.monthHeaderHeight,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.only(left: 16),
+      decoration: BoxDecoration(
+        color: CalendarStyles.monthHeaderColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [CalendarStyles.monthHeaderShadow],
+      ),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          currentMonth!,
+          style: const TextStyle(
+            color: CalendarStyles.secondaryColor,
+            fontSize: CalendarStyles.monthNameFontSize,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCalendarGrid() {
+    final tasks = Provider.of<TaskProvider>(context).tasks;
+
+    return Container(
+      height: CalendarStyles.calendarHeight,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: CalendarStyles.calendarPadding,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [CalendarStyles.calendarShadow],
+      ),
+      child: Column(
+        children: [
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: _buildDayLabels(),
+          ),
+          const SizedBox(height: 8),
+
+
+          Expanded(
+            child: GridView.count(
+              shrinkWrap: true,
+              crossAxisCount: 7,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              children: _buildCalendarDays(_selectedDate, tasks),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildDayLabels() {
+    const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    return days.map((day) => Center(
+      child: Text(
+        day,
+        style: const TextStyle(
+          color: CalendarStyles.dayLabelColor,
+          fontWeight: FontWeight.bold,
+          fontSize: CalendarStyles.dayLabelFontSize,
+        ),
+      ),
+    )).toList();
+  }
+
+  List<Widget> _buildCalendarDays(DateTime month, List<TaskModel> tasks) {
+    final firstDay = DateTime(month.year, month.month, 1);
+    final lastDay = DateTime(month.year, month.month + 1, 0);
+    final startOffset = (firstDay.weekday + 6) % 7;
+    final daysInMonth = lastDay.day;
+
+    return [
+      for (int i = 0; i < startOffset; i++) Container(),
+      for (int day = 1; day <= daysInMonth; day++)
+        _buildDayCell(
+          day: day,
+          date: DateTime(month.year, month.month, day),
+          tasks: tasks,
+        ),
+    ];
+  }
+
+  Widget _buildDayCell({
+    required int day,
+    required DateTime date,
+    required List<TaskModel> tasks,
+  }) {
+    final isToday = DateUtils.isSameDay(DateTime.now(), date);
+    final isSelected = DateUtils.isSameDay(_selectedDate, date);
+    final hasTasks = tasks.any((t) => DateUtils.isSameDay(date, _safeParseDate(t.endPoint)));
+
+    return GestureDetector(
+      onTap: () => setState(() => _selectedDate = date),
+      child: Container(
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isSelected ? CalendarStyles.secondaryColor : null,
+          border: Border.all(
+            color: isToday
+                ? (isSelected ? Colors.white : CalendarStyles.todayBorderColor)
+                : Colors.transparent,
+            width: 2,
+          ),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Text(
+              '$day',
+              style: TextStyle(
+                color: isSelected ? CalendarStyles.selectedDayColor : CalendarStyles.dayNumberColor,
+                fontSize: CalendarStyles.dayNumberFontSize,
+                fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+            if (hasTasks)
+              Positioned(
+                top: 2,
+                right: 2,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTaskList() {
+    final tasks = Provider.of<TaskProvider>(context).tasks;
+    final filteredTasks = tasks.where((t) {
+      final deadline = _safeParseDate(t.endPoint);
+      return deadline != null && DateUtils.isSameDay(_selectedDate, deadline);
+    }).toList();
+
+    if (filteredTasks.isEmpty) {
+      return const Center(child: Text('Нет задач на выбранную дату'));
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: filteredTasks.length,
+      itemBuilder: (context, i) => _buildTaskCard(filteredTasks[i]),
+    );
+  }
+
+  Widget _buildTaskCard(TaskModel task) {
+    final deadline = _safeParseDate(task.endPoint);
+    final isOverdue = deadline?.isBefore(DateTime.now()) ?? false;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: CalendarStyles.taskCardPadding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    task.name,
+                    style: const TextStyle(
+                      fontSize: CalendarStyles.taskTitleFontSize,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                if (task.reward > 0)
+                  _buildRewardBadge(task.reward),
+              ],
+            ),
+            if (task.description.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                task.description,
+                style: const TextStyle(fontSize: CalendarStyles.taskDescriptionFontSize),
+              ),
+            ],
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.timer, size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  'До ${DateFormat('dd.MM.yyyy').format(deadline!)}',
+                  style: TextStyle(
+                    color: isOverdue ? CalendarStyles.taskOverdueColor : CalendarStyles.taskOnTimeColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRewardBadge(double reward) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.amber.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.star, size: 16, color: Colors.amber),
+          const SizedBox(width: 2),
+          Text(
+            reward.toStringAsFixed(reward.truncateToDouble() == reward ? 0 : 1),
+            style: const TextStyle(fontSize: 12, color: Colors.amber),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUnauthorizedTaskMessage() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.lock, size: 64, color: Colors.grey),
+            const SizedBox(height: 20),
+            const Text(
+              'Для просмотра задач необходимо авторизоваться',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () => Navigator.pushNamed(context, '/login'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: CalendarStyles.secondaryColor,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              child: const Text('Войти', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMonthPicker(int year) {
+    return GridView.count(
+      padding: CalendarStyles.monthPickerPadding,
+      crossAxisCount: 3,
+      childAspectRatio: 1.5,
+      mainAxisSpacing: 8,
+      crossAxisSpacing: 8,
+      children: List.generate(12, (month) {
+        final monthName = DateFormat.MMMM('ru').format(DateTime(year, month + 1));
+        return InkWell(
+          onTap: () => setState(() {
+            _selectedDate = DateTime(year, month + 1);
+            _showMonthPicker = false;
+          }),
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.deepPurple[50],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              toBeginningOfSentenceCase(monthName)!,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.deepPurple,
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  DateTime? _safeParseDate(dynamic date) {
+    try {
+      if (date is DateTime) return date;
+      if (date is String && date.isNotEmpty) return DateTime.parse(date);
+    } catch (_) {}
+    return null;
+  }
 }

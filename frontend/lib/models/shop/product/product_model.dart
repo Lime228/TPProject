@@ -9,6 +9,7 @@ class ProductModel implements BaseRequest<ProductModel>, BaseResponse{
   final String state;
   final double price;
   final int customerId;
+  final String? link;
 
   ProductModel({
     this.id = 0, // 0 для новых продуктов
@@ -18,7 +19,30 @@ class ProductModel implements BaseRequest<ProductModel>, BaseResponse{
     required this.state,
     required this.price,
     required this.customerId,
+    this.link,
   });
+
+  ProductModel copyWith({
+    int? id,
+    String? name,
+    String? description,
+    String? photo,
+    String? state,
+    double? price,
+    int? customerId,
+    String? link,
+  }) {
+    return ProductModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      photo: photo ?? this.photo,
+      state: state ?? this.state,
+      price: price ?? this.price,
+      customerId: customerId ?? this.customerId,
+      link: link ?? this.link,
+    );
+  }
 
   // Для создания продукта (без ID)
   Map<String, dynamic> toCreateJson() => {
@@ -39,6 +63,7 @@ class ProductModel implements BaseRequest<ProductModel>, BaseResponse{
     'Product_state': state,
     'Price': price,
     'Customer_ID': customerId,
+    if (link != null) 'Link': link,
   };
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -56,8 +81,12 @@ class ProductModel implements BaseRequest<ProductModel>, BaseResponse{
   }
 
   // Для списка продуктов
-  static List<ProductModel> listFromJson(List<dynamic> jsonList) {
-    return jsonList.map((json) => ProductModel.fromJson(json)).toList();
+  static List<ProductModel> listFromJson(List<dynamic> json) {
+    return json.map((item) => ProductModel.fromJson(item)).toList();
+  }
+
+  static List<Map<String, dynamic>> listToJson(List<ProductModel> products) {
+    return products.map((product) => product.toJson()).toList();
   }
 
   // Валидация продукта

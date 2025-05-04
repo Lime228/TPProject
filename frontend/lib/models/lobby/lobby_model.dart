@@ -45,8 +45,8 @@ class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse{
   }
 
   @override
+  @override
   LobbyModel fromJson(Map<String, dynamic> json) {
-    // TODO: implement fromJson
-    throw UnimplementedError();
+    return LobbyModel.fromJson(json);
   }
 }

@@ -131,9 +131,78 @@ class ApiClient implements ApiInterface {
   }
 
   @override
-  Future<ProductModel> createShopItem(ProductModel request) {
-    // TODO: implement createShopItem
-    throw UnimplementedError();
+  Future<ProductModel> createShopItem(ProductModel request) async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/shop/items');
+
+    try {
+      final response = await _client.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(request.toJson()),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 201) {
+        return ProductModel.fromJson(json.decode(response.body));
+      } else {
+        throw Exception('Failed to create item: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error creating shop item: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<List<ProductModel>> getShopItems() async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/shop/items');
+
+    try {
+      final response = await _client.get(url).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body);
+        return jsonList.map((json) => ProductModel.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load shop items: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error getting shop items: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<ProductModel> updateShopItem(ProductModel request) async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/shop/items/${request.id}');
+
+    try {
+      final response = await _client.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(request.toJson()),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return ProductModel.fromJson(json.decode(response.body));
+      } else {
+        throw Exception('Failed to update item: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error updating shop item: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<void> deleteShopItem(String itemId) async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/shop/items/$itemId');
+
+    try {
+      final response = await _client.delete(url).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception('Failed to delete item: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error deleting shop item: ${e.toString()}');
+    }
   }
 
   @override
@@ -157,6 +226,18 @@ class ApiClient implements ApiInterface {
   @override
   Future<WalletModel> updateWallet(WalletModel request) {
     // TODO: implement updateWallet
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> deleteTask(String taskId) {
+    // TODO: implement deleteTask
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<TaskModel> updateTask(TaskModel task) {
+    // TODO: implement updateTask
     throw UnimplementedError();
   }
 }

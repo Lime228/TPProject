@@ -50,6 +50,6 @@
 - [Команда 9.4](https://github.com/MaksimStrelnikov/tp-9.4)
 
 ### Дополнительно
-- [О коммитах](http://185.239.50.208:8080/articles/TPP-A-7/O-kommitah)
+- [О коммитах](https://youtrack.zadachok.ru/articles/TPP-A-7/O-kommitah)
 
 
