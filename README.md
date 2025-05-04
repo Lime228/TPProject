@@ -24,10 +24,13 @@
 - [YouTrack](https://youtrack.zadachok.ru/agiles)
 - [База знаний](https://youtrack.zadachok.ru/articles/TPP-A-1/Chto-takoe-ZadachOk)
 
-### Презентация
+### Презентации
+#### Первая презентация
 - [Видео](https://rutube.ru/video/private/a85e811868c46b3603de2aa67ca15791/?p=VjMTJI3Fn6lerUq2h8GveA)
-- [Презентация](https://github.com/Lime228/TPProject/tree/main/Presentation)
-
+- [Презентация](https://github.com/Lime228/TPProject/blob/main/Presentation/Презентация%20ZадачOk.pdf)
+#### Вторая презентация
+- [Видео](https://rutube.ru/video/private/7ea3a4c7f6f5533a78706013177b678c/?p=M65ck1gzYpuB0xBoE2eWJg)
+- [Презентация](https://github.com/Lime228/TPProject/blob/main/Presentation/Промежуточное%20ревью.pdf)
 ### Дизайн
 - [Макет](https://www.figma.com/design/FeBuqTk5FFe9QljM7Z3QmR/тп?node-id=0-1&t=js9svRIyNNHnEnSF-1)
 - [UI Kit](https://www.figma.com/design/FeBuqTk5FFe9QljM7Z3QmR/тп?node-id=4474-2&p=f&t=X9U2rRnZUpLaTmW8-0)
