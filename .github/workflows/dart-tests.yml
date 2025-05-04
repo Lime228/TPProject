@@ -60,6 +60,12 @@ jobs:
           mvn clean package -Dspring.profiles.active=ci -DskipTests
           echo "✅ API build completed."
 
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: api-artifact
+          path: ./backend/api/target/zadachok-api.jar
+
       - name: Start Docker Compose
         env:
           DB_PASSWORD: zadachok
@@ -133,7 +139,6 @@ jobs:
           echo "🚨 API logs:"
           docker-compose -f docker-compose.template.yml logs api || echo "No api logs available."
 
-
       - name: Cleanup
         if: always()
         run: |
@@ -141,3 +146,36 @@ jobs:
           docker-compose -f docker-compose.template.yml down -v
           docker system prune -f
           echo "✅ Cleanup completed."
+
+  deploy-to-branch:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout bob-builder branch
+        uses: actions/checkout@v4
+        with:
+          ref: bob-builder
+          fetch-depth: 0
+
+      - name: Download JAR from artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: api-artifact
+          path: ./
+
+      - name: Commit and push JAR
+        run: |
+          # Удаляем старый JAR (если есть) и копируем новый
+          rm -f zadachok-api.jar
+          mv ./backend/api/target/zadachok-api.jar ./
+
+          # Настраиваем git
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+          # Коммитим и пушим
+          git add zadachok-api.jar
+          git commit -m "Auto-update: API build from $GITHUB_SHA"
+          git push origin bob-builder
