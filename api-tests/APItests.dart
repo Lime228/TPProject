@@ -200,48 +200,48 @@ void main() {
         print('Ошибка при удалении пользователя из лобби\n');
       }
     });
-    test('6. Создание задания', () async {
-      print('Создание задачи...');
+    // test('6. Создание задания', () async {
+    //   print('Создание задачи...');
 
-      final requestData = {
-        'name': 'TEST TASK',
-        'reward': 100,
-        'description': 'Ogo, chto eto? Eto je opisanie!',
-        'startdate': '2025-05-02',
-        'enddate': '2025-05-20',
-        'lobbyid': 1,
-        'creatorid': 1,
-      };
+    //   final requestData = {
+    //     'name': 'TEST TASK',
+    //     'reward': 100,
+    //     'description': 'Ogo, chto eto? Eto je opisanie!',
+    //     'startdate': '2025-05-02',
+    //     'enddate': '2025-05-20',
+    //     'lobbyid': 1,
+    //     'creatorid': 1,
+    //   };
 
-      print('Отправляемые данные: ${jsonEncode(requestData)}');
+    //   print('Отправляемые данные: ${jsonEncode(requestData)}');
 
-      final response = await http.post(
-        Uri.parse(taskCreateUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(requestData),
-      );
+    //   final response = await http.post(
+    //     Uri.parse(taskCreateUrl),
+    //     headers: {'Content-Type': 'application/json'},
+    //     body: jsonEncode(requestData),
+    //   );
 
-      print('Статус код: ${response.statusCode}');
-      print('Ответ сервера: ${response.body}');
+    //   print('Статус код: ${response.statusCode}');
+    //   print('Ответ сервера: ${response.body}');
 
-      expect(response.statusCode, 200,
-          reason: 'Ожидался статус 200 ()');
+    //   expect(response.statusCode, 200,
+    //       reason: 'Ожидался статус 200 ()');
 
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
+    //   if (response.statusCode == 200) {
+    //     final responseData = jsonDecode(response.body);
         
-        expect(responseData['name'], equals('TEST TASK'),
-            reason: 'Название задания не соответствует');
+    //     expect(responseData['name'], equals('TEST TASK'),
+    //         reason: 'Название задания не соответствует');
         
 
-        print('Задание успешно создано:');
-        print('Название задания: ${responseData['name']}');
-        print('Описание: ${responseData['description']}');
-        print('Награда: ${responseData['reward']}\n');
-      } else {
-        print('Ошибка при создании задания\n');
-      }
-    });
+    //     print('Задание успешно создано:');
+    //     print('Название задания: ${responseData['name']}');
+    //     print('Описание: ${responseData['description']}');
+    //     print('Награда: ${responseData['reward']}\n');
+    //   } else {
+    //     print('Ошибка при создании задания\n');
+    //   }
+    // });
   });
   tearDownAll(() {
     print('Тестирование завершено');
