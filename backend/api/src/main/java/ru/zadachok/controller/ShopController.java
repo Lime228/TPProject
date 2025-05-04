@@ -16,21 +16,21 @@ public class ShopController {
 
     private final ShopService shopService;
 
-    @PostMapping("/product/create")
+    @PostMapping("/product/create") // POST — создание ресурса
     public ResponseEntity<Product> createProduct(@RequestBody ProductCreateRequest request) {
         Product createdProduct = shopService.createProductForShop(request);
         return ResponseEntity.ok(createdProduct);
     }
-    // controller/ShopController.java
-    @PostMapping("/product/delete")
+
+    @DeleteMapping("/product/delete") // DELETE — удаление ресурса
     public ResponseEntity<String> deleteProduct(@RequestBody DeleteProductRequest request) {
         shopService.deleteProduct(request);
         return ResponseEntity.ok("Продукт удалён успешно");
     }
-    @PostMapping("/product/update")
+
+    @PatchMapping("/product/update") // PATCH — частичное обновление ресурса
     public ResponseEntity<Product> updateProduct(@RequestBody UpdateProductRequest request) {
         Product updatedProduct = shopService.updateProduct(request);
         return ResponseEntity.ok(updatedProduct);
     }
-
 }

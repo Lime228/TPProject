@@ -17,22 +17,21 @@ public class LobbyController {
 
     private final LobbyService lobbyService;
 
-    @PostMapping("/create")
+    @PostMapping("/create") // POST, потому что СОЗДАЁМ новую сущность
     public ResponseEntity<Lobby> createLobby(@RequestBody CreateLobbyRequest request) {
         Lobby createdLobby = lobbyService.createLobby(request);
         return ResponseEntity.ok(createdLobby);
     }
 
-    @PostMapping("/add")
+    @PatchMapping("/add") // PATCH, потому что МЕНЯЕМ СОСТАВ (не всё лобби, а частично)
     public ResponseEntity<Lobby> addCustomerToLobby(@RequestBody AddInLobbyRequest request) {
         Lobby updatedLobby = lobbyService.addCustomerToLobby(request);
         return ResponseEntity.ok(updatedLobby);
     }
 
-    @PostMapping("/remove")
+    @PatchMapping("/remove")     // PATCH, потому что тоже МЕНЯЕМ состав (частично)
     public ResponseEntity<Lobby> removeCustomerFromLobby(@RequestBody RemoveFromLobbyRequest request) {
         Lobby updatedLobby = lobbyService.removeCustomerFromLobby(request);
         return ResponseEntity.ok(updatedLobby);
     }
-
 }

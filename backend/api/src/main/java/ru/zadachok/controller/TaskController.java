@@ -14,7 +14,7 @@ public class TaskController {
 
     private final TaskService taskService;
 
-    @PostMapping("/create")
+    @PostMapping("/create") // POST — создание новой задачи
     public ResponseEntity<Task> create(@RequestBody CreateTaskRequest request) {
         Task task = taskService.createTask(request);
         return ResponseEntity.ok(task);
