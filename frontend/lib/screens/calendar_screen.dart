@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:zadachok/models/task/task_model.dart';
+import 'package:zadachok/screens/tasks_screen.dart';
 import '../providers/auth_provider.dart';
 import '../providers/group_provider.dart';
 import '../providers/task_provider.dart';
@@ -263,7 +264,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isSelected ? CalendarStyles.secondaryColor : null,
+          color: isSelected ? Color(0xFFCCC1FF) : null,
           border: Border.all(
             color: isToday
                 ? (isSelected ? Colors.white : CalendarStyles.todayBorderColor)
@@ -320,54 +321,178 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _buildTaskCard(TaskModel task) {
-    final deadline = _safeParseDate(task.endPoint);
-    final isOverdue = deadline?.isBefore(DateTime.now()) ?? false;
+    final theme = Theme.of(context);
+    final startPoint = _safeParseDate(task.startPoint);
+    final endPoint = _safeParseDate(task.endPoint);
+    final isOverdue = endPoint != null && endPoint.isBefore(DateTime.now());
+    final groupProvider = Provider.of<GroupProvider>(context);
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: CalendarStyles.taskCardPadding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    task.name,
-                    style: const TextStyle(
-                      fontSize: CalendarStyles.taskTitleFontSize,
-                      fontWeight: FontWeight.bold,
+    return Container(
+      height: 96,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+
+
+
+          Expanded(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              child: Stack(
+                children: [
+
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                      color: task.state == 'Completed'
+                          ? const Color(0xFFD9FFF3)
+                          : Colors.white,
                     ),
                   ),
-                ),
-                if (task.reward > 0)
-                  _buildRewardBadge(task.reward),
-              ],
-            ),
-            if (task.description.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(
-                task.description,
-                style: const TextStyle(fontSize: CalendarStyles.taskDescriptionFontSize),
-              ),
-            ],
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.timer, size: 16),
-                const SizedBox(width: 4),
-                Text(
-                  'До ${DateFormat('dd.MM.yyyy').format(deadline!)}',
-                  style: TextStyle(
-                    color: isOverdue ? CalendarStyles.taskOverdueColor : CalendarStyles.taskOnTimeColor,
-                    fontWeight: FontWeight.bold,
+
+
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 100,
+                    child: ClipPath(
+                      clipper: _DiagonalClipper(),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              const Color(0xFFCCC1FF).withOpacity(0.7),
+                              const Color(0xFF6E44FF),
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF6E44FF).withOpacity(0.3),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                              offset: const Offset(-5, 0),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ],
+
+
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+
+                        Expanded(
+                          flex: 7,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                task.name,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: TaskScreenConstants.primaryColor,
+                                  decoration: task.state == 'Completed'
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (task.description.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    task.description,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey[700],
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+
+
+                        Expanded(
+                          flex: 3,
+                          child: Stack(
+                            children: [
+
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    if (endPoint != null)
+                                      Text(
+                                        'До ${DateFormat('dd.MM').format(endPoint)}',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: isOverdue
+                                              ? Colors.red[400]
+                                              : Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    if (startPoint != null)
+                                      Text(
+                                        'С ${DateFormat('dd.MM').format(startPoint)}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.white.withOpacity(0.8),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              if (task.reward > 0)
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: _buildRewardBadge(task.reward),
+                                ),
+                              if (task.state == 'Completed')
+                                const Positioned(
+                                  bottom: 20,
+                                  right: 0,
+                                  child: Icon(
+                                    Icons.verified,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -376,7 +501,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.amber.withOpacity(0.2),
+        color: Colors.white.withOpacity(0.9),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -386,7 +511,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
           const SizedBox(width: 2),
           Text(
             reward.toStringAsFixed(reward.truncateToDouble() == reward ? 0 : 1),
-            style: const TextStyle(fontSize: 12, color: Colors.amber),
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.black87,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -443,7 +572,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           child: Container(
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: Colors.deepPurple[50],
+              color: Color(0xFF937DF3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -451,7 +580,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.deepPurple,
+                color: Colors.white,
               ),
             ),
           ),
@@ -467,4 +596,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
     } catch (_) {}
     return null;
   }
+}
+
+class _DiagonalClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.moveTo(size.width * 0.3, 0);
+    path.lineTo(size.width, 0);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }

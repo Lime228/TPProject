@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS tp.task (
     description text,
     start_point date,
     end_point date,
-    customer_id integer NOT NULL REFERENCES tp.customer(customer_id),
+    customer_id integer REFERENCES tp.customer(customer_id), -- убран NOT NULL
     task_state boolean DEFAULT false
 );
 

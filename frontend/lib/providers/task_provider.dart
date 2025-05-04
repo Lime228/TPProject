@@ -7,6 +7,7 @@ import 'package:zadachok/providers/group_provider.dart';
 class TaskProvider with ChangeNotifier {
   final ApiInterface apiClient;
   List<TaskModel> _tasks = [];
+  List<TaskModel> _filteredTasks = [];
   bool _isLoadingTasks = false;
   bool _isLoadingTaskCreation = false;
   bool _isLoadingTaskDeletion = false;
@@ -19,6 +20,12 @@ class TaskProvider with ChangeNotifier {
   bool get isLoadingTaskCreation => _isLoadingTaskCreation;
   bool get isLoadingTaskDeletion => _isLoadingTaskDeletion;
   String? get error => _error;
+  String _searchQuery = '';
+  String _sortOption = 'all';
+
+  List<TaskModel> get filteredTasks => _filteredTasks.isNotEmpty && _searchQuery.isNotEmpty
+      ? _filteredTasks
+      : _tasks;
 
 
   List<TaskModel> getTasksForDate(DateTime date) {
@@ -152,6 +159,63 @@ class TaskProvider with ChangeNotifier {
 
   void _setLoadingTaskDeletion(bool loading) {
     _isLoadingTaskDeletion = loading;
+    notifyListeners();
+  }
+
+  void searchTasks(String query) {
+    _searchQuery = query.toLowerCase();
+    _applyFilters();
+    notifyListeners();
+  }
+
+
+  void sortTasks({String? option}) {
+    _sortOption = option ?? 'default';
+    _applyFilters();
+    notifyListeners();
+  }
+
+
+  void _applyFilters() {
+
+    List<TaskModel> result = _tasks.where((task) {
+      final nameMatches = task.name.toLowerCase().contains(_searchQuery);
+      final descMatches = task.description.toLowerCase().contains(_searchQuery);
+      return nameMatches || descMatches;
+    }).toList();
+
+
+    switch (_sortOption) {
+      case 'date':
+        result.sort((a, b) {
+          final aDate = DateTime.parse(a.endPoint);
+          final bDate = DateTime.parse(b.endPoint);
+          return aDate.compareTo(bDate);
+        });
+        break;
+      case 'completed':
+        result = result.where((t) => t.state == 'Completed').toList();
+        break;
+      case 'pending':
+        result = result.where((t) => t.state != 'Completed').toList();
+        break;
+      default:
+
+        result.sort((a, b) {
+          if (a.state == 'Completed' && b.state != 'Completed') return 1;
+          if (a.state != 'Completed' && b.state == 'Completed') return -1;
+          return 0;
+        });
+    }
+
+    _filteredTasks = result;
+  }
+
+
+  void resetFilters() {
+    _searchQuery = '';
+    _sortOption = 'all';
+    _applyFilters();
     notifyListeners();
   }
 }

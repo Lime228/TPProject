@@ -31,6 +31,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _searchController = TextEditingController();
   final _nameController = TextEditingController(text: 'Имя');
   final _surnameController = TextEditingController(text: 'Фамилия');
+  final _birthDateController = TextEditingController(text: 'ДД.ММ.ГГГГ');
   final _picker = ImagePicker();
 
   File? _avatarImage;
@@ -52,6 +53,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     'аккаунт': GlobalKey(),
   };
 
+  @override
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
@@ -86,16 +88,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _buildStatisticsBlock(authProvider, isAuthorized),
                     _buildDecorativeLine(),
                     _buildNotificationsBlock(settings),
-                    _buildDecorativeLine(),
-                    _buildOtherSettingsBlock(settings),
-                    _buildDecorativeLine(),
-                    _buildBonusSettingsBlock(settings, isAuthorized),
-                    _buildDecorativeLine(),
-                    _buildExperimentalFeaturesBlock(settings),
-                    _buildDecorativeLine(),
-                    _buildUpdatesBlock(settings),
-                    _buildDecorativeLine(),
-                    _buildLocationBlock(settings),
                     _buildDecorativeLine(),
                     _buildAccountBlock(authProvider, isAuthorized),
                   ],
@@ -192,67 +184,97 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildNameFields() {
     return Expanded(
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           const Text('Имя', style: TextStyle(fontSize: 12, color: Color(0xFF666666))),
-      const SizedBox(height: 8),
-      Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-            ],
-          ),
-          child: TextField(
-            controller: _nameController,
-            onChanged: (value) {
-              Provider.of<SettingsProvider>(context, listen: false)
-                  .updateUserData(name: value);
-            },
-            decoration: const InputDecoration(
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              border: InputBorder.none,
-              hintText: 'Введите имя',
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        const Text('Фамилия', style: TextStyle(fontSize: 12, color: Color(0xFF666666))),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 8,
-                offset: Offset(0, 4),
+            child: TextField(
+              controller: _nameController,
+              onChanged: (value) {
+                Provider.of<SettingsProvider>(context, listen: false)
+                    .updateUserData(name: value);
+              },
+              decoration: const InputDecoration(
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                border: InputBorder.none,
+                hintText: 'Введите имя',
               ),
-            ],
-          ),
-          child: TextField(
-            controller: _surnameController,
-            onChanged: (value) {
-              Provider.of<SettingsProvider>(context, listen: false)
-                  .updateUserData(surname: value);
-            },
-            decoration: const InputDecoration(
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              border: InputBorder.none,
-              hintText: 'Введите фамилию',
             ),
           ),
-        ),
+          const SizedBox(height: 16),
+          const Text('Фамилия', style: TextStyle(fontSize: 12, color: Color(0xFF666666))),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: _surnameController,
+              onChanged: (value) {
+                Provider.of<SettingsProvider>(context, listen: false)
+                    .updateUserData(surname: value);
+              },
+              decoration: const InputDecoration(
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                border: InputBorder.none,
+                hintText: 'Введите фамилию',
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text('Дата рождения', style: TextStyle(fontSize: 12, color: Color(0xFF666666))),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: _birthDateController,
+              onChanged: (value) {
+                Provider.of<SettingsProvider>(context, listen: false)
+                    .updateUserData(birthDate: value);
+              },
+              decoration: const InputDecoration(
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                border: InputBorder.none,
+                hintText: 'ДД.ММ.ГГГГ',
+              ),
+              keyboardType: TextInputType.datetime,
+            ),
+          ),
         ],
       ),
     );
   }
+
 
   Widget _buildStatisticsBlock(AuthProvider authProvider, bool isAuthorized) {
     return _buildBlock(
@@ -319,100 +341,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildOtherSettingsBlock(SettingsProvider settings) {
-    return _buildBlock(
-      key: _blockKeys['другие настройки']!,
-      title: 'Другие настройки',
-      child: Column(
-        children: [
-          ListTile(
-            title: const Text('Темная тема'),
-            trailing: Switch(
-              value: settings.darkTheme,
-              onChanged: (val) => settings.update('darkTheme', val),
-            ),
-            leading: const Icon(Icons.dark_mode, size: SETTINGS_ICON_SIZE),
-          ),
-          ListTile(
-            title: const Text('Уровень громкости'),
-            subtitle: Slider(
-              value: settings.volume,
-              onChanged: (val) => settings.update('volume', val),
-            ),
-            leading: const Icon(Icons.volume_up, size: SETTINGS_ICON_SIZE),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildBonusSettingsBlock(SettingsProvider settings, bool isAuthorized) {
-    return _buildBlock(
-      key: _blockKeys['бонусные настройки']!,
-      title: 'Бонусные настройки',
-      child: isAuthorized
-          ? Column(
-        children: [
-          ListTile(
-            title: const Text('Фоновая музыка'),
-            trailing: Switch(
-              value: settings.backgroundMusic,
-              onChanged: (val) => settings.update('backgroundMusic', val),
-            ),
-            leading: const Icon(Icons.music_note, size: SETTINGS_ICON_SIZE),
-          ),
-          ListTile(
-            title: const Text('Анимации интерфейса'),
-            trailing: Switch(
-              value: settings.interfaceAnimations,
-              onChanged: (val) => settings.update('interfaceAnimations', val),
-            ),
-            leading: const Icon(Icons.animation, size: SETTINGS_ICON_SIZE),
-          ),
-        ],
-      )
-          : _unauthorizedMessage('Упс(\nЭти настройки доступны только\nавторизованным пользователям'),
-    );
-  }
-
-  Widget _buildExperimentalFeaturesBlock(SettingsProvider settings) {
-    return _buildBlock(
-      key: _blockKeys['экспериментальные функции']!,
-      title: 'Экспериментальные функции',
-      child: SwitchListTile(
-        value: settings.experimentalFeatures,
-        onChanged: (val) => settings.update('experimentalFeatures', val),
-        title: const Text('Включить экспериментальные функции'),
-        secondary: const Icon(Icons.science, size: SETTINGS_ICON_SIZE),
-      ),
-    );
-  }
-
-  Widget _buildUpdatesBlock(SettingsProvider settings) {
-    return _buildBlock(
-      key: _blockKeys['обновления']!,
-      title: 'Обновления',
-      child: SwitchListTile(
-        value: settings.autoUpdates,
-        onChanged: (val) => settings.update('autoUpdates', val),
-        title: const Text('Автоматические обновления'),
-        secondary: const Icon(Icons.system_update, size: SETTINGS_ICON_SIZE),
-      ),
-    );
-  }
-
-  Widget _buildLocationBlock(SettingsProvider settings) {
-    return _buildBlock(
-      key: _blockKeys['геолокация']!,
-      title: 'Геолокация',
-      child: SwitchListTile(
-        value: settings.locationAccess,
-        onChanged: (val) => settings.update('locationAccess', val),
-        title: const Text('Разрешить доступ к геолокации'),
-        secondary: const Icon(Icons.location_on, size: SETTINGS_ICON_SIZE),
-      ),
-    );
-  }
 
   Widget _buildAccountBlock(AuthProvider authProvider, bool isAuthorized) {
     return _buildBlock(

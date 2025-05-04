@@ -65,6 +65,14 @@ class _ShopScreenState extends State<ShopScreen> {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
 
+    groupProvider.addListener(() async {
+      if (groupProvider.isInGroup) {
+        await shopProvider.loadProducts();
+      } else {
+        shopProvider.clearProducts();
+      }
+    });
+
     if (groupProvider.isInGroup) {
       await shopProvider.loadProducts();
     } else {
@@ -98,7 +106,7 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Widget _buildHeader(String userName, File? avatarImage) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final settingsProvider = Provider.of<SettingsProvider>(context, listen: true);
     final theme = Theme.of(context);
 
 
@@ -147,16 +155,27 @@ class _ShopScreenState extends State<ShopScreen> {
             ],
           ),
           if (Provider.of<GroupProvider>(context).isOwner)
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: Colors.white, size: 25),
-              onSelected: (value) => _handleMenuSelection(value),
-              itemBuilder: (BuildContext context) => [
-                const PopupMenuItem<String>(
-                  value: 'edit',
-                  child: Text('Управление товарами'),
+            Theme(
+              data: Theme.of(context).copyWith(
+                popupMenuTheme: const PopupMenuThemeData(
+                  color: Colors.white,
+                  textStyle: TextStyle(color: Colors.black),
                 ),
-              ],
-            ),
+                splashColor: Colors.transparent,
+                highlightColor: Colors.transparent,
+                hoverColor: Colors.transparent,
+              ),
+              child: PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, color: Colors.white, size: 25),
+                onSelected: (value) => _handleMenuSelection(value),
+                itemBuilder: (BuildContext context) => [
+                  const PopupMenuItem<String>(
+                    value: 'edit',
+                    child: Text('Управление товарами'),
+                  ),
+                ],
+              ),
+            )
         ],
       ),
     );
@@ -213,7 +232,7 @@ class _ShopScreenState extends State<ShopScreen> {
         ? FloatingActionButton(
       backgroundColor: ShopScreenConstants.primaryColor,
       onPressed: () => _showAddProductDialog(),
-      child: const Icon(Icons.add),
+      child: const Icon(Icons.add, color: Colors.white,),
     )
         : null;
   }
@@ -221,6 +240,7 @@ class _ShopScreenState extends State<ShopScreen> {
   Widget _buildProductCard(ProductModel product) {
     return Card(
       elevation: ShopScreenConstants.productCardElevation,
+      color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(ShopScreenConstants.productCardRadius),
       ),
@@ -377,6 +397,7 @@ class _ShopScreenState extends State<ShopScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
         title: Text(product.name),
         content: SingleChildScrollView(
           child: Column(
@@ -451,6 +472,7 @@ class _ShopScreenState extends State<ShopScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
+            backgroundColor: Colors.white,
             title: const Text('Добавить товар'),
             content: SingleChildScrollView(
               child: Form(
@@ -581,6 +603,7 @@ class _ShopScreenState extends State<ShopScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
         title: const Text('Управление товарами'),
         content: SizedBox(
           width: double.maxFinite,
@@ -633,6 +656,7 @@ class _ShopScreenState extends State<ShopScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
+            backgroundColor: Colors.white,
             title: const Text('Редактировать товар'),
             content: SingleChildScrollView(
               child: Form(
