@@ -167,14 +167,11 @@ jobs:
 
       - name: Commit and push JAR
         run: |
-          # Удаляем старый JAR (если есть) и копируем новый
-          rm -f zadachok-api.jar
-          mv ./backend/api/target/zadachok-api.jar ./
           # Проверяем, что файл скачался
-          
           if [ ! -f zadachok-api.jar ]; then
             echo "❌ Error: zadachok-api.jar not found!"
-            ls -la  # Покажем содержимое директории для отладки
+            echo "Contents of current directory:"
+            ls -la
             exit 1
           fi
 
