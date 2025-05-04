@@ -23,7 +23,7 @@ class SettingsProvider with ChangeNotifier {
     _userSurname = prefs.getString('userSurname');
     _birthDate = prefs.getString('birthDate');
     final avatarPath = prefs.getString('avatarPath');
-    if (avatarPath != null) {
+    if (avatarPath != null && File(avatarPath).existsSync()) {
       _avatarImage = File(avatarPath);
     }
 

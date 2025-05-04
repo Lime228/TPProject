@@ -22,7 +22,13 @@ class ShopProvider with ChangeNotifier {
   }
 
   Future<void> _init() async {
-    final cachedData = prefs.getString('cached_products');
+    final groupId = prefs.getString('current_group_id');
+    if (groupId == null) {
+      _products = [];
+      return;
+    }
+
+    final cachedData = prefs.getString('cached_products_$groupId');
     if (cachedData != null) {
       try {
         final jsonList = jsonDecode(cachedData) as List;
@@ -39,9 +45,15 @@ class ShopProvider with ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
+      final groupId = prefs.getString('current_group_id');
+      if (groupId == null) {
+        _products = [];
+        return;
+      }
+
       _products = await apiClient.getShopItems();
       await prefs.setString(
-          'cached_products',
+          'cached_products_$groupId',
           jsonEncode(ProductModel.listToJson(_products))
       );
       _error = null;
