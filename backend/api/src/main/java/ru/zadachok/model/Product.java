@@ -1,6 +1,7 @@
 // model/Product.java
 package ru.zadachok.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -34,5 +35,6 @@ public class Product {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "\"customer_id\"", referencedColumnName = "\"customer_id\"")
+    @JsonIgnore  // Спрячем customer из JSON-ответа, чтобы не было ошибки
     private Customer customer;
 }
