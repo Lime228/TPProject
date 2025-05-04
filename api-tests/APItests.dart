@@ -212,7 +212,7 @@ void main() {
         'startdate': '2025-05-02',
         'enddate': '2025-05-20',
         'lobbyid': 1,
-        'creatorid': 1,
+        'customerid': 1,
       };
 
       print('Отправляемые данные: ${jsonEncode(requestData)}');

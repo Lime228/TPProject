@@ -35,6 +35,6 @@ public class Product {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "\"customer_id\"", referencedColumnName = "\"customer_id\"")
-    @JsonIgnore  // Спрячем customer из JSON-ответа, чтобы не было ошибки
+    @JsonIgnore  // Спрячем customer из JSON-ответа, чтобы не было  ошибки
     private Customer customer;
 }
