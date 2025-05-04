@@ -159,16 +159,27 @@ class _TasksScreenState extends State<TasksScreen> {
               ),
             ],
           ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onSelected: (value) => _handlePopupSelection(value, context),
-            itemBuilder: (context) => [
-              const PopupMenuItem<String>(
-                value: 'info',
-                child: Text('Информация о группе'),
+          Theme(
+            data: Theme.of(context).copyWith(
+              popupMenuTheme: const PopupMenuThemeData(
+                color: Colors.white,
+                textStyle: TextStyle(color: Colors.black),
               ),
-            ],
-          ),
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+              hoverColor: Colors.transparent,
+            ),
+            child: PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, color: Colors.white),
+              onSelected: (value) => _handlePopupSelection(value, context),
+              itemBuilder: (context) => [
+                const PopupMenuItem<String>(
+                  value: 'info',
+                  child: Text('Информация о группе'),
+                ),
+              ],
+            ),
+          )
         ],
       ),
     );
@@ -888,12 +899,14 @@ class _TasksScreenState extends State<TasksScreen> {
       builder: (ctx) => Theme(
         data: Theme.of(context).copyWith(
           dialogTheme: DialogTheme(
+            backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16.0),
             ),
           ),
         ),
         child: AlertDialog(
+
           title: const Text('Информация о группе'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
