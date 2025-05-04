@@ -351,7 +351,7 @@ void main() {
 
       print('Отправляемые данные: ${jsonEncode(requestData)}');
 
-      final response = await http.post(
+      final response = await http.delete(
         Uri.parse(productDeleteUrl),
         headers: {
           'Content-Type': 'application/json',
