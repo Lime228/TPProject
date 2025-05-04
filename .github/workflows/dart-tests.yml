@@ -170,6 +170,13 @@ jobs:
           # Удаляем старый JAR (если есть) и копируем новый
           rm -f zadachok-api.jar
           mv ./backend/api/target/zadachok-api.jar ./
+          # Проверяем, что файл скачался
+          
+          if [ ! -f zadachok-api.jar ]; then
+            echo "❌ Error: zadachok-api.jar not found!"
+            ls -la  # Покажем содержимое директории для отладки
+            exit 1
+          fi
 
           # Настраиваем git
           git config --global user.name "GitHub Actions"
