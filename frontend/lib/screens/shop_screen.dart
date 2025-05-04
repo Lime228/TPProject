@@ -711,7 +711,7 @@ class _ShopScreenState extends State<ShopScreen> {
       child: Row(
         children: [
           Container(
-            width: 352 / 2,
+            width: 168,
             height: 27,
             decoration: BoxDecoration(
               color: ShopScreenConstants.primaryColor,
@@ -749,6 +749,7 @@ class _ShopScreenState extends State<ShopScreen> {
               ),
             ),
           ),
+          const SizedBox(width: 8),
           Expanded(
             child: Container(
               height: 27,

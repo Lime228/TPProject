@@ -307,7 +307,7 @@ class _TasksScreenState extends State<TasksScreen> {
       child: Row(
         children: [
           Container(
-            width: TaskScreenConstants.searchSortWidth / 2,
+            width: 168,
             height: 27,
             decoration: BoxDecoration(
               color: TaskScreenConstants.sortButtonColor,
@@ -348,8 +348,7 @@ class _TasksScreenState extends State<TasksScreen> {
               ),
             ),
           ),
-
-
+          const SizedBox(width: 8),
           Expanded(
             child: Container(
               height: 27,
