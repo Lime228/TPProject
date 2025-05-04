@@ -17,6 +17,12 @@ class ShopProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  List<ProductModel> _filteredProducts = [];
+  String _searchQuery = '';
+  String _sortOption = 'all';
+
+  List<ProductModel> get filteredProducts => _filteredProducts;
+
   ShopProvider({required this.apiClient, required this.prefs}) {
     _init();
   }
@@ -80,6 +86,7 @@ class ShopProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+    _applyFilters();
   }
 
   Future<void> updateProduct(ProductModel product) async {
@@ -100,6 +107,8 @@ class ShopProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+
+    _applyFilters();
   }
 
   Future<void> removeProduct(int productId) async {
@@ -117,10 +126,59 @@ class ShopProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+
+    _applyFilters();
   }
 
   void clearProducts() {
     _products = [];
     notifyListeners();
+    _applyFilters();
+  }
+
+  void searchProducts(String query) {
+    _searchQuery = query.toLowerCase();
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void sortProducts({String? option}) {
+    _sortOption = option ?? 'all';
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void resetFilters() {
+    _searchQuery = '';
+    _sortOption = 'all';
+    _applyFilters();
+    notifyListeners();
+  }
+
+  void _applyFilters() {
+    // Фильтрация по поисковому запросу
+    List<ProductModel> result = _products.where((product) {
+      final nameMatches = product.name.toLowerCase().contains(_searchQuery);
+      final descMatches = product.description.toLowerCase().contains(_searchQuery);
+      return nameMatches || descMatches;
+    }).toList();
+
+    // Сортировка
+    switch (_sortOption) {
+      case 'price_asc':
+        result.sort((a, b) => a.price.compareTo(b.price));
+        break;
+      case 'price_desc':
+        result.sort((a, b) => b.price.compareTo(a.price));
+        break;
+      case 'name':
+        result.sort((a, b) => a.name.compareTo(b.name));
+        break;
+      default:
+      // Без сортировки или обычная сортировка
+        break;
+    }
+
+    _filteredProducts = result;
   }
 }

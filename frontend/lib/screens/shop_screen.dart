@@ -11,17 +11,20 @@ import 'package:zadachok/providers/shop_provider.dart';
 
 class ShopScreenConstants {
   static const double headerHeight = 100.0;
-  static const double productCardWidth = 168.0;
-  static const double productCardHeight = 180.0;
+
   static const double productCardRadius = 12.0;
   static const double productCardElevation = 4.0;
   static const double avatarRadius = 25.0;
   static const double headerFontSize = 22.0;
   static const Color primaryColor = Color(0xFF937DF3);
-  static const Color secondaryColor = Color(0xFF6E44FF);
+  static const Color secondaryColor = Color(0xFF937DF3);
   static const EdgeInsets headerPadding = EdgeInsets.fromLTRB(24, 15, 24, 10);
   static const EdgeInsets defaultPadding = EdgeInsets.all(16.0);
   static const EdgeInsets productCardPadding = EdgeInsets.all(8.0);
+  static const double productCardWidth = 137.0; // Ширина карточки
+  static const double productCardHeight = 137.0; // Высота карточки с изображением
+  static const double productInfoHeight = 4.0;  //
+
 }
 
 class ShopScreen extends StatefulWidget {
@@ -39,6 +42,8 @@ class _ShopScreenState extends State<ShopScreen> {
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _linkController = TextEditingController();
   final TextEditingController _groupNameController = TextEditingController();
+  final _searchController = TextEditingController();
+  String _sortOption = 'all';
 
   File? _tempProductImage;
   final _addProductFormKey = GlobalKey<FormState>();
@@ -58,7 +63,26 @@ class _ShopScreenState extends State<ShopScreen> {
     _priceController.dispose();
     _linkController.dispose();
     _groupNameController.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  void _searchProducts(String query) {
+    Provider.of<ShopProvider>(context, listen: false).searchProducts(query);
+  }
+
+  void _sortProducts({String? option}) {
+    setState(() {
+      _sortOption = option ?? 'all';
+    });
+    Provider.of<ShopProvider>(context, listen: false).sortProducts(option: option);
+  }
+
+  void _resetFilters() {
+    _searchController.clear();
+    _sortOption = 'all';
+    Provider.of<ShopProvider>(context, listen: false).resetFilters();
+    FocusScope.of(context).unfocus();
   }
 
   Future<void> _loadData() async {
@@ -202,23 +226,31 @@ class _ShopScreenState extends State<ShopScreen> {
       return Center(child: Text(shopProvider.error!));
     }
 
-    return Padding(
-      padding: ShopScreenConstants.productCardPadding,
-      child: GridView.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.8,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
+    return Column(
+      children: [
+        _buildSearchAndSortBar(),
+        Expanded(
+          child: GridView.builder(
+            padding: const EdgeInsets.only(top: 8),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.8,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+            ),
+            itemCount: shopProvider.filteredProducts.length,
+            itemBuilder: (context, index) {
+              return GestureDetector(
+                onTap: () => _showProductDetails(shopProvider.filteredProducts[index]),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: _buildProductCard(shopProvider.filteredProducts[index]),
+                ),
+              );
+            },
+          ),
         ),
-        itemCount: shopProvider.products.length,
-        itemBuilder: (context, index) {
-          return GestureDetector(
-            onTap: () => _showProductDetails(shopProvider.products[index]),
-            child: _buildProductCard(shopProvider.products[index]),
-          );
-        },
-      ),
+      ],
     );
   }
 
@@ -238,72 +270,96 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Widget _buildProductCard(ProductModel product) {
-    return Card(
-      elevation: ShopScreenConstants.productCardElevation,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ShopScreenConstants.productCardRadius),
-      ),
+    return SizedBox(
+      width: 168,
+      height: 145,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-
-          Expanded(
+          Card(
+            elevation: ShopScreenConstants.productCardElevation,
+            margin: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+                bottomRight: Radius.circular(12),
+              ),
+            ),
             child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              child: product.photo.isNotEmpty
-                  ? Image.network(
-                product.photo,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _buildPlaceholderImage(),
-              )
-                  : _buildPlaceholderImage(),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+              child: SizedBox(
+                width: 200,
+                height: 170,
+                child: product.photo.isNotEmpty
+                    ? Image.network(
+                  product.photo,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _buildPlaceholderImage(),
+                )
+                    : _buildPlaceholderImage(),
+              ),
             ),
           ),
-
-          Padding(
-            padding: ShopScreenConstants.defaultPadding,
+          Container(
+            width: 145,
+            height: 50,
+            decoration: BoxDecoration(
+              color: ShopScreenConstants.primaryColor,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(12),
+                bottomRight: Radius.circular(12),
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 6,
+                  offset: Offset(0, 3),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   product.name,
                   style: const TextStyle(
-                    fontSize: 16,
+                    color: Colors.white,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
-                if (product.description.isNotEmpty)
-                  Text(
-                    product.description,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 0),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${product.price.toStringAsFixed(0)} звёзд',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.amber,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star, size: 14, color: Colors.amber),
+                      const SizedBox(width: 2),
+                      Text(
+                        product.price.toStringAsFixed(
+                            product.price.truncateToDouble() == product.price ? 0 : 1),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    if (product.link?.isNotEmpty ?? false)
-                      IconButton(
-                        icon: const Icon(Icons.link),
-                        onPressed: () => _openProductLink(product.link!),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -312,6 +368,9 @@ class _ShopScreenState extends State<ShopScreen> {
       ),
     );
   }
+
+
+
 
   Widget _buildPlaceholderImage() {
     return Container(
@@ -375,7 +434,7 @@ class _ShopScreenState extends State<ShopScreen> {
               onPressed: _showJoinGroupDialog,
               child: const Text(
                 'Вступить в существующую группу',
-                style: TextStyle(color: Color(0xFF6E44FF)),
+                style: TextStyle(color: Color(0xFF937DF3)),
               ),
             ),
           ],
@@ -638,6 +697,93 @@ class _ShopScreenState extends State<ShopScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Закрыть'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchAndSortBar() {
+    return Container(
+      width: 352,
+      height: 27,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 352 / 2,
+            height: 27,
+            decoration: BoxDecoration(
+              color: ShopScreenConstants.primaryColor,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: PopupMenuButton<String>(
+              offset: const Offset(0, 30),
+              onSelected: (value) => _sortProducts(option: value),
+              itemBuilder: (context) => [
+                const PopupMenuItem<String>(
+                  value: 'price_asc',
+                  child: Text('По возрастанию цены'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'price_desc',
+                  child: Text('По убыванию цены'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'name',
+                  child: Text('По названию'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'all',
+                  child: Text('Обычная сортировка'),
+                ),
+              ],
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.sort, color: Colors.white, size: 16),
+                  SizedBox(width: 5),
+                  Text('Сортировка',
+                      style: TextStyle(color: Colors.white, fontSize: 12)),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Container(
+              height: 27,
+              decoration: BoxDecoration(
+                color: const Color(0xFFC1FFEB),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                children: [
+                  const Icon(Icons.search,
+                      color: ShopScreenConstants.primaryColor, size: 16),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      style: const TextStyle(
+                          fontSize: 12,
+                          color: ShopScreenConstants.primaryColor),
+                      decoration: const InputDecoration(
+                        hintText: 'Поиск товаров...',
+                        border: InputBorder.none,
+                        isDense: true,
+                      ),
+                      onChanged: _searchProducts,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close,
+                        color: Colors.grey[600], size: 16),
+                    onPressed: _resetFilters,
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
