@@ -14,7 +14,7 @@ class UpperNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final groupProvider = Provider.of<GroupProvider>(context);
-    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final settingsProvider = Provider.of<SettingsProvider>(context, listen: true);
 
     return Container(
       width: double.infinity,
