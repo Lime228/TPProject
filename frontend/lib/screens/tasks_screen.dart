@@ -274,7 +274,7 @@ class _TasksScreenState extends State<TasksScreen> {
             ElevatedButton(
               onPressed: _showCreateGroupDialog,
               style: ElevatedButton.styleFrom(
-                backgroundColor: TaskScreenConstants.secondaryColor,
+                backgroundColor: TaskScreenConstants.primaryColor,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -290,7 +290,7 @@ class _TasksScreenState extends State<TasksScreen> {
               onPressed: _showJoinGroupDialog,
               child: Text(
                 'Вступить в существующую группу',
-                style: TextStyle(color: TaskScreenConstants.secondaryColor),
+                style: TextStyle(color: TaskScreenConstants.primaryColor),
               ),
             ),
           ],

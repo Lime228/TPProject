@@ -529,7 +529,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.lock, size: 64, color: Colors.grey),
+            const Icon(Icons.lock, size: 64, color: Color(0xFF937DF3)),
             const SizedBox(height: 20),
             const Text(
               'Для просмотра задач необходимо авторизоваться',
@@ -543,7 +543,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ElevatedButton(
               onPressed: () => Navigator.pushNamed(context, '/login'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: CalendarStyles.secondaryColor,
+                backgroundColor: Color(0xFF937DF3),
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
               child: const Text('Войти', style: TextStyle(color: Colors.white)),
