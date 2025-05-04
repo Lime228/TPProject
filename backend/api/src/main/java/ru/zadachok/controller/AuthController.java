@@ -1,5 +1,11 @@
 package ru.zadachok.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,11 +24,20 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Tag(name = "Authentication", description = "Регистрация и аутентификация")
 public class AuthController {
     private final CustomerService customerService;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
 
+    @Operation(summary = "Регистрация нового пользователя")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Пользователь успешно зарегистрирован",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CustomerDto.class))}),
+            @ApiResponse(responseCode = "400", description = "Пользователь уже существует",
+                    content = @Content)
+    })
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
@@ -35,6 +50,14 @@ public class AuthController {
         }
     }
 
+    @Operation(summary = "Аутентификация пользователя")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Аутентификация успешна, возвращен JWT токен",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(example = "{\"token\": \"string\"}"))}),
+            @ApiResponse(responseCode = "401", description = "Неверные учетные данные",
+                    content = @Content)
+    })
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request) {
         try {

@@ -2,6 +2,7 @@
 package ru.zadachok.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
@@ -9,8 +10,12 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Запрос на создание нового лобби")
 public class CreateLobbyRequest {
-    @JsonProperty("creatorID")  // Входящее поле в JSON будет "creatorID"
+    @JsonProperty("creatorID")
     @NotBlank
-    private Integer creatorId;  // ID пользователя, инициирующего создание
+    @Schema(description = "ID создателя лобби",
+            example = "7",
+            requiredMode = Schema.RequiredMode.REQUIRED)
+    private Integer creatorId;
 }
