@@ -38,7 +38,7 @@ jobs:
           echo "✅ Found db/init.sql"
 
       - name: Set up JDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -61,7 +61,7 @@ jobs:
           echo "✅ API build completed."
 
       - name: Upload JAR artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: api-artifact
           path: ./backend/api/target/zadachok-api.jar
