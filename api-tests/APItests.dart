@@ -10,7 +10,9 @@ void main() {
   const addUserLobbyUrl = '$baseUrl/api/lobby/add';
   const removeUserLobbyUrl = '$baseUrl/api/lobby/remove';
   const taskCreateUrl = '$baseUrl/api/task/create';
-  const healthCheckUrl = '$baseUrl';
+  const productCreateUrl = '$baseUrl/api/shop/product/create';
+  const productDeleteUrl = '$baseUrl/api/shop/product/delete';
+  const productUpdateUrl = '$baseUrl/api/shop/product/update';
 
   // Генерируем уникальные тестовые данные
   final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -20,8 +22,6 @@ void main() {
   const testCreatorId = 1;
   const testCustomerId = 2;
 
-  // Переменные для хранения состояния между тестами
-  late String authToken;
 
   group('API Integration Tests', () {
     setUpAll(() async {
@@ -121,6 +121,7 @@ void main() {
         print('Ошибка при создании лобби\n');
       }
     });
+
     test('4. Добавление пользователя в лобби', () async {
       print('Попытка добавления пользователя в лобби...');
 
@@ -200,48 +201,186 @@ void main() {
         print('Ошибка при удалении пользователя из лобби\n');
       }
     });
-    // test('6. Создание задания', () async {
-    //   print('Создание задачи...');
 
-    //   final requestData = {
-    //     'name': 'TEST TASK',
-    //     'reward': 100,
-    //     'description': 'Ogo, chto eto? Eto je opisanie!',
-    //     'startdate': '2025-05-02',
-    //     'enddate': '2025-05-20',
-    //     'lobbyid': 1,
-    //     'creatorid': 1,
-    //   };
+    test('6. Создание задания', () async {
+      print('Создание задачи...');
 
-    //   print('Отправляемые данные: ${jsonEncode(requestData)}');
+      final requestData = {
+        'name': 'TEST TASK',
+        'reward': 100,
+        'description': 'Ogo, chto eto? Eto je opisanie!',
+        'startdate': '2025-05-02',
+        'enddate': '2025-05-20',
+        'lobbyid': 1,
+        'creatorid': 1,
+      };
 
-    //   final response = await http.post(
-    //     Uri.parse(taskCreateUrl),
-    //     headers: {'Content-Type': 'application/json'},
-    //     body: jsonEncode(requestData),
-    //   );
+      print('Отправляемые данные: ${jsonEncode(requestData)}');
 
-    //   print('Статус код: ${response.statusCode}');
-    //   print('Ответ сервера: ${response.body}');
+      final response = await http.post(
+        Uri.parse(taskCreateUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestData),
+      );
 
-    //   expect(response.statusCode, 200,
-    //       reason: 'Ожидался статус 200 ()');
+      print('Статус код: ${response.statusCode}');
+      print('Ответ сервера: ${response.body}');
 
-    //   if (response.statusCode == 200) {
-    //     final responseData = jsonDecode(response.body);
+      expect(response.statusCode, 200,
+          reason: 'Ожидался статус 200 ()');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
         
-    //     expect(responseData['name'], equals('TEST TASK'),
-    //         reason: 'Название задания не соответствует');
+        expect(responseData['name'], equals('TEST TASK'),
+            reason: 'Название задания не соответствует');
         
 
-    //     print('Задание успешно создано:');
-    //     print('Название задания: ${responseData['name']}');
-    //     print('Описание: ${responseData['description']}');
-    //     print('Награда: ${responseData['reward']}\n');
-    //   } else {
-    //     print('Ошибка при создании задания\n');
-    //   }
-    // });
+        print('Задание успешно создано:');
+        print('Название задания: ${responseData['name']}');
+        print('Описание: ${responseData['description']}');
+        print('Награда: ${responseData['reward']}\n');
+      } else {
+        print('Ошибка при создании задания\n');
+      }
+    }); // пока не работает
+
+    test('7. Создание продукта', () async {
+      print('Создание продукта...');
+
+      final requestData = {
+        'name': 'TEST PRODUCT',
+        'description': 'Это тестовый продукт для проверки',
+        'photo': base64Encode(utf8.encode('test_image_data')), // Пример кодирования фото
+        'state': false,
+        'price': 999,
+        'customerid': 1,
+        'shopid': 1,
+      };
+
+      print('Отправляемые данные: ${jsonEncode(requestData)}');
+
+      final response = await http.post(
+        Uri.parse(productCreateUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(requestData),
+      );
+
+      print('Статус код: ${response.statusCode}');
+      print('Ответ сервера: ${response.body}');
+
+      expect(response.statusCode, 200,
+          reason: 'Ожидался статус 200 (Успешное создание продукта)');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        expect(responseData['name'], equals('TEST PRODUCT'),
+            reason: 'Название продукта не соответствует');
+        expect(responseData['price'], equals(999),
+            reason: 'Цена продукта не соответствует');
+
+        print('Продукт успешно создан:');
+        print('Название продукта: ${responseData['name']}');
+        print('Описание: ${responseData['description']}');
+        print('Цена: ${responseData['price']}');
+        print('Состояние: ${responseData['state'] ? "Выполнен администратором" : "Еще не выполнен"}\n');
+      } else {
+        print('Ошибка при создании продукта\n');
+      }
+    });
+
+    test('8. Обновление продукта', () async {
+      print('Обновление продукта...');
+
+      final requestData = {
+        'productid': 1,
+        'name': 'UPDATED TEST PRODUCT',
+        'description': 'Обновлённое описание тестового продукта',
+        'photo': base64Encode(utf8.encode('updated_test_image_data')),
+        'state': false,
+        'price': 1999,
+      };
+
+      print('Отправляемые данные: ${jsonEncode(requestData)}');
+
+      final response = await http.post(
+        Uri.parse(productUpdateUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(requestData),
+      );
+
+      print('Статус код: ${response.statusCode}');
+      print('Ответ сервера: ${response.body}');
+
+      expect(response.statusCode, 200,
+          reason: 'Ожидался статус 200 (Успешное обновление продукта)');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        expect(responseData['name'], equals('UPDATED TEST PRODUCT'),
+            reason: 'Название продукта не обновилось');
+        expect(responseData['price'], equals(1999),
+            reason: 'Цена продукта не обновилась');
+        expect(responseData['state'], equals(false),
+            reason: 'Состояние продукта не обновилось');
+
+        print('Продукт успешно обновлён:');
+        print('ID продукта: ${responseData['productid']}');
+        print('Новое название: ${responseData['name']}');
+        print('Новое описание: ${responseData['description']}');
+        print('Новая цена: ${responseData['price']}');
+        print('Новое состояние: ${responseData['state'] ? "Работает" : "Не работает"}\n');
+      } else {
+        print('Ошибка при обновлении продукта\n');
+      }
+    });
+
+    test('9. Удаление продукта', () async {
+      print('Удаление продукта...');
+
+      final requestData = {
+        'shopid': 1,
+        'productid': 1,
+      };
+
+      print('Отправляемые данные: ${jsonEncode(requestData)}');
+
+      final response = await http.post(
+        Uri.parse(productDeleteUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(requestData),
+      );
+
+      print('Статус код: ${response.statusCode}');
+      print('Ответ сервера: ${response.body}');
+
+      expect(response.statusCode, 200,
+          reason: 'Ожидался статус 200 (Успешное удаление продукта)');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        expect(responseData['success'], isTrue,
+            reason: 'Флаг успешного удаления не установлен');
+        expect(responseData['productid'], equals(1),
+            reason: 'ID удалённого продукта не совпадает');
+
+        print('Продукт успешно удалён:');
+        print('ID магазина: ${responseData['shopid']}');
+        print('ID продукта: ${responseData['productid']}');
+        print('Статус: ${responseData['success'] ? "Успешно" : "Не удалось"}\n');
+      } else {
+        print('Ошибка при удалении продукта\n');
+      }
+    });
   });
   tearDownAll(() {
     print('Тестирование завершено');

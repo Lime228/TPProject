@@ -33,6 +33,7 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/api/lobby/**",
                                 "/api/task/**",
+                                "/api/shop/**",
                                 "/"
                         ).permitAll()
                         .anyRequest().authenticated()
