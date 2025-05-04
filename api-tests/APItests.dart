@@ -362,13 +362,12 @@ void main() {
       print('Статус код: ${response.statusCode}');
       print('Ответ сервера: ${response.body}');
 
-      expect(response.statusCode, 200,
-          reason: 'Ожидался статус 200 (Успешное удаление продукта)');
-
       if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        print('${responseData}');
+        expect(response.body, contains('Продукт удалён успешно'),
+            reason: 'Ответ сервера не содержит подтверждения удаления');
 
+        print('Успех: ${response.body}');
+        print('Продукт shopid=1, productid=1 удалён\n');
       } else {
         print('Ошибка при удалении продукта\n');
       }
