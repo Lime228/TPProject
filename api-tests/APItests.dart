@@ -132,7 +132,7 @@ void main() {
 
       print('Отправляемые данные: ${jsonEncode(requestData)}');
 
-      final response = await http.post(
+      final response = await http.patch(
         Uri.parse(addUserLobbyUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestData),
@@ -172,7 +172,7 @@ void main() {
 
       print('Отправляемые данные: ${jsonEncode(requestData)}');
 
-      final response = await http.post(
+      final response = await http.patch(
         Uri.parse(removeUserLobbyUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestData),
@@ -306,7 +306,7 @@ void main() {
 
       print('Отправляемые данные: ${jsonEncode(requestData)}');
 
-      final response = await http.post(
+      final response = await http.patch(
         Uri.parse(productUpdateUrl),
         headers: {
           'Content-Type': 'application/json',
