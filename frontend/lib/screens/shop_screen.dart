@@ -25,6 +25,7 @@ class ShopScreenConstants {
   static const double productCardHeight = 137.0;
   static const double productInfoHeight = 4.0;
 
+
 }
 
 class ShopScreen extends StatefulWidget {
@@ -48,6 +49,8 @@ class _ShopScreenState extends State<ShopScreen> {
   File? _tempProductImage;
   final _addProductFormKey = GlobalKey<FormState>();
   final _editProductFormKey = GlobalKey<FormState>();
+
+  File? _avatarImage;
 
   @override
   void initState() {
@@ -299,8 +302,8 @@ class _ShopScreenState extends State<ShopScreen> {
                 width: 200,
                 height: 170,
                 child: product.photo.isNotEmpty
-                    ? Image.network(
-                  product.photo,
+                    ? Image.file(
+                  File(product.photo),
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => _buildPlaceholderImage(),
                 )
@@ -595,25 +598,27 @@ class _ShopScreenState extends State<ShopScreen> {
                             }
                           },
                           child: Container(
-                            height: 100,
+                            height: 150,
                             decoration: BoxDecoration(
                               color: Colors.grey[200],
                               borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
                             ),
                             child: _tempProductImage != null
                                 ? ClipRRect(
                               borderRadius: BorderRadius.circular(12),
-                              child: Image.file(_tempProductImage!, fit: BoxFit.cover),
+                              child: Image.file(
+                                _tempProductImage!,
+                                fit: BoxFit.cover,
+                              ),
                             )
-                                : const Center(
-                              child: Icon(Icons.add_a_photo, size: 40, color: Colors.grey),
+                                : Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.add_a_photo, size: 40, color: Colors.grey),
+                                  Text('Добавить фото', style: TextStyle(color: Colors.grey)),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -725,7 +730,7 @@ class _ShopScreenState extends State<ShopScreen> {
       id: DateTime.now().millisecondsSinceEpoch,
       name: _nameController.text,
       description: _descController.text,
-      photo: _tempProductImage?.path ?? '',
+      photo: _tempProductImage?.path ?? '', 
       state: 'Available',
       price: double.parse(_priceController.text),
       customerId: authProvider.user?.id ?? 0,
@@ -921,24 +926,28 @@ class _ShopScreenState extends State<ShopScreen> {
                         }
                       },
                       child: Container(
-                        height: 100,
-                        width: 100,
+                        height: 150,
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey),
                         ),
                         child: _tempProductImage != null
                             ? ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image.file(_tempProductImage!, fit: BoxFit.cover),
+                          child: Image.file(
+                            _tempProductImage!,
+                            fit: BoxFit.cover,
+                          ),
                         )
-                            : product.photo.isNotEmpty
-                            ? ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.network(product.photo, fit: BoxFit.cover),
-                        )
-                            : const Icon(Icons.add_a_photo, size: 40),
+                            : Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_a_photo, size: 40, color: Colors.grey),
+                              Text('Добавить фото', style: TextStyle(color: Colors.grey)),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -1140,7 +1149,25 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        setState(() => _avatarImage = File(image.path));
+        _uploadAvatarToServer(_avatarImage!);
+      }
+    } catch (e) {
+      debugPrint('Ошибка при выборе изображения: $e');
+    }
+  }
+
   void _openProductLink(String url) async {
+
+
     // TODO: Реализовать открытие ссылки
   }
+}
+
+class _uploadAvatarToServer {
+  _uploadAvatarToServer(File file);
 }
