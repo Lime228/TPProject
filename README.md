@@ -43,6 +43,7 @@
 - [Схема API](https://api.zadachok.ru/swagger-ui/index.html#/)
 - [Дополнение 1 к техническому заданию](https://github.com/Lime228/TPProject/blob/main/Documentation/Дополнение%201%20к%20тз.pdf)
 - [Письмо к дополнению](https://github.com/Lime228/TPProject/blob/main/Documentation/Письмо%20к%20дополнению.pdf)
+- [PM-отчет (2 атт.)](https://github.com/Lime228/TPProject/blob/main/Documentation/PM-отчет.pdf)
 
 ### Проверка
 - [Чек-лист](https://github.com/Lime228/TPProject/blob/main/Documentation/ВГУ-ТП.%20Чеклист%201%20этап%20Команда%208.2.pdf)
