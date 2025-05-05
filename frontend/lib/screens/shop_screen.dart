@@ -730,7 +730,7 @@ class _ShopScreenState extends State<ShopScreen> {
       id: DateTime.now().millisecondsSinceEpoch,
       name: _nameController.text,
       description: _descController.text,
-      photo: _tempProductImage?.path ?? '', 
+      photo: _tempProductImage?.path ?? '',
       state: 'Available',
       price: double.parse(_priceController.text),
       customerId: authProvider.user?.id ?? 0,

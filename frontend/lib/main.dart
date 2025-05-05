@@ -16,7 +16,7 @@ void main() async {
   await initializeDateFormatting('ru');
   final prefs = await SharedPreferences.getInstance();
 
-  // Создаем экземпляр MockApiClient один раз
+
   final mockApiClient = MockApiClient();
 
   runApp(

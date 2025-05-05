@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import 'package:zadachok/routes/transitions.dart';
 import '/screens/calendar_screen.dart';
 import '/screens/login_screen.dart';
 import '/screens/settings_screen.dart';
@@ -15,7 +16,6 @@ class MainNavigationScreen extends StatefulWidget {
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-
   static const int DEFAULT_SELECTED_INDEX = 1;
   static const Color NAV_BAR_SHADOW_COLOR = Colors.black12;
   static const double NAV_BAR_SHADOW_BLUR = 8.0;
@@ -25,6 +25,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   int _selectedIndex = DEFAULT_SELECTED_INDEX;
   int _previousIndex = DEFAULT_SELECTED_INDEX;
+
+
+  final PageController _pageController = PageController(initialPage: DEFAULT_SELECTED_INDEX);
 
   List<Widget> _getScreens(BuildContext context) {
     final isAuthorized = Provider.of<AuthProvider>(context).isAuthorized;
@@ -85,6 +88,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _previousIndex = _selectedIndex;
       _selectedIndex = index;
     });
+
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -102,8 +117,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: IndexedStack(
-        index: adjustedIndex,
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
+        onPageChanged: (index) {
+          setState(() {
+            _previousIndex = _selectedIndex;
+            _selectedIndex = index;
+          });
+        },
         children: screens,
       ),
       bottomNavigationBar: Container(
