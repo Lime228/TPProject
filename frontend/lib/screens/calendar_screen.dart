@@ -18,6 +18,7 @@ class CalendarStyles {
   static const double yearFontSize = 35.0;
   static const double taskTitleFontSize = 18.0;
   static const double taskDescriptionFontSize = 14.0;
+  static const double titleMonthCalendarSize = 23.0;
 
   static const Color primaryColor = Color(0xFF937DF3);
   static const Color secondaryColor = Color(0xFF6E44FF);
@@ -28,6 +29,7 @@ class CalendarStyles {
   static const Color todayBorderColor = Color(0xFFCCC1FF);
   static const Color taskOverdueColor = Colors.red;
   static const Color taskOnTimeColor = Colors.green;
+  static const Color todayMonthColor = Color(0xFFC1FFEB);
 
   static const BorderRadius headerBorderRadius = BorderRadius.only(
     bottomLeft: Radius.circular(40),
@@ -68,13 +70,38 @@ class CalendarScreen extends StatefulWidget {
 class _CalendarScreenState extends State<CalendarScreen> {
 
   DateTime _selectedDate = DateTime.now();
-  bool _showMonthPicker = false;
+  bool _showYearPicker = false;
+
+  Widget _buildYearPickerOverlay() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        alignment: Alignment.topCenter,
+        child: _showYearPicker
+            ? Material(
+          elevation: 2,
+          borderRadius: BorderRadius.circular(6),
+          child: _buildYearPicker(),
+        )
+            : const SizedBox(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: _buildMainContent(),
+      body: Stack(
+        children: [
+          _buildMainContent(),
+          if (_showYearPicker) _buildYearPickerOverlay(),
+        ],
+      ),
     );
   }
 
@@ -97,27 +124,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final auth = Provider.of<AuthProvider>(context);
     final group = Provider.of<GroupProvider>(context);
 
-    if (_showMonthPicker) {
-      return _buildMonthPicker(_selectedDate.year);
-    }
-
-    return Column(
-      children: [
-
-        _buildMonthHeader(),
-        const SizedBox(height: 0),
-
-
-        _buildCalendarGrid(),
-        const SizedBox(height: 12),
-
-
-        Expanded(
-          child: auth.isAuthenticated && group.isInGroup
-              ? _buildTaskList()
-              : _buildUnauthorizedTaskMessage(),
+    return Expanded(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildMonthHeader(),
+            _buildCalendarGrid(),
+            const SizedBox(height: 12),
+            auth.isAuthenticated && group.isInGroup
+                ? _buildTaskList()
+                : _buildUnauthorizedTaskMessage(),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -145,11 +165,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
           IconButton(
             icon: Icon(
-              _showMonthPicker ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+              _showYearPicker ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
               color: Colors.white,
               size: 30,
             ),
-            onPressed: () => setState(() => _showMonthPicker = !_showMonthPicker),
+            onPressed: () => setState(() => _showYearPicker = !_showYearPicker),
           ),
         ],
       ),
@@ -159,24 +179,31 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Widget _buildMonthHeader() {
     final currentMonth = toBeginningOfSentenceCase(DateFormat.MMMM('ru').format(_selectedDate));
 
-    return Container(
-      height: CalendarStyles.monthHeaderHeight,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.only(left: 16),
-      decoration: BoxDecoration(
-        color: CalendarStyles.monthHeaderColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [CalendarStyles.monthHeaderShadow],
-      ),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          currentMonth!,
-          style: const TextStyle(
-            color: CalendarStyles.secondaryColor,
-            fontSize: CalendarStyles.monthNameFontSize,
-            fontWeight: FontWeight.bold,
-          ),
+    return GestureDetector(
+      onTap: () => setState(() {
+        _showYearPicker = false;
+      }),
+      child: Container(
+        height: CalendarStyles.monthHeaderHeight,
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: CalendarStyles.monthHeaderColor,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [CalendarStyles.monthHeaderShadow],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              currentMonth!,
+              style: const TextStyle(
+                color: CalendarStyles.secondaryColor,
+                fontSize: CalendarStyles.monthNameFontSize,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -310,13 +337,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }).toList();
 
     if (filteredTasks.isEmpty) {
-      return const Center(child: Text('Нет задач на выбранную дату'));
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Text('Нет задач на выбранную дату'),
+      );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: filteredTasks.length,
-      itemBuilder: (context, i) => _buildTaskCard(filteredTasks[i]),
+    return SizedBox(
+      height: 300,
+      child: ListView.builder(
+        shrinkWrap: true,
+        physics: const ClampingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: filteredTasks.length,
+        itemBuilder: (context, i) => _buildTaskCard(filteredTasks[i]),
+      ),
     );
   }
 
@@ -523,30 +558,125 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _buildUnauthorizedTaskMessage() {
+    final auth = Provider.of<AuthProvider>(context);
+    final group = Provider.of<GroupProvider>(context);
+
+    String message;
+    if (!auth.isAuthenticated) {
+      message = 'Для просмотра задач необходимо авторизоваться';
+    } else if (!group.isInGroup) {
+      message = 'Только находясь в группе можно просматривать задачи';
+    } else {
+      message = 'Нет доступа к задачам';
+    }
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.lock, size: 64, color: Colors.grey),
-            const SizedBox(height: 20),
-            const Text(
-              'Для просмотра задач необходимо авторизоваться',
+            const SizedBox(height: 50),
+            Icon(
+              auth.isAuthenticated ? Icons.group : Icons.lock,
+              size: 64,
+              color: const Color(0xFF937DF3),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              message,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, '/login'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: CalendarStyles.secondaryColor,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildYearPicker() {
+    final currentYear = _selectedDate.year;
+    final monthNames = DateFormat.MMMM('ru');
+    final now = DateTime.now();
+
+    return Material(
+      key: const ValueKey('year_picker'),
+      elevation: 8,
+      borderRadius: const BorderRadius.only(
+        bottomLeft: Radius.circular(16),
+        bottomRight: Radius.circular(16),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: CalendarStyles.primaryColor,
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(16),
+            bottomRight: Radius.circular(16),
+          ),
+        ),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.75,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 40),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '$currentYear',
+                    style: const TextStyle(
+                      fontSize: CalendarStyles.yearFontSize,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      _showYearPicker ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                      color: Colors.white,
+                      size: 50,
+                    ),
+                    onPressed: () => setState(() {
+                      _showYearPicker = !_showYearPicker;
+                    }),
+                  ),
+                ],
               ),
-              child: const Text('Войти', style: TextStyle(color: Colors.white)),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: GridView.count(
+                  shrinkWrap: true,
+                  physics: const ClampingScrollPhysics(),
+                  crossAxisCount: 3,
+                  childAspectRatio: 1.1,
+                  mainAxisSpacing: 4,
+                  crossAxisSpacing: 4,
+                  children: List.generate(12, (index) {
+                    final month = index + 1;
+                    final monthName = toBeginningOfSentenceCase(
+                      monthNames.format(DateTime(currentYear, month)),
+                    );
+                    final isCurrentMonth = month == now.month && currentYear == now.year;
+
+                    return _buildMonthPicker(
+                      monthName: monthName!,
+                      year: currentYear,
+                      month: month,
+                      isCurrentMonth: isCurrentMonth,
+                    );
+                  }),
+                ),
+              ),
             ),
           ],
         ),
@@ -554,38 +684,84 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  Widget _buildMonthPicker(int year) {
-    return GridView.count(
-      padding: CalendarStyles.monthPickerPadding,
-      crossAxisCount: 3,
-      childAspectRatio: 1.5,
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      children: List.generate(12, (month) {
-        final monthName = DateFormat.MMMM('ru').format(DateTime(year, month + 1));
-        return InkWell(
-          onTap: () => setState(() {
-            _selectedDate = DateTime(year, month + 1);
-            _showMonthPicker = false;
-          }),
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Color(0xFF937DF3),
-              borderRadius: BorderRadius.circular(8),
+  Widget _buildMonthPicker({
+    required String monthName,
+    required int year,
+    required int month,
+    required bool isCurrentMonth,
+  }) {
+    final isSelectedMonth = _selectedDate.month == month && _selectedDate.year == year;
+
+    return Container(
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: isSelectedMonth ? CalendarStyles.secondaryColor.withOpacity(0.5) : null,
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () {
+          setState(() {
+            _selectedDate = DateTime(year, month);
+            _showYearPicker = false;
+          });
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              monthName,
+              style: TextStyle(
+                fontSize: CalendarStyles.titleMonthCalendarSize,
+                fontWeight: FontWeight.bold,
+                color: isCurrentMonth
+                    ? CalendarStyles.todayMonthColor
+                    : (isSelectedMonth ? Colors.white : Colors.white.withOpacity(0.8)),
+              ),
             ),
+            const SizedBox(height: 5),
+            Expanded(
+              child: _buildMiniCalendar(year, month),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMiniCalendar(int year, int month) {
+    final firstDay = DateTime(year, month, 1);
+    final lastDay = DateTime(year, month + 1, 0);
+    final startOffset = (firstDay.weekday + 6) % 7;
+    final daysInMonth = lastDay.day;
+
+    final currentDate = DateTime.now();
+    final currentMonth = currentDate.month;
+    final currentYear = currentDate.year;
+
+    return GridView.count(
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 7,
+      childAspectRatio: 1,
+      padding: EdgeInsets.zero,
+      mainAxisSpacing: 0,
+      crossAxisSpacing: 0,
+      shrinkWrap: true,
+      children: [
+        for (int i = 0; i < startOffset; i++) const SizedBox(),
+        for (int day = 1; day <= daysInMonth; day++)
+          Center(
             child: Text(
-              toBeginningOfSentenceCase(monthName)!,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
+              '$day',
+              style: TextStyle(
+                fontSize: 9,
+                color: (month == currentMonth && year == currentYear)
+                    ? CalendarStyles.todayMonthColor
+                    : Colors.white,
               ),
             ),
           ),
-        );
-      }),
+      ],
     );
   }
 

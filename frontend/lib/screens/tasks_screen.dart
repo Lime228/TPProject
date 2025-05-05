@@ -8,6 +8,7 @@ import '../providers/auth_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/task_provider.dart';
 import '../providers/group_provider.dart';
+import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
 
 
@@ -255,26 +256,22 @@ class _TasksScreenState extends State<TasksScreen> {
               color: TaskScreenConstants.primaryColor,
             ),
             const SizedBox(height: 20),
-            Text(
+            const Text(
               'Задачи доступны только для участников групп',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 10),
-            Text(
-              'Создайте новую группу или вступите в существующую, чтобы получить доступ к задачам',
+            const Text(
+              'Создайте новую группу или вступите в существующую, чтобы получить доступ к магазину',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.grey,
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
             const SizedBox(height: 30),
             ElevatedButton(
               onPressed: _showCreateGroupDialog,
               style: ElevatedButton.styleFrom(
-                backgroundColor: TaskScreenConstants.secondaryColor,
+                backgroundColor: TaskScreenConstants.primaryColor,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -290,7 +287,7 @@ class _TasksScreenState extends State<TasksScreen> {
               onPressed: _showJoinGroupDialog,
               child: Text(
                 'Вступить в существующую группу',
-                style: TextStyle(color: TaskScreenConstants.secondaryColor),
+                style: TextStyle(color: TaskScreenConstants.primaryColor),
               ),
             ),
           ],
@@ -307,13 +304,14 @@ class _TasksScreenState extends State<TasksScreen> {
       child: Row(
         children: [
           Container(
-            width: TaskScreenConstants.searchSortWidth / 2,
+            width: 168,
             height: 27,
             decoration: BoxDecoration(
               color: TaskScreenConstants.sortButtonColor,
               borderRadius: BorderRadius.circular(10),
             ),
             child: PopupMenuButton<String>(
+              color: Colors.white,
               offset: const Offset(0, 30),
               onSelected: (value) {
                 Provider.of<TaskProvider>(context, listen: false)
@@ -348,8 +346,7 @@ class _TasksScreenState extends State<TasksScreen> {
               ),
             ),
           ),
-
-
+          const SizedBox(width: 8),
           Expanded(
             child: Container(
               height: 27,
@@ -663,7 +660,6 @@ class _TasksScreenState extends State<TasksScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -697,57 +693,74 @@ class _TasksScreenState extends State<TasksScreen> {
               const SizedBox(height: 16),
 
 
-              TextFormField(
+              _buildRoundedTextField(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Название задачи',
-                  border: OutlineInputBorder(),
-                ),
+                labelText: 'Название задачи',
                 validator: (value) =>
                 value?.isEmpty ?? true ? 'Введите название задачи' : null,
               ),
               const SizedBox(height: 16),
-              TextFormField(
+
+
+              _buildRoundedTextField(
                 controller: _descController,
-                decoration: const InputDecoration(
-                  labelText: 'Описание',
-                  border: OutlineInputBorder(),
-                ),
+                labelText: 'Описание',
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
-              TextFormField(
+
+
+              _buildRoundedTextField(
                 controller: _rewardController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Количество звёзд',
-                  border: OutlineInputBorder(),
-                ),
+                labelText: 'Количество звёзд',
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Введите количество';
-                  if (double.tryParse(value) == null) return 'Введите число';
+                  final num = double.tryParse(value);
+                  if (num == null) return 'Введите число';
+                  if (num < 0) return 'Число должно быть положительным';
                   return null;
                 },
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _deadline == null
-                          ? 'Выберите дедлайн'
-                          : 'Дедлайн: ${DateFormat('dd.MM.yyyy').format(_deadline!)}',
-                      style: const TextStyle(fontSize: 14),
+
+
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-                  TextButton(
-                    onPressed: () => _selectDeadline(context),
-                    child: const Text(
-                      'Выбрать дату',
-                      style: TextStyle(color: TaskScreenConstants.primaryColor),
+                  ],
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _deadline == null
+                            ? 'Выберите дедлайн'
+                            : 'Дедлайн: ${DateFormat('dd.MM.yyyy').format(_deadline!)}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: _deadline == null
+                              ? Colors.grey[600]
+                              : Colors.black,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                    TextButton(
+                      onPressed: () => _selectDeadline(context),
+                      child: const Text(
+                        'Выбрать дату',
+                        style: TextStyle(color: TaskScreenConstants.primaryColor),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               if (_isLoading)
                 const Padding(
@@ -760,6 +773,48 @@ class _TasksScreenState extends State<TasksScreen> {
       ),
     );
   }
+
+
+  Widget _buildRoundedTextField({
+    required TextEditingController controller,
+    required String labelText,
+    TextInputType? keyboardType,
+    int? maxLines,
+    String? Function(String?)? validator,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        validator: validator,
+        decoration: InputDecoration(
+          labelText: labelText,
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: maxLines == null ? 0 : 16,
+          ),
+        ),
+      ),
+    );
+  }
+
 
 
   Widget? _buildAddTaskButton() {
@@ -784,6 +839,21 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
+  final ThemeData _datePickerTheme = ThemeData.light().copyWith(
+      colorScheme: const ColorScheme.light(
+        primary: TaskScreenConstants.primaryColor,
+        onPrimary: Colors.white,
+        surface: Colors.white,
+        onSurface: Colors.black,
+      ),
+      dialogBackgroundColor: Colors.white,
+      dialogTheme: const DialogTheme(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16.0)),
+        ),
+      ),
+      );
+
 
   Future<void> _selectDeadline(BuildContext context) async {
     if (!_formKey.currentState!.validate()) {
@@ -796,6 +866,12 @@ class _TasksScreenState extends State<TasksScreen> {
       initialDate: _deadline ?? DateTime.now().add(const Duration(days: 1)),
       firstDate: DateTime.now(),
       lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: _datePickerTheme,
+          child: child!,
+        );
+      },
     );
 
     if (picked != null && mounted) {
@@ -949,6 +1025,7 @@ class _TasksScreenState extends State<TasksScreen> {
     final shouldLeave = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
         title: const Text('Подтверждение'),
         content: const Text('Вы уверены, что хотите выйти из группы?'),
         actions: [
@@ -981,6 +1058,7 @@ class _TasksScreenState extends State<TasksScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
+              tileColor: Colors.white,
               leading: const Icon(Icons.edit),
               title: const Text('Изменить название группы'),
               onTap: () {
@@ -989,6 +1067,7 @@ class _TasksScreenState extends State<TasksScreen> {
               },
             ),
             ListTile(
+              tileColor: Colors.white,
               leading: const Icon(Icons.people),
               title: const Text('Управление участниками'),
               onTap: () {
@@ -997,6 +1076,7 @@ class _TasksScreenState extends State<TasksScreen> {
               },
             ),
             ListTile(
+              tileColor: Colors.white,
               leading: const Icon(Icons.exit_to_app),
               title: const Text('Распустить группу'),
               onTap: () {
@@ -1017,6 +1097,7 @@ class _TasksScreenState extends State<TasksScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
         title: const Text('Изменить название группы'),
         content: TextField(
           controller: controller,
@@ -1053,6 +1134,7 @@ class _TasksScreenState extends State<TasksScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
         title: const Text('Участники группы'),
         content: SizedBox(
           width: double.maxFinite,
@@ -1098,6 +1180,7 @@ class _TasksScreenState extends State<TasksScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
         title: const Text('Распустить группу?'),
         content: const Text(
             'Все участники будут удалены из группы. Это действие нельзя отменить.'),
@@ -1131,6 +1214,7 @@ class _TasksScreenState extends State<TasksScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
         title: const Text('Создать группу'),
         content: TextField(
           controller: nameController,
@@ -1180,6 +1264,7 @@ class _TasksScreenState extends State<TasksScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
         title: const Text("Вступить в группу"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1235,6 +1320,7 @@ class _TasksScreenState extends State<TasksScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
         title: const Text('Редактировать задачу'),
         content: Column(
           mainAxisSize: MainAxisSize.min,

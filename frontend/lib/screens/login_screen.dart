@@ -37,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
   static const _inputWidth = 305.0;
   static const _inputHeight = 41.0;
   static const _colorEnter = Color.fromARGB(100, 110, 68, 255);
-  static const _colorEnterButton = Color.fromARGB(100, 147, 125, 243);
+  static const _colorEnterButton = Color(0xFF937DF3);
 
   static const _textStyle = TextStyle(
     fontSize: 15,

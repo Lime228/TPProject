@@ -333,6 +333,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       key: _blockKeys['уведомления']!,
       title: 'Уведомления',
       child: SwitchListTile(
+        activeTrackColor: Color(0xFF6E44FF),
         value: settings.notificationsEnabled,
         onChanged: (val) => settings.update('notificationsEnabled', val),
         title: const Text('Получать уведомления'),

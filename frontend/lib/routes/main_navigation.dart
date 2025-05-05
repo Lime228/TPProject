@@ -20,7 +20,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   static const Color NAV_BAR_SHADOW_COLOR = Colors.black12;
   static const double NAV_BAR_SHADOW_BLUR = 8.0;
   static const Offset NAV_BAR_SHADOW_OFFSET = Offset(0, -2);
-  static const Color SELECTED_ITEM_COLOR = Colors.deepPurple;
+  static const Color SELECTED_ITEM_COLOR = Color(0xFF937DF3);
   static const Color UNSELECTED_ITEM_COLOR = Colors.grey;
 
   int _selectedIndex = DEFAULT_SELECTED_INDEX;

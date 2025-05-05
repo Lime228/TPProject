@@ -28,7 +28,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   static const double inputWidth = 305.0;
   static const double inputHeight = 41.0;
   static const Color colorEnter = Color.fromARGB(100, 110, 68, 255);
-  static const Color colorEnterButton = Color.fromARGB(100, 147, 125, 243);
+  static const Color colorEnterButton = Color(0xFF937DF3);
 
 
   static const TextStyle textStyle = TextStyle(
