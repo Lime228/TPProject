@@ -70,6 +70,9 @@ class _ShopScreenState extends State<ShopScreen> {
   void _searchProducts(String query) {
     Provider.of<ShopProvider>(context, listen: false).searchProducts(query);
   }
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
 
   void _sortProducts({String? option}) {
     setState(() {
@@ -658,6 +661,10 @@ class _ShopScreenState extends State<ShopScreen> {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
 
     if (!groupProvider.isOwner) return;
+    if (!groupProvider.isInGroup) {
+      _showError('Вы не состоите в группе');
+      return;
+    }
 
     showDialog(
       context: context,
@@ -718,6 +725,7 @@ class _ShopScreenState extends State<ShopScreen> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: PopupMenuButton<String>(
+              color: Colors.white,
               offset: const Offset(0, 30),
               onSelected: (value) => _sortProducts(option: value),
               itemBuilder: (context) => [
@@ -932,6 +940,7 @@ class _ShopScreenState extends State<ShopScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
         title: const Text("Вступить в группу"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -991,6 +1000,7 @@ class _ShopScreenState extends State<ShopScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
         title: const Text('Создать группу'),
         content: TextField(
           controller: _groupNameController,
