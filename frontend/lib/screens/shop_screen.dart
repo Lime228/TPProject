@@ -21,9 +21,9 @@ class ShopScreenConstants {
   static const EdgeInsets headerPadding = EdgeInsets.fromLTRB(24, 15, 24, 10);
   static const EdgeInsets defaultPadding = EdgeInsets.all(16.0);
   static const EdgeInsets productCardPadding = EdgeInsets.all(8.0);
-  static const double productCardWidth = 137.0; // Ширина карточки
-  static const double productCardHeight = 137.0; // Высота карточки с изображением
-  static const double productInfoHeight = 4.0;  //
+  static const double productCardWidth = 137.0;
+  static const double productCardHeight = 137.0;
+  static const double productInfoHeight = 4.0;
 
 }
 
@@ -533,90 +533,184 @@ class _ShopScreenState extends State<ShopScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) {
-          return AlertDialog(
+          return Dialog(
             backgroundColor: Colors.white,
-            title: const Text('Добавить товар'),
-            content: SingleChildScrollView(
-              child: Form(
-                key: _addProductFormKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    GestureDetector(
-                      onTap: () async {
-                        final image = await _picker.pickImage(source: ImageSource.gallery);
-                        if (image != null) {
-                          setState(() => _tempProductImage = File(image.path));
-                        }
-                      },
-                      child: Container(
-                        height: 100,
-                        width: 100,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16.0),
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Form(
+                    key: _addProductFormKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            TextButton(
+                              onPressed: () {
+                                _tempProductImage = null;
+                                Navigator.pop(ctx);
+                              },
+                              child: const Text(
+                                'Отмена',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ),
+                            const Text(
+                              'Новый товар',
+                              style: TextStyle(
+                                color: ShopScreenConstants.primaryColor,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => _handleAddProduct(ctx),
+                              child: const Text(
+                                'Готово',
+                                style: TextStyle(
+                                  color: ShopScreenConstants.primaryColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        child: _tempProductImage != null
-                            ? ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.file(_tempProductImage!, fit: BoxFit.cover),
-                        )
-                            : const Icon(Icons.add_a_photo, size: 40),
-                      ),
+                        const SizedBox(height: 16),
+
+
+                        GestureDetector(
+                          onTap: () async {
+                            final image = await _picker.pickImage(source: ImageSource.gallery);
+                            if (image != null) {
+                              setState(() => _tempProductImage = File(image.path));
+                            }
+                          },
+                          child: Container(
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: _tempProductImage != null
+                                ? ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.file(_tempProductImage!, fit: BoxFit.cover),
+                            )
+                                : const Center(
+                              child: Icon(Icons.add_a_photo, size: 40, color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+
+                        _buildRoundedTextField(
+                          controller: _nameController,
+                          labelText: 'Название товара',
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Введите название';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+
+                        _buildRoundedTextField(
+                          controller: _descController,
+                          labelText: 'Описание',
+                          maxLines: 3,
+                        ),
+                        const SizedBox(height: 16),
+
+
+                        _buildRoundedTextField(
+                          controller: _priceController,
+                          labelText: 'Цена в звёздах',
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Введите цену';
+                            }
+                            if (double.tryParse(value) == null) {
+                              return 'Введите число';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+
+                        _buildRoundedTextField(
+                          controller: _linkController,
+                          labelText: 'Ссылка на товар',
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Название товара'),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Введите название';
-                        }
-                        return null;
-                      },
-                    ),
-                    TextFormField(
-                      controller: _descController,
-                      decoration: const InputDecoration(labelText: 'Описание'),
-                    ),
-                    TextFormField(
-                      controller: _priceController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Цена в звёздах'),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Введите цену';
-                        }
-                        if (double.tryParse(value) == null) {
-                          return 'Введите число';
-                        }
-                        return null;
-                      },
-                    ),
-                    TextFormField(
-                      controller: _linkController,
-                      decoration: const InputDecoration(labelText: 'Ссылка на товар'),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  _tempProductImage = null;
-                  Navigator.pop(ctx);
-                },
-                child: const Text('Отмена'),
-              ),
-              TextButton(
-                onPressed: () => _handleAddProduct(ctx),
-                child: const Text('Добавить'),
-              ),
-            ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildRoundedTextField({
+    required TextEditingController controller,
+    required String labelText,
+    TextInputType? keyboardType,
+    int? maxLines,
+    String? Function(String?)? validator,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        validator: validator,
+        decoration: InputDecoration(
+          labelText: labelText,
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: maxLines == null ? 0 : 16,
+          ),
+        ),
       ),
     );
   }
