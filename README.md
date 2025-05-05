@@ -31,6 +31,8 @@
 #### Вторая презентация
 - [Видео](https://rutube.ru/video/private/7ea3a4c7f6f5533a78706013177b678c/?p=M65ck1gzYpuB0xBoE2eWJg)
 - [Презентация](https://github.com/Lime228/TPProject/blob/main/Presentation/Промежуточное%20ревью.pdf)
+- [Показ мобильной части на момент 05.05.25](https://rutube.ru/video/private/b6c91706a558137c72a04f98682c0f58/?p=NDGKaoc_6ZqU636UEK0Zyg)
+  
 ### Дизайн
 - [Макет](https://www.figma.com/design/FeBuqTk5FFe9QljM7Z3QmR/тп?node-id=0-1&t=js9svRIyNNHnEnSF-1)
 - [UI Kit](https://www.figma.com/design/FeBuqTk5FFe9QljM7Z3QmR/тп?node-id=4474-2&p=f&t=X9U2rRnZUpLaTmW8-0)
@@ -43,6 +45,7 @@
 - [Схема API](https://api.zadachok.ru/swagger-ui/index.html#/)
 - [Дополнение 1 к техническому заданию](https://github.com/Lime228/TPProject/blob/main/Documentation/Дополнение%201%20к%20тз.pdf)
 - [Письмо к дополнению](https://github.com/Lime228/TPProject/blob/main/Documentation/Письмо%20к%20дополнению.pdf)
+- [PM-отчет (2 атт.)](https://github.com/Lime228/TPProject/blob/main/Documentation/PM-отчет.pdf)
 
 ### Проверка
 - [Чек-лист](https://github.com/Lime228/TPProject/blob/main/Documentation/ВГУ-ТП.%20Чеклист%201%20этап%20Команда%208.2.pdf)
@@ -54,5 +57,5 @@
 
 ### Дополнительно
 - [О коммитах](https://youtrack.zadachok.ru/articles/TPP-A-7/O-kommitah)
-
+- [Как собрать frontend в Android Studio](https://github.com/Lime228/TPProject/blob/main/frontend/README.md)
 
