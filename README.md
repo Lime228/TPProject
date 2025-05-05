@@ -31,12 +31,12 @@
 #### Вторая презентация
 - [Видео](https://rutube.ru/video/private/7ea3a4c7f6f5533a78706013177b678c/?p=M65ck1gzYpuB0xBoE2eWJg)
 - [Презентация](https://github.com/Lime228/TPProject/blob/main/Presentation/Промежуточное%20ревью.pdf)
+- [Показ мобильной части на момент 05.05.25](https://rutube.ru/video/private/b6c91706a558137c72a04f98682c0f58/?p=NDGKaoc_6ZqU636UEK0Zyg)
   
 ### Дизайн
 - [Макет](https://www.figma.com/design/FeBuqTk5FFe9QljM7Z3QmR/тп?node-id=0-1&t=js9svRIyNNHnEnSF-1)
 - [UI Kit](https://www.figma.com/design/FeBuqTk5FFe9QljM7Z3QmR/тп?node-id=4474-2&p=f&t=X9U2rRnZUpLaTmW8-0)
 - [Brandbook](https://www.figma.com/slides/uC9wJ5Sb4cqGahNlHbuKRz/Brandbook?node-id=1-42&t=l0CqrePWgSncocg2-0)
-- [Design showcase 05.05.25](https://rutube.ru/video/private/b6c91706a558137c72a04f98682c0f58/?p=NDGKaoc_6ZqU636UEK0Zyg)
 
 ### Документация
 - [Еженедельные отчеты](https://github.com/Lime228/TPProject/tree/main/Weekly%20reports)
