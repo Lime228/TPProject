@@ -55,5 +55,5 @@
 
 ### Дополнительно
 - [О коммитах](https://youtrack.zadachok.ru/articles/TPP-A-7/O-kommitah)
-
+- [Как собрать frontend в Android Studio](https://github.com/Lime228/TPProject/blob/main/frontend/README.md)
 
