@@ -50,6 +50,7 @@
 
 ### Проверка
 - [Чек-лист](https://github.com/Lime228/TPProject/blob/main/Documentation/ВГУ-ТП.%20Чеклист%201%20этап%20Команда%208.2.pdf)
+- [Чек-лист 2](https://github.com/Lime228/TPProject/blob/main/Documentation/ВГУК-ТП.%20Чеклист%202%20этап%20-%20Лист1.pdf)
 #### Нас проверяли
 - [Команда 8.1](https://github.com/mxnmiraii/Vkatun/tree/main)
 - [Команда 8.5](https://gitlab.com/vsu.cs/TPmain)
