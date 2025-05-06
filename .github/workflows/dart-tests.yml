@@ -161,62 +161,62 @@ jobs:
           echo 'Docker Compose version:';
           docker-compose --version;
           echo 'Current directory:';
-          ls -la ${{ env.PRODUCTION_DIR }}
+          ls -la /root/zadachok
         "
-
-    - name: Prepare for deployment
-      run: |
-        echo "Syncing from branch: ${{ github.ref }}"
-        echo "Production dir: ${{ env.PRODUCTION_DIR }}"
 
     - name: Selective Deploy
       env:
-        SOURCE_BRANCH: backend-test  # Используем текущую ветку как источник
+        SOURCE_BRANCH: backend-test
         COMPOSE_FILE: docker-compose.yml
+        PRODUCTION_DIR: /root/zadachok
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
           set -e
           echo '🚀 Starting selective deployment from branch $SOURCE_BRANCH...'
           
           # Проверка директории
-          if [ ! -d '${{ env.PRODUCTION_DIR }}' ]; then
+          if [ ! -d '$PRODUCTION_DIR' ]; then
             echo '❌ Error: Production directory not found!'
             exit 1
           fi
           
-          cd ${{ env.PRODUCTION_DIR }} || exit 1
-          
-          # Временная папка для обновления
+          # Создаем временную папку
           TMP_DIR=$(mktemp -d)
+          trap 'rm -rf \"\$TMP_DIR\"' EXIT
           
-          # Клонируем ТОЛЬКО из ветки backend-test
-          git clone --depth 1 --branch $SOURCE_BRANCH --no-checkout \
-            https://github.com/Lime228/TPProject.git $TMP_DIR
-          cd $TMP_DIR
+          # Клонируем только нужную ветку
+          echo '🔍 Cloning repository...'
+          git clone --depth 1 --branch $SOURCE_BRANCH --filter=blob:none --no-checkout \\
+            https://github.com/Lime228/TPProject.git \"\$TMP_DIR\"
+          cd \"\$TMP_DIR\"
           
           # Настраиваем выборочное копирование
+          echo '⚙️ Setting up sparse checkout...'
           git sparse-checkout init --cone
           git sparse-checkout set backend db
           git checkout
           
+          # Синхронизируем изменения
           echo '🔄 Syncing backend and db folders...'
-          # Копируем только нужные папки с сохранением прав
-          rsync -av --delete \
-            --exclude='config/' \
-            --exclude='nginx/' \
-            --exclude='docker-compose*' \
-            $TMP_DIR/backend/ $TMP_DIR/db/ ${{ env.PRODUCTION_DIR }}/
+          rsync -av --delete \\
+            --exclude='.git/' \\
+            --exclude='config/' \\
+            --exclude='nginx/' \\
+            --exclude='docker-compose*' \\
+            \"\$TMP_DIR/backend/\" \"\$TMP_DIR/db/\" \"$PRODUCTION_DIR/\"
           
-          # Очистка временных файлов
-          rm -rf $TMP_DIR
+          # Переходим в рабочую директорию
+          cd \"$PRODUCTION_DIR\"
           
+          # Перезапускаем контейнеры
           echo '🐳 Rebuilding production containers...'
-          docker-compose -f $COMPOSE_FILE down || echo '⚠️ No containers to stop'
-          docker-compose -f $COMPOSE_FILE up -d --build
+          docker-compose -f \"$COMPOSE_FILE\" down || echo '⚠️ No containers to stop'
+          docker-compose -f \"$COMPOSE_FILE\" up -d --build
           
+          # Проверка здоровья
           echo '⏳ Health check (60s timeout)...'
           timeout 60s bash -c '
-            while [[ $(curl -s -o /dev/null -w "%{http_code}" localhost:${{ env.PROD_API_PORT }}/actuator/health) != "200" ]]; do
+            while [[ \$(curl -s -o /dev/null -w \"%{http_code}\" localhost:${{ env.PROD_API_PORT }}/actuator/health) != \"200\" ]]; do
               sleep 5
               echo -n .
             done
@@ -230,11 +230,3 @@ jobs:
         echo "Checking production API at ${{ secrets.SERVER_IP }}:${{ env.PROD_API_PORT }}..."
         curl -sSf http://${{ secrets.SERVER_IP }}:${{ env.PROD_API_PORT }}/actuator/health
         echo -e "\n🎉 Production API is healthy and running!"
-
-    - name: Cleanup
-      if: always()
-      run: |
-        echo "🧹 Cleaning up temporary files..."
-        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
-          rm -rf /tmp/tmp.*
-        "
