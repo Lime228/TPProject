@@ -9,7 +9,7 @@ on:
       - 'docker-compose.template.yml'
 
 env:
-  API_PORT: 8081
+  API_PORT: 8090
   DOCKER_COMPOSE_VERSION: "2.23.0"
   POSTGRES_TIMEOUT: 120
   API_TIMEOUT: 180
@@ -173,46 +173,57 @@ jobs:
           run: |
               ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "echo 'Connection successful!'"
         
-              - name: Deploy to production
+              - name: Selective Deploy
               env:
                 GIT_BRANCH: main
                 COMPOSE_FILE: docker-compose.yml
               run: |
                 ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
                   set -e
-                  echo '🚀 Starting deployment...'
+                  echo '🚀 Starting selective deployment...'
                   
-                  # Проверка существования директории
+                  # Проверка директории
                   if [ ! -d '${{ env.PRODUCTION_DIR }}' ]; then
-                    echo '❌ Error: Directory ${{ env.PRODUCTION_DIR }} not found!'
+                    echo '❌ Error: Production directory not found!'
                     exit 1
                   fi
                   
                   cd ${{ env.PRODUCTION_DIR }} || exit 1
                   
-                  # Проверка git репозитория
-                  if [ ! -d .git ]; then
-                    echo '❌ Error: Not a git repository!'
-                    exit 1
-                  fi
+                  # Временная папка для обновления
+                  TMP_DIR=$(mktemp -d)
                   
-                  echo '🔄 Pulling latest changes...'
-                  git fetch origin $GIT_BRANCH
-                  git checkout $GIT_BRANCH
-                  git reset --hard origin/$GIT_BRANCH
+                  # Клонируем только нужные папки
+                  git clone --depth 1 --branch $GIT_BRANCH --no-checkout \
+                    https://github.com/Lime228/TPProject.git $TMP_DIR
+                  cd $TMP_DIR
+                  git sparse-checkout init --cone
+                  git sparse-checkout set backend db
+                  git checkout
+                  
+                  echo '🔄 Syncing changes...'
+                  # Копируем только backend и db с сохранением прав
+                  rsync -av --delete \
+                    --exclude='config/' \
+                    --exclude='nginx/' \
+                    --exclude='docker-compose*' \
+                    $TMP_DIR/backend/ $TMP_DIR/db/ ${{ env.PRODUCTION_DIR }}/
+                  
+                  # Очистка временных файлов
+                  cd ${{ env.PRODUCTION_DIR }}
+                  rm -rf $TMP_DIR
                   
                   echo '🐳 Rebuilding containers...'
-                  docker-compose -f $COMPOSE_FILE down || echo '⚠️ No running containers to stop'
+                  docker-compose -f $COMPOSE_FILE down || echo '⚠️ No containers to stop'
                   docker-compose -f $COMPOSE_FILE up -d --build
                   
-                  echo '⏳ Waiting for API to become healthy (max 60s)...'
+                  echo '⏳ Health check (60s timeout)...'
                   timeout 60s bash -c '
-                    while [[ \"\$(curl -s -o /dev/null -w ''%{http_code}'' localhost:${{ env.API_PORT }}/actuator/health)\" != \"200\" ]]; do 
-                      sleep 5; 
+                    while [[ $(curl -s -o /dev/null -w "%{http_code}" localhost:${{ env.API_PORT }}/actuator/health) != "200" ]]; do
+                      sleep 5
                       echo -n .
                     done
                   '
                   
-                  echo -e '\n✅ Deployment completed successfully!'
+                  echo -e '\n✅ Selective deployment completed!'
                 " || { echo '❌ Deployment failed'; exit 1; }
-  
