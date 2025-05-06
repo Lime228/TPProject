@@ -153,6 +153,7 @@ jobs:
     if: github.ref == 'refs/heads/backend-test'
     runs-on: ubuntu-latest
     steps:
+    # 1. Настройка SSH
     - name: Install SSH key
       uses: webfactory/ssh-agent@v0.7.0
       with:
@@ -163,6 +164,7 @@ jobs:
         mkdir -p ~/.ssh
         ssh-keyscan ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
+    # 2. Проверка сервера (оставляем без изменений)
     - name: Verify server connection
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
@@ -173,56 +175,50 @@ jobs:
           echo 'Docker Compose version:';
           docker-compose --version;
           echo 'Current directory:';
-          ls -la /root/zadachok
+          ls -la ${{ env.PRODUCTION_DIR }}
         "
 
-    - name: Verify project structure
+    # 3. Копируем файлы с сервера (если они там уже есть)
+    - name: Fetch backend files from server
       run: |
-          echo "Current directory: $(pwd)"
-          echo "Project contents:"
-          ls -la
-          echo "Backend contents:"
-          ls -la backend/
-          [ -f "backend/api/pom.xml" ] || { echo "❌ pom.xml not found"; exit 1; }
+        scp -r -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/backend ./backend
+        scp -r -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/db ./db
+        ls -la backend/
 
+    # 4. Собираем JAR (теперь файлы есть в Runner)
     - name: Build production JAR
-      working-directory: /root/zadachok/backend/api  # Точный путь к Maven-проекту
+      working-directory: ./backend/api
       run: |
-          echo "🏗 Building JAR..."
-          mvn clean package -DskipTests
-          echo "✅ JAR built:"
-          ls -la target/
-          [ -f "target/*.jar" ] || { echo "❌ JAR not found"; exit 1; }
+        echo "🏗 Building JAR..."
+        mvn clean package -DskipTests
+        echo "✅ JAR built:"
+        ls -la target/
+        [ -f "target/*.jar" ] || { echo "❌ JAR not found"; exit 1; }
 
+    # 5. Упаковываем для деплоя
     - name: Prepare deployment
       run: |
         mkdir -p deploy-pkg/backend/{target,config}
-        cp backend/target/*.jar deploy-pkg/backend/target/
+        cp backend/api/target/*.jar deploy-pkg/backend/target/
         cp -r backend/config deploy-pkg/backend/
         cp -r db deploy-pkg/
         tar czvf deploy.tar.gz -C deploy-pkg .
         ls -la deploy.tar.gz
 
-    - name: Transfer to server
+    # 6. Передаём на сервер и разворачиваем
+    - name: Transfer and deploy
       run: |
         scp -o StrictHostKeyChecking=no deploy.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
         ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
           cd ${{ env.PRODUCTION_DIR }}
           tar xzf deploy.tar.gz --overwrite
           rm deploy.tar.gz
-          ls -la backend/target/
-        "
-
-    - name: Run deployment
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
-          cd ${{ env.PRODUCTION_DIR }}
           docker-compose down || true
           docker-compose up -d --build
           
           echo '⏳ Waiting for API...'
           for i in {1..12}; do
-            if curl -s http://localhost:8090/actuator/health | grep -q UP; then
+            if curl -s http://localhost:${{ env.PROD_API_PORT }}/actuator/health | grep -q UP; then
               echo -e '\n✅ API is ready!'
               exit 0
             fi
@@ -233,12 +229,14 @@ jobs:
           exit 1
         "
 
+    # 7. Проверка (оставляем без изменений)
     - name: Verify deployment
       run: |
         echo "Checking production API..."
         curl -sSf http://${{ secrets.SERVER_IP }}:${{ env.PROD_API_PORT }}/actuator/health
         echo -e "\n🎉 Production is healthy!"
 
+    # 8. Очистка (оставляем без изменений)
     - name: Cleanup
       if: always()
       run: |
