@@ -155,7 +155,18 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    # 1. Настройка SSH
+    # 1. Проверяем структуру репозитория
+    - name: Check repository structure
+      run: |
+        echo "Current directory: $(pwd)"
+        echo "Repository contents:"
+        ls -la
+        echo "Backend contents:"
+        ls -la backend/ || echo "No backend directory"
+        echo "DB files:"
+        ls -la db/ || echo "No db directory"
+
+    # 2. Настройка SSH
     - name: Install SSH key
       uses: webfactory/ssh-agent@v0.7.0
       with:
@@ -166,30 +177,11 @@ jobs:
         mkdir -p ~/.ssh
         ssh-keyscan ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-    # 2. Проверка сервера
-    - name: Verify server
+    # 3. Копируем файлы напрямую из репозитория
+    - name: Deploy backend
       run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
-          docker ps -a
-          ls -la ${{ env.PRODUCTION_DIR }}
-        "
-
-    # 3. Копируем файлы ИЗ РЕПОЗИТОРИЯ на сервер
-    - name: Deploy files from repository
-      run: |
-        # Создаем временную папку с нужной структурой
-        mkdir -p tmp_deploy/backend tmp_deploy/db
-        
-        # Копируем файлы из репозитория
-        cp -r $GITHUB_WORKSPACE/backend/* tmp_deploy/backend/
-        cp $GITHUB_WORKSPACE/init.sql tmp_deploy/db/
-        cp $GITHUB_WORKSPACE/docker-compose.yml tmp_deploy/
-        
-        # Копируем на сервер
-        scp -r -o StrictHostKeyChecking=no tmp_deploy/backend ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
-        scp -r -o StrictHostKeyChecking=no tmp_deploy/db ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
-        scp -o StrictHostKeyChecking=no tmp_deploy/docker-compose.yml ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
-
+        [ -d "backend" ] && scp -r -o StrictHostKeyChecking=no backend ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
+        [ -d "db" ] && scp -r -o StrictHostKeyChecking=no db ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
     # 4. Перезапускаем сервисы
     - name: Restart services
       run: |
