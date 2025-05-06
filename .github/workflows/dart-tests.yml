@@ -148,44 +148,7 @@ jobs:
           echo "🚨 API logs:"
           docker-compose -f docker-compose.template.yml logs api || echo "No api logs available."
 
-  deploy:
-    needs: test  # Зависит от успешного прохождения CI
-    if: github.ref == 'refs/heads/backend-test'
-    runs-on: ubuntu-latest
-    
-    steps:
-    # 1. Настройка SSH
-    - name: Install SSH key
-      uses: webfactory/ssh-agent@v0.7.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: Add to known hosts
-      run: |
-        mkdir -p ~/.ssh
-        ssh-keyscan ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-
-    # 2. Проверка сервера
-    - name: Verify server
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
-          echo 'Current docker containers:';
-          docker ps -a;
-          echo 'Current directory:';
-          ls -la ${{ env.PRODUCTION_DIR }}
-        "
-
-    name: Deploy to Production
-
-on:
-  push:
-    branches: [backend-test]
-
-env:
-  PRODUCTION_DIR: /root/zadachok
-  PROD_API_PORT: 8090
-
-jobs:
   deploy:
     needs: test
     if: github.ref == 'refs/heads/backend-test'
@@ -219,39 +182,27 @@ jobs:
         
         # Копируем файлы из репозитория
         cp -r $GITHUB_WORKSPACE/backend/* tmp_deploy/backend/
-        cp $GITHUB_WORKSPACE/db/init.sql tmp_deploy/db/
+        cp $GITHUB_WORKSPACE/init.sql tmp_deploy/db/
+        cp $GITHUB_WORKSPACE/docker-compose.yml tmp_deploy/
         
         # Копируем на сервер
         scp -r -o StrictHostKeyChecking=no tmp_deploy/backend ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
         scp -r -o StrictHostKeyChecking=no tmp_deploy/db ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
+        scp -o StrictHostKeyChecking=no tmp_deploy/docker-compose.yml ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
 
     # 4. Перезапускаем сервисы
     - name: Restart services
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
           cd ${{ env.PRODUCTION_DIR }}
-          echo 'Stopping old containers...'
           docker-compose down || true
-          
-          echo 'Building new containers...'
           docker-compose up -d --build
-          
-          echo '⏳ Waiting for API to start...'
-          for i in {1..12}; do
-            if curl -s http://localhost:${{ env.PROD_API_PORT }}/actuator/health | grep -q UP; then
-              echo -e '\n✅ API is ready!'
-              exit 0
-            fi
-            sleep 5
-            echo -n '.'
-          done
-          echo -e '\n❌ API failed to start'
-          exit 1
+          sleep 10
+          curl -f http://localhost:${{ env.PROD_API_PORT }}/actuator/health || exit 1
         "
 
     # 5. Проверка
     - name: Verify deployment
       run: |
-        echo "Checking production API..."
         curl -sSf http://${{ secrets.SERVER_IP }}:${{ env.PROD_API_PORT }}/actuator/health
-        echo -e "\n🎉 Deployment successful!"
+        echo -e "\n✅ Deployment successful"
