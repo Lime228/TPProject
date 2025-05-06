@@ -1,25 +1,14 @@
-# Builder stage
+# Dockerfile (универсальный)
 FROM eclipse-temurin:17-jdk-jammy as builder
-
 WORKDIR /app
-
-# Копируем только необходимые файлы для зависимостей
 COPY api/pom.xml .
 COPY api/src ./src
-
-# Устанавливаем Maven и собираем проект
 RUN apt-get update && \
     apt-get install -y maven && \
     mvn clean package -DskipTests
 
-# Final stage
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
-
-# Копируем собранный JAR из builder-стадии
 COPY --from=builder /app/target/*.jar app.jar
-
 EXPOSE 8081
-
-# Команда запуска
 ENTRYPOINT ["java", "-jar", "app.jar"]
