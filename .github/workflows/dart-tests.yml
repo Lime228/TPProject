@@ -176,43 +176,60 @@ jobs:
           ls -la /root/zadachok
         "
 
-        - name: Build JAR
-        working-directory: ./backend
-        run: |
-          echo "🏗 Building production JAR..."
-          mvn clean package -DskipTests
-          echo "✅ JAR built:"
-          ls -la target/
-  
-    - name: Prepare deployment bundle
+    - name: Build production JAR
+      working-directory: ./backend
       run: |
-          mkdir -p deploy-bundle/backend/target
-          cp backend/target/*.jar deploy-bundle/backend/target/
-          cp -r backend/config deploy-bundle/
-          cp -r db deploy-bundle/
-          tar czvf deploy-bundle.tar.gz -C deploy-bundle .
-          ls -la deploy-bundle.tar.gz
-  
-    - name: Upload to production
+        echo "🏗 Building JAR with prod profile..."
+        mvn clean package -DskipTests
+        echo "✅ JAR built:"
+        ls -la target/
+
+    - name: Prepare deployment
       run: |
-          scp -o StrictHostKeyChecking=no deploy-bundle.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
-            cd ${{ env.PRODUCTION_DIR }}
-            tar xzf deploy-bundle.tar.gz
-            rm deploy-bundle.tar.gz
-            ls -la backend/target/
-          "
-  
-    - name: Deploy
+        mkdir -p deploy-pkg/backend/{target,config}
+        cp backend/target/*.jar deploy-pkg/backend/target/
+        cp -r backend/config deploy-pkg/backend/
+        cp -r db deploy-pkg/
+        tar czvf deploy.tar.gz -C deploy-pkg .
+        ls -la deploy.tar.gz
+
+    - name: Transfer to server
       run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
-            cd ${{ env.PRODUCTION_DIR }}
-            docker-compose down || true
-            docker-compose up -d --build
-          "
-  
+        scp -o StrictHostKeyChecking=no deploy.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
+          cd ${{ env.PRODUCTION_DIR }}
+          tar xzf deploy.tar.gz --overwrite
+          rm deploy.tar.gz
+          ls -la backend/target/
+        "
+
+    - name: Run deployment
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
+          cd ${{ env.PRODUCTION_DIR }}
+          docker-compose down || true
+          docker-compose up -d --build
+          
+          echo '⏳ Waiting for API...'
+          for i in {1..12}; do
+            if curl -s http://localhost:8090/actuator/health | grep -q UP; then
+              echo -e '\n✅ API is ready!'
+              exit 0
+            fi
+            sleep 5
+            echo -n '.'
+          done
+          echo -e '\n❌ API failed to start'
+          exit 1
+        "
+
     - name: Verify deployment
       run: |
-          echo "Checking API health..."
-          curl -sSf http://${{ secrets.SERVER_IP }}:${{ env.PROD_API_PORT }}/actuator/health
-          echo -e "\n🎉 Deployment successful!"
+        echo "Checking production API..."
+        curl -sSf http://${{ secrets.SERVER_IP }}:${{ env.PROD_API_PORT }}/actuator/health
+        echo -e "\n🎉 Production is healthy!"
+
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -rf deploy-pkg deploy.tar.gz
