@@ -175,15 +175,55 @@ jobs:
           ls -la ${{ env.PRODUCTION_DIR }}
         "
 
-    # 3. Копируем ТОЛЬКО необходимые файлы напрямую на сервер
-    - name: Deploy files
+    name: Deploy to Production
+
+on:
+  push:
+    branches: [backend-test]
+
+env:
+  PRODUCTION_DIR: /root/zadachok
+  PROD_API_PORT: 8090
+
+jobs:
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/backend-test'
+    runs-on: ubuntu-latest
+    
+    steps:
+    # 1. Настройка SSH
+    - name: Install SSH key
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: Add to known hosts
       run: |
-        # Копируем backend
-        scp -r -o StrictHostKeyChecking=no ./backend ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
+        mkdir -p ~/.ssh
+        ssh-keyscan ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
+    # 2. Проверка сервера
+    - name: Verify server
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
+          docker ps -a
+          ls -la ${{ env.PRODUCTION_DIR }}
+        "
+
+    # 3. Копируем файлы ИЗ РЕПОЗИТОРИЯ на сервер
+    - name: Deploy files from repository
+      run: |
+        # Создаем временную папку с нужной структурой
+        mkdir -p tmp_deploy/backend tmp_deploy/db
         
-        # Копируем db (если есть изменения)
-        scp -r -o StrictHostKeyChecking=no ./db ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
+        # Копируем файлы из репозитория
+        cp -r $GITHUB_WORKSPACE/backend/* tmp_deploy/backend/
+        cp $GITHUB_WORKSPACE/db/init.sql tmp_deploy/db/
         
+        # Копируем на сервер
+        scp -r -o StrictHostKeyChecking=no tmp_deploy/backend ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
+        scp -r -o StrictHostKeyChecking=no tmp_deploy/db ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
 
     # 4. Перезапускаем сервисы
     - name: Restart services
