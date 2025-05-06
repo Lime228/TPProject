@@ -178,24 +178,6 @@ jobs:
           ls -la ${{ env.PRODUCTION_DIR }}
         "
 
-    # 3. Подготовка правильной структуры
-    - name: Prepare correct structure
-      run: |
-        # Создаем правильную структуру папок локально
-        mkdir -p backend/{api,config} db
-        
-        # Копируем только нужные файлы из сервера
-        scp -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/backend/api/pom.xml ./backend/api/
-        scp -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/backend/config/* ./backend/config/
-        scp -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/init.sql ./db/
-        
-        # Копируем Docker-файлы
-        scp -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/Dockerfile ./backend/
-        scp -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/Dockerfile.ci ./backend/
-        scp -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/docker-compose.yml ./
-
-        ls -laR
-
     # 4. Сборка JAR
     - name: Build production JAR
       working-directory: ./backend/api
