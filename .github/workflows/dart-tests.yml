@@ -149,9 +149,10 @@ jobs:
           docker-compose -f docker-compose.template.yml logs api || echo "No api logs available."
 
   deploy:
-    needs: test
+    needs: test  # Зависит от успешного прохождения CI
     if: github.ref == 'refs/heads/backend-test'
     runs-on: ubuntu-latest
+    
     steps:
     # 1. Настройка SSH
     - name: Install SSH key
@@ -165,65 +166,37 @@ jobs:
         ssh-keyscan ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
     # 2. Проверка сервера
-    - name: Verify server connection
+    - name: Verify server
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
-          echo 'Server info:';
-          uname -a;
-          echo 'Docker version:';
-          docker --version;
-          echo 'Docker Compose version:';
-          docker-compose --version;
+          echo 'Current docker containers:';
+          docker ps -a;
           echo 'Current directory:';
           ls -la ${{ env.PRODUCTION_DIR }}
         "
 
-    # 4. Сборка JAR
-    - name: Build production JAR
-      working-directory: ./backend/api
+    # 3. Копируем ТОЛЬКО необходимые файлы напрямую на сервер
+    - name: Deploy files
       run: |
-        echo "🏗 Building JAR..."
-        mvn clean package -DskipTests
-        echo "✅ JAR built:"
-        ls -la target/
-        [ -f "target/*.jar" ] || { echo "❌ JAR not found"; exit 1; }
-
-    # 5. Упаковка для деплоя
-    - name: Prepare deployment
-      run: |
-        mkdir -p deploy-pkg
-        cp -r backend deploy-pkg/
-        cp -r db deploy-pkg/
-        cp docker-compose.yml deploy-pkg/
+        # Копируем backend
+        scp -r -o StrictHostKeyChecking=no ./backend ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
         
-        # Проверяем структуру перед упаковкой
-        echo "Deployment structure:"
-        ls -laR deploy-pkg
+        # Копируем db (если есть изменения)
+        scp -r -o StrictHostKeyChecking=no ./db ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
         
-        tar czvf deploy.tar.gz -C deploy-pkg .
-        ls -la deploy.tar.gz
 
-    # 6. Деплой
-    - name: Transfer and deploy
+    # 4. Перезапускаем сервисы
+    - name: Restart services
       run: |
-        scp -o StrictHostKeyChecking=no deploy.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
         ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
           cd ${{ env.PRODUCTION_DIR }}
-          echo 'Cleaning old files...'
-          rm -rf backend db docker-compose.yml
-          
-          echo 'Extracting new files...'
-          tar xzf deploy.tar.gz --overwrite
-          rm deploy.tar.gz
-          
-          echo 'Final structure:'
-          ls -laR
-          
-          echo 'Starting containers...'
+          echo 'Stopping old containers...'
           docker-compose down || true
+          
+          echo 'Building new containers...'
           docker-compose up -d --build
           
-          echo '⏳ Waiting for API...'
+          echo '⏳ Waiting for API to start...'
           for i in {1..12}; do
             if curl -s http://localhost:${{ env.PROD_API_PORT }}/actuator/health | grep -q UP; then
               echo -e '\n✅ API is ready!'
@@ -236,15 +209,9 @@ jobs:
           exit 1
         "
 
-    # 7. Проверка
+    # 5. Проверка
     - name: Verify deployment
       run: |
         echo "Checking production API..."
         curl -sSf http://${{ secrets.SERVER_IP }}:${{ env.PROD_API_PORT }}/actuator/health
-        echo -e "\n🎉 Production is healthy!"
-
-    # 8. Очистка
-    - name: Cleanup
-      if: always()
-      run: |
-        rm -rf deploy-pkg deploy.tar.gz
+        echo -e "\n🎉 Deployment successful!"
