@@ -1,25 +1,10 @@
-# Builder stage
-FROM eclipse-temurin:17-jdk-jammy as builder
-
+FROM eclipse-temurin:17-jre
 WORKDIR /app
 
-# Копируем pom.xml и src из backend/api/
-COPY api/pom.xml .
-COPY api/src ./src
+# РљРѕРїРёСЂСѓРµРј С‚РѕР»СЊРєРѕ JAR Р±РµР· РєРѕРЅС„РёРіРѕРІ
+COPY ./target/zadachok-api.jar ./app.jar
 
-# Собираем приложение (Maven будет автоматически скачан)
-RUN apt-get update && \
-    apt-get install -y maven && \
-    mvn clean package -DskipTests
+# РўРѕС‡РєР° РјРѕРЅС‚РёСЂРѕРІР°РЅРёСЏ РґР»СЏ РєРѕРЅС„РёРіРѕРІ Р±СѓРґРµС‚ СЃРѕР·РґР°РЅР° С‡РµСЂРµР· docker-compose
+EXPOSE 8090
 
-# Final stage
-FROM eclipse-temurin:17-jre-jammy
-WORKDIR /app
-
-# Копируем только собранный JAR
-COPY --from=builder /app/target/*.jar app.jar
-
-EXPOSE 8081
-
-# Простой запуск (конфигурация через переменные окружения)
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar", "--spring.config.location=file:/app/config/"]
