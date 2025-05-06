@@ -186,7 +186,7 @@ jobs:
           [ -f "backend/api/pom.xml" ] || { echo "❌ pom.xml not found"; exit 1; }
 
     - name: Build production JAR
-      working-directory: ./backend/api  # Точный путь к Maven-проекту
+      working-directory: /root/zadachok/backend/api  # Точный путь к Maven-проекту
       run: |
           echo "🏗 Building JAR..."
           mvn clean package -DskipTests
