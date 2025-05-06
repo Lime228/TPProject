@@ -24,7 +24,7 @@ services:
     container_name: tpproject-api
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.ci
     environment:
       spring.profiles.active: ci
       server.address: 0.0.0.0
@@ -38,6 +38,8 @@ services:
       spring.jpa.show-sql: true
       jwt.secret: ${JWT_SECRET:-defaultSecret}
       jwt.expiration: 3600
+    volumes:
+      - ./backend/config:/app/config:ro
     depends_on:
       db:
         condition: service_healthy
@@ -46,9 +48,10 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1"]
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       
-      retries: 5
+      retries: 10
+      start_period: 30s
 
 volumes:
   postgres_data:
