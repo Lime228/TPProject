@@ -176,13 +176,23 @@ jobs:
           ls -la /root/zadachok
         "
 
-    - name: Build production JAR
-      working-directory: ./backend
+    - name: Verify project structure
       run: |
-        echo "🏗 Building JAR with prod profile..."
-        mvn clean package -DskipTests
-        echo "✅ JAR built:"
-        ls -la target/
+          echo "Current directory: $(pwd)"
+          echo "Project contents:"
+          ls -la
+          echo "Backend contents:"
+          ls -la backend/
+          [ -f "backend/api/pom.xml" ] || { echo "❌ pom.xml not found"; exit 1; }
+
+    - name: Build production JAR
+      working-directory: ./backend/api  # Точный путь к Maven-проекту
+      run: |
+          echo "🏗 Building JAR..."
+          mvn clean package -DskipTests
+          echo "✅ JAR built:"
+          ls -la target/
+          [ -f "target/*.jar" ] || { echo "❌ JAR not found"; exit 1; }
 
     - name: Prepare deployment
       run: |
