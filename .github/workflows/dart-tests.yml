@@ -164,7 +164,7 @@ jobs:
         mkdir -p ~/.ssh
         ssh-keyscan ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-    # 2. Проверка сервера (оставляем без изменений)
+    # 2. Проверка сервера
     - name: Verify server connection
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
@@ -178,14 +178,25 @@ jobs:
           ls -la ${{ env.PRODUCTION_DIR }}
         "
 
-    # 3. Копируем файлы с сервера (если они там уже есть)
-    - name: Fetch backend files from server
+    # 3. Подготовка правильной структуры
+    - name: Prepare correct structure
       run: |
-        scp -r -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/backend ./backend
-        scp -r -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/db ./db
-        ls -la backend/
+        # Создаем правильную структуру папок локально
+        mkdir -p backend/{api,config} db
+        
+        # Копируем только нужные файлы из сервера
+        scp -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/backend/api/pom.xml ./backend/api/
+        scp -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/backend/config/* ./backend/config/
+        scp -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/init.sql ./db/
+        
+        # Копируем Docker-файлы
+        scp -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/Dockerfile ./backend/
+        scp -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/Dockerfile.ci ./backend/
+        scp -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/docker-compose.yml ./
 
-    # 4. Собираем JAR (теперь файлы есть в Runner)
+        ls -laR
+
+    # 4. Сборка JAR
     - name: Build production JAR
       working-directory: ./backend/api
       run: |
@@ -195,24 +206,38 @@ jobs:
         ls -la target/
         [ -f "target/*.jar" ] || { echo "❌ JAR not found"; exit 1; }
 
-    # 5. Упаковываем для деплоя
+    # 5. Упаковка для деплоя
     - name: Prepare deployment
       run: |
-        mkdir -p deploy-pkg/backend/{target,config}
-        cp backend/api/target/*.jar deploy-pkg/backend/target/
-        cp -r backend/config deploy-pkg/backend/
+        mkdir -p deploy-pkg
+        cp -r backend deploy-pkg/
         cp -r db deploy-pkg/
+        cp docker-compose.yml deploy-pkg/
+        
+        # Проверяем структуру перед упаковкой
+        echo "Deployment structure:"
+        ls -laR deploy-pkg
+        
         tar czvf deploy.tar.gz -C deploy-pkg .
         ls -la deploy.tar.gz
 
-    # 6. Передаём на сервер и разворачиваем
+    # 6. Деплой
     - name: Transfer and deploy
       run: |
         scp -o StrictHostKeyChecking=no deploy.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
         ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
           cd ${{ env.PRODUCTION_DIR }}
+          echo 'Cleaning old files...'
+          rm -rf backend db docker-compose.yml
+          
+          echo 'Extracting new files...'
           tar xzf deploy.tar.gz --overwrite
           rm deploy.tar.gz
+          
+          echo 'Final structure:'
+          ls -laR
+          
+          echo 'Starting containers...'
           docker-compose down || true
           docker-compose up -d --build
           
@@ -229,14 +254,14 @@ jobs:
           exit 1
         "
 
-    # 7. Проверка (оставляем без изменений)
+    # 7. Проверка
     - name: Verify deployment
       run: |
         echo "Checking production API..."
         curl -sSf http://${{ secrets.SERVER_IP }}:${{ env.PROD_API_PORT }}/actuator/health
         echo -e "\n🎉 Production is healthy!"
 
-    # 8. Очистка (оставляем без изменений)
+    # 8. Очистка
     - name: Cleanup
       if: always()
       run: |
