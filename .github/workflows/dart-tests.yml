@@ -15,6 +15,7 @@ env:
   POSTGRES_TIMEOUT: 120
   API_TIMEOUT: 180
   PRODUCTION_DIR: "/root/zadachok"
+  DOCKER_IMAGE: "your-registry/zadachok-api"
 
 jobs:
   test:
@@ -175,65 +176,62 @@ jobs:
           ls -la /root/zadachok
         "
 
-    - name: Selective Deploy
-      env:
-        SOURCE_BRANCH: backend-test
-        COMPOSE_FILE: docker-compose.yml
-        PRODUCTION_DIR: /root/zadachok
+    - name: Build and package application
+      working-directory: ./backend
+      run: |
+        echo "🏗 Building API..."
+        mvn clean package -DskipTests
+        echo "✅ Build completed"
+        ls -la target/
+
+    - name: Prepare deployment artifacts
+      run: |
+        mkdir -p deployment/backend
+        cp -r backend/target deployment/backend/
+        cp backend/Dockerfile deployment/
+        cp -r backend/config deployment/
+        cp -r db deployment/
+        tar czvf deployment.tar.gz deployment/
+        ls -la deployment.tar.gz
+
+    - name: Upload artifacts to server
+      run: |
+        scp -o StrictHostKeyChecking=no deployment.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
+          cd ${{ env.PRODUCTION_DIR }}
+          tar xzvf deployment.tar.gz
+          chmod -R 755 deployment
+          ls -la deployment/backend/target/
+        "
+
+    - name: Deploy application
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
           set -e
-          echo '🚀 Starting selective deployment from branch $SOURCE_BRANCH...'
+          cd ${{ env.PRODUCTION_DIR }}
           
-          if [ ! -d '$PRODUCTION_DIR' ]; then
-            echo '❌ Error: Production directory not found!'
-            exit 1
-          fi
+          echo '🐳 Stopping existing containers...'
+          docker-compose -f ${{ env.COMPOSE_FILE }} down || echo '⚠️ No containers to stop'
           
-          TMP_DIR=$(mktemp -d)
-          trap 'rm -rf \"\$TMP_DIR\"' EXIT
+          echo '🔄 Updating configuration...'
+          cp -r deployment/* ./
+          rm -rf deployment deployment.tar.gz
           
-          echo '🔍 Cloning repository...'
-          git clone --depth 1 --branch $SOURCE_BRANCH --filter=blob:none \
-            https://github.com/Lime228/TPProject.git \"\$TMP_DIR\"
-          cd \"\$TMP_DIR\"
+          echo '🏗 Building Docker image...'
+          docker-compose -f ${{ env.COMPOSE_FILE }} build
           
-          echo '⚙️ Setting up sparse checkout...'
-          git sparse-checkout init --cone
-          git sparse-checkout set backend db
-          git checkout
+          echo '🚀 Starting containers...'
+          docker-compose -f ${{ env.COMPOSE_FILE }} up -d
           
-          echo '🔄 Syncing backend and db folders...'
-          rsync -av \
-            --exclude='.git/' \
-            --exclude='config/' \
-            --exclude='nginx/' \
-            --exclude='docker-compose*' \
-            \"\$TMP_DIR/backend/\" \"\$TMP_DIR/db/\" \"$PRODUCTION_DIR/\"
-          
-          # Гарантированное копирование Dockerfile и target/
-          if [ -f \"\$TMP_DIR/backend/Dockerfile\" ]; then
-            cp \"\$TMP_DIR/backend/Dockerfile\" \"$PRODUCTION_DIR/backend/\"
-          fi
-          if [ -d \"\$TMP_DIR/backend/target\" ]; then
-            cp -r \"\$TMP_DIR/backend/target\" \"$PRODUCTION_DIR/backend/\"
-          fi
-          
-          cd \"$PRODUCTION_DIR\"
-          
-          echo '🐳 Rebuilding production containers...'
-          docker-compose -f \"$COMPOSE_FILE\" down || echo '⚠️ No containers to stop'
-          docker-compose -f \"$COMPOSE_FILE\" up -d --build
-          
-          echo '⏳ Health check (60s timeout)...'
-          timeout 60s bash -c '
+          echo '⏳ Waiting for API to start...'
+          timeout 120s bash -c '
             while [[ \$(curl -s -o /dev/null -w \"%{http_code}\" localhost:${{ env.PROD_API_PORT }}/actuator/health) != \"200\" ]]; do
               sleep 5
               echo -n .
             done
           '
           
-          echo -e '\n✅ Deployment from $SOURCE_BRANCH completed successfully!'
+          echo -e '\n✅ Deployment completed successfully!'
         " || { echo '❌ Deployment failed'; exit 1; }
 
     - name: Verify Production Deployment
@@ -241,3 +239,11 @@ jobs:
         echo "Checking production API at ${{ secrets.SERVER_IP }}:${{ env.PROD_API_PORT }}..."
         curl -sSf http://${{ secrets.SERVER_IP }}:${{ env.PROD_API_PORT }}/actuator/health
         echo -e "\n🎉 Production API is healthy and running!"
+
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -rf deployment deployment.tar.gz
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
+          rm -f ${{ env.PRODUCTION_DIR }}/deployment.tar.gz
+        "
