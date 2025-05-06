@@ -13,6 +13,7 @@ env:
   DOCKER_COMPOSE_VERSION: "2.23.0"
   POSTGRES_TIMEOUT: 120
   API_TIMEOUT: 180
+  PRODUCTION_DIR: "/root/zadachok"
 
 jobs:
   test:
@@ -38,7 +39,7 @@ jobs:
           echo "✅ Found db/init.sql"
 
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -59,8 +60,6 @@ jobs:
           echo "🏗 Building API..."
           mvn clean package -Dspring.profiles.active=ci -DskipTests
           echo "✅ API build completed."
-
-      
       - name: Start Docker Compose
         env:
           DB_PASSWORD: zadachok
@@ -126,20 +125,94 @@ jobs:
           dart test APItests.dart
           echo "✅ Dart tests completed."
 
+
       - name: Show Logs on Failure
         if: failure()
         run: |
-          echo "🚨 Database logs:"
-          docker-compose -f docker-compose.template.yml logs db || echo "No db logs available."
-          echo "🚨 API logs:"
-          docker-compose -f docker-compose.template.yml logs api || echo "No api logs available."
-
+            echo "🚨 Database logs:"
+            docker-compose -f docker-compose.template.yml logs db || echo "No db logs available."
+            echo "🚨 API logs:"
+            docker-compose -f docker-compose.template.yml logs api || echo "No api logs available."
+  
+  
       - name: Cleanup
         if: always()
         run: |
-          echo "🧹 Cleaning up Docker containers..."
-          docker-compose -f docker-compose.template.yml down -v
-          docker system prune -f
-          echo "✅ Cleanup completed."
-
+            echo "🧹 Cleaning up Docker containers..."
+            docker-compose -f docker-compose.template.yml down -v
+            docker system prune -f
+            echo "✅ Cleanup completed."
+  deploy:
+      needs: test
+      if: github.ref == 'refs/heads/main'
+      runs-on: ubuntu-latest
+      steps:
+        - name: Install SSH key
+          uses: webfactory/ssh-agent@v0.7.0
+          with:
+            ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+  
+        - name: Add to known hosts
+          run: |
+              mkdir -p ~/.ssh
+              ssh-keyscan ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts    
+  
+        - name: Verify server connection
+          run: |
+            ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
+              echo 'Server info:';
+              uname -a;
+              echo 'Docker version:';
+              docker --version;
+              echo 'Docker Compose version:';
+              docker-compose --version;
+              echo 'Current directory:';
+              ls -la ${{ env.PRODUCTION_DIR }}
+            "
+        - name: Test SSH connection
+          run: |
+              ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "echo 'Connection successful!'"
+        
+              - name: Deploy to production
+              env:
+                GIT_BRANCH: main
+                COMPOSE_FILE: docker-compose.yml
+              run: |
+                ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
+                  set -e
+                  echo '🚀 Starting deployment...'
+                  
+                  # Проверка существования директории
+                  if [ ! -d '${{ env.PRODUCTION_DIR }}' ]; then
+                    echo '❌ Error: Directory ${{ env.PRODUCTION_DIR }} not found!'
+                    exit 1
+                  fi
+                  
+                  cd ${{ env.PRODUCTION_DIR }} || exit 1
+                  
+                  # Проверка git репозитория
+                  if [ ! -d .git ]; then
+                    echo '❌ Error: Not a git repository!'
+                    exit 1
+                  fi
+                  
+                  echo '🔄 Pulling latest changes...'
+                  git fetch origin $GIT_BRANCH
+                  git checkout $GIT_BRANCH
+                  git reset --hard origin/$GIT_BRANCH
+                  
+                  echo '🐳 Rebuilding containers...'
+                  docker-compose -f $COMPOSE_FILE down || echo '⚠️ No running containers to stop'
+                  docker-compose -f $COMPOSE_FILE up -d --build
+                  
+                  echo '⏳ Waiting for API to become healthy (max 60s)...'
+                  timeout 60s bash -c '
+                    while [[ \"\$(curl -s -o /dev/null -w ''%{http_code}'' localhost:${{ env.API_PORT }}/actuator/health)\" != \"200\" ]]; do 
+                      sleep 5; 
+                      echo -n .
+                    done
+                  '
+                  
+                  echo -e '\n✅ Deployment completed successfully!'
+                " || { echo '❌ Deployment failed'; exit 1; }
   
