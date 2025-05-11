@@ -4,11 +4,9 @@ package ru.zadachok.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.zadachok.model.Task;
+import ru.zadachok.model.*;
 import ru.zadachok.request.AddInLobbyRequest;
 import ru.zadachok.request.CreateLobbyRequest;
-import ru.zadachok.model.Lobby;
-import ru.zadachok.model.Shop;
 
 import ru.zadachok.request.DeleteLobbyRequest;
 import ru.zadachok.request.RemoveFromLobbyRequest;
@@ -26,6 +24,8 @@ public class LobbyService {
     private final ShopRepository shopRepository;
     private final TaskRepository taskRepository;
     private final ProductRepository productRepository;
+    private final WalletRepository walletRepository;
+    private final CustomerRepository customerRepository;
 
     public Lobby createLobby(CreateLobbyRequest request) {
         // 1. Создание пустого магазина
@@ -61,10 +61,27 @@ public class LobbyService {
         Integer[] updatedCustomers = new Integer[currentCustomers.length + 1];
         System.arraycopy(currentCustomers, 0, updatedCustomers, 0, currentCustomers.length);
         updatedCustomers[currentCustomers.length] = request.getCustomerId();
-
         lobby.setCustomerId(updatedCustomers);
-        return lobbyRepository.save(lobby);
+
+        // Сохраняем обновлённое лобби
+        Lobby savedLobby = lobbyRepository.save(lobby);
+
+        // Получаем пользователя
+        Customer customer = customerRepository.findById(request.getCustomerId())
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+
+        // Создаём кошелёк для пользователя
+        Wallet wallet = Wallet.builder()
+                .customer(customer)
+                .lobby(savedLobby)
+                .balance(0)
+                .build();
+
+        walletRepository.save(wallet);
+
+        return savedLobby;
     }
+
 
     public Lobby removeCustomerFromLobby(RemoveFromLobbyRequest request) {
         Lobby lobby = lobbyRepository.findById(request.getLobbyId())
@@ -88,7 +105,7 @@ public class LobbyService {
                 .orElseThrow(() -> new RuntimeException("Лобби не найдено"));
 
         Integer[] taskIds = lobby.getTaskId();
-        if (taskIds != null && taskIds.length > 0) {
+        if (taskIds != null) {
             for (Integer id : taskIds) {
                 taskRepository.deleteById(id);
             }
@@ -98,7 +115,7 @@ public class LobbyService {
                 .orElseThrow(() -> new RuntimeException("Магазин не найден"));
 
         Integer[] productIds = shop.getProductId();
-        if (productIds != null && productIds.length > 0) {
+        if (productIds != null) {
             for (Integer id : productIds) {
                 productRepository.deleteById(id);
             }
