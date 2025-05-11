@@ -1,15 +1,18 @@
 // service/LobbyService.java
 package ru.zadachok.service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.zadachok.model.Task;
 import ru.zadachok.request.AddInLobbyRequest;
 import ru.zadachok.request.CreateLobbyRequest;
 import ru.zadachok.model.Lobby;
 import ru.zadachok.model.Shop;
-import ru.zadachok.repository.LobbyRepository;
-import ru.zadachok.repository.ShopRepository;
+
+import ru.zadachok.request.DeleteLobbyRequest;
 import ru.zadachok.request.RemoveFromLobbyRequest;
+import ru.zadachok.repository.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,6 +24,8 @@ public class LobbyService {
 
     private final LobbyRepository lobbyRepository;
     private final ShopRepository shopRepository;
+    private final TaskRepository taskRepository;
+    private final ProductRepository productRepository;
 
     public Lobby createLobby(CreateLobbyRequest request) {
         // 1. Создание пустого магазина
@@ -60,6 +65,7 @@ public class LobbyService {
         lobby.setCustomerId(updatedCustomers);
         return lobbyRepository.save(lobby);
     }
+
     public Lobby removeCustomerFromLobby(RemoveFromLobbyRequest request) {
         Lobby lobby = lobbyRepository.findById(request.getLobbyId())
                 .orElseThrow(() -> new IllegalArgumentException("Lobby not found"));
@@ -76,4 +82,30 @@ public class LobbyService {
         return lobbyRepository.save(lobby);
     }
 
+    @Transactional
+    public void deleteLobby(DeleteLobbyRequest request) {
+        Lobby lobby = lobbyRepository.findById(request.getLobbyId())
+                .orElseThrow(() -> new RuntimeException("Лобби не найдено"));
+
+        Integer[] taskIds = lobby.getTaskId();
+        if (taskIds != null && taskIds.length > 0) {
+            for (Integer id : taskIds) {
+                taskRepository.deleteById(id);
+            }
+        }
+
+        Shop shop = shopRepository.findById(lobby.getShopId())
+                .orElseThrow(() -> new RuntimeException("Магазин не найден"));
+
+        Integer[] productIds = shop.getProductId();
+        if (productIds != null && productIds.length > 0) {
+            for (Integer id : productIds) {
+                productRepository.deleteById(id);
+            }
+        }
+
+        shopRepository.delete(shop);
+        lobbyRepository.delete(lobby);
+    }
 }
+

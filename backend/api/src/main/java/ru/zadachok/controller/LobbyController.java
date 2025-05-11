@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.zadachok.request.AddInLobbyRequest;
 import ru.zadachok.request.CreateLobbyRequest;
 import ru.zadachok.model.Lobby;
+import ru.zadachok.request.DeleteLobbyRequest;
 import ru.zadachok.request.RemoveFromLobbyRequest;
 import ru.zadachok.service.LobbyService;
 
@@ -103,9 +104,25 @@ public class LobbyController {
                     content = @Content
             )
     })
+
     @PatchMapping("/remove")     // PATCH, потому что тоже МЕНЯЕМ состав (частично)
     public ResponseEntity<Lobby> removeCustomerFromLobby(@RequestBody RemoveFromLobbyRequest request) {
         Lobby updatedLobby = lobbyService.removeCustomerFromLobby(request);
         return ResponseEntity.ok(updatedLobby);
     }
+
+    @Operation(
+            summary = "Удалить лобби и связанные сущности",
+            description = "Удаляет лобби, все его задачи и товары в магазине"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Лобби удалено успешно"),
+            @ApiResponse(responseCode = "404", description = "Лобби не найдено", content = @Content)
+    })
+    @DeleteMapping("/delete")
+    public ResponseEntity<String> deleteLobby(@RequestBody DeleteLobbyRequest request) {
+        lobbyService.deleteLobby(request);
+        return ResponseEntity.ok("Лобби и связанные сущности удалены");
+    }
+
 }
