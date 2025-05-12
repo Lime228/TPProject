@@ -4,7 +4,4 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import ru.zadachok.model.Wallet;
 
 public interface WalletRepository extends JpaRepository<Wallet, Integer> {
-
-    boolean existsByCustomerIdAndLobbyId(Integer customerId, Integer lobbyId);
-
 }

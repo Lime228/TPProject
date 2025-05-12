@@ -1,4 +1,3 @@
-// model/Wallet.java
 package ru.zadachok.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -6,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "\"Wallet\"", schema = "\"TP\"")
+@Table(name = "\"wallet\"", schema = "\"tp\"")
 @Data
 @Builder
 @NoArgsConstructor
@@ -16,45 +15,19 @@ public class Wallet {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "\"Wallet_ID\"")
+    @Column(name = "\"wallet_id\"")
     @Schema(description = "Уникальный идентификатор кошелька", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "\"Customer_ID\"", nullable = false)
-    @Schema(description = "Владелец кошелька")
-    private Customer customer;
+    @Column(name = "\"customer_id\"", nullable = false)
+    @Schema(description = "ID владельца кошелька", example = "123")
+    private Integer customerId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "\"Lobby_ID\"", nullable = false)
-    @Schema(description = "Лобби, к которому привязан кошелек")
-    private Lobby lobby;
+    @Column(name = "\"lobby_id\"", nullable = false)
+    @Schema(description = "ID лобби, к которому привязан кошелек", example = "456")
+    private Integer lobbyId;
 
-    @Column(name = "\"Balance\"")
+    @Column(name = "\"balance\"", nullable = false)
     @Schema(description = "Текущий баланс", example = "1000", defaultValue = "0")
     private Integer balance;
-
-    @Schema(hidden = true)
-    public void deposit(int amount) {
-        if (amount <= 0) {
-            throw new IllegalArgumentException("Deposit amount must be positive");
-        }
-        this.balance += amount;
-    }
-
-    @Schema(hidden = true)
-    public void withdraw(int amount) {
-        if (amount <= 0) {
-            throw new IllegalArgumentException("Withdrawal amount must be positive");
-        }
-        if (this.balance < amount) {
-            throw new IllegalStateException("Insufficient funds");
-        }
-        this.balance -= amount;
-    }
-
-    @Schema(hidden = true)
-    public boolean hasSufficientFunds(int amount) {
-        return this.balance >= amount;
-    }
 }

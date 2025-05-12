@@ -27,8 +27,6 @@ public class LobbyService {
     private final WalletRepository walletRepository;
     private final CustomerRepository customerRepository;
 
-    private final WalletService walletService;
-
     public Lobby createLobby(CreateLobbyRequest request) {
         // 1. Создание пустого магазина
         Shop newShop = Shop.builder()
@@ -65,12 +63,16 @@ public class LobbyService {
         lobby.setCustomerId(updatedCustomers);
         Lobby savedLobby = lobbyRepository.save(lobby);
 
-        // Асинхронно создаём кошелёк — НЕ мешаем основной логике
-        walletService.createWalletIfAbsentAsync(request.getCustomerId(), savedLobby.getLobbyId());
+        // 💰 Создаём кошелёк для нового участника
+        Wallet wallet = Wallet.builder()
+                .customerId(request.getCustomerId())
+                .lobbyId(lobby.getLobbyId())
+                .balance(0)
+                .build();
+        walletRepository.save(wallet);
 
         return savedLobby;
     }
-
 
     public Lobby removeCustomerFromLobby(RemoveFromLobbyRequest request) {
         Lobby lobby = lobbyRepository.findById(request.getLobbyId())
