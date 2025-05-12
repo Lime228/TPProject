@@ -87,13 +87,18 @@ public class LobbyService {
         }
 
         lobby.setCustomerId(updatedList.toArray(new Integer[0]));
+        walletRepository.deleteByCustomerIdAndLobbyId(request.getCustomerId(), request.getLobbyId());
+
         return lobbyRepository.save(lobby);
     }
+
 
     @Transactional
     public void deleteLobby(DeleteLobbyRequest request) {
         Lobby lobby = lobbyRepository.findById(request.getLobbyId())
                 .orElseThrow(() -> new RuntimeException("Лобби не найдено"));
+
+        walletRepository.deleteAllByLobbyId(request.getLobbyId());
 
         Integer[] taskIds = lobby.getTaskId();
         if (taskIds != null) {
