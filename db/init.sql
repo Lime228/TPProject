@@ -79,8 +79,8 @@ CREATE TABLE IF NOT EXISTS tp.lobby (
 -- Òàáëèöà wallet
 CREATE TABLE IF NOT EXISTS tp.wallet (
     wallet_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    customer_id integer REFERENCES tp.customer(customer_id),
-    lobby_id integer REFERENCES tp.lobby(lobby_id),
+    customer_id integer,
+    lobby_id integer,
     balance integer NOT NULL DEFAULT 0
 );
 
