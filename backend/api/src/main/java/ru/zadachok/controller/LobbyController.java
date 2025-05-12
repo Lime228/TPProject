@@ -119,6 +119,7 @@ public class LobbyController {
             @ApiResponse(responseCode = "200", description = "Лобби удалено успешно"),
             @ApiResponse(responseCode = "404", description = "Лобби не найдено", content = @Content)
     })
+
     @DeleteMapping("/delete")
     public ResponseEntity<String> deleteLobby(@RequestBody DeleteLobbyRequest request) {
         lobbyService.deleteLobby(request);
