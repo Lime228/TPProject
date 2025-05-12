@@ -10,11 +10,9 @@ import 'api_endpoints.dart';
 
 class ApiClient implements ApiInterface {
   final http.Client _client;
-  final String _baseUrl;
 
   ApiClient({http.Client? client, String? baseUrl})
-      : _client = client ?? http.Client(),
-        _baseUrl = baseUrl ?? ApiEndpoints.baseUrl;
+      : _client = client ?? http.Client();
 
   @override
   Future<UserModel> register(UserModel request) async {
@@ -24,7 +22,7 @@ class ApiClient implements ApiInterface {
       final response = await _client.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: json.encode(request.toJson()),
+        body: json.encode(request.registerRequest()),
       ).timeout(const Duration(seconds: 10));
 
       return _handleResponse(response);
@@ -36,17 +34,14 @@ class ApiClient implements ApiInterface {
   }
 
   @override
-  Future<UserModel> login(String username, String password) async {
+  Future<UserModel> login(UserModel request) async {
     final url = Uri.parse(ApiEndpoints.loginUrl);
 
     try {
       final response = await _client.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'login': username,
-          'password': password,
-        }),
+        body: json.encode(request.loginRequest()),
       ).timeout(const Duration(seconds: 10));
 
       return _handleResponse(response);

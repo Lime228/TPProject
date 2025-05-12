@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zadachok/api/api_interface.dart';
+import 'package:zadachok/models/user/user_model.dart';
 import 'package:zadachok/providers/auth_provider.dart';
 import 'package:zadachok/routes/main_navigation.dart';
 import 'package:zadachok/screens/password_recovery_screen.dart';
@@ -63,9 +64,8 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final user = await widget.apiClient.login(
-        _usernameController.text,
-        _passwordController.text,
+      final user = await widget.apiClient.login( // временный костыль, обязательно переделать
+        new UserModel(login: _usernameController.text, password: _passwordController.text,name: '', email: '', birthdayDate:DateTime(1980, 1, 1))
       );
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);

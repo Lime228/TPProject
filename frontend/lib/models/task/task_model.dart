@@ -11,6 +11,7 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
   final String endPoint;
   final int customerId;
   final String state;
+  final int lobbyId;
 
   bool isCompleted;
   bool isOverdue;
@@ -24,6 +25,7 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
     required this.endPoint,
     required this.customerId,
     required this.state,
+    required this.lobbyId,
     this.isCompleted = false,
     this.isOverdue = false,
   });
@@ -70,46 +72,48 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
       state: state ?? this.state,
       isCompleted: isCompleted ?? this.isCompleted,
       isOverdue: isOverdue ?? this.isOverdue,
+      lobbyId: this.lobbyId,
     );
   }
 
   // Реализация BaseRequest
-  @override
-  Map<String, dynamic> toCreateJson() => {
-    'Task_name': name,
-    'Reward': reward,
-    'Description': description,
-    'Start_point': startPoint,
-    'End_point': endPoint,
-    'Customer_ID': customerId,
-    'Task_state': state,
+  Map<String, dynamic> createRequest() => {
+    'name': name,
+    'reward': reward,
+    'description': description,
+    'startdate': startPoint,
+    'enddate': endPoint,
+    'customerid': customerId,
+    'lobbyid': lobbyId,
   };
 
   // Реализация BaseResponse
   @override
   Map<String, dynamic> toJson() => {
-    'Task_ID': id,
-    'Task_name': name,
-    'Reward': reward,
-    'Description': description,
-    'Start_point': startPoint,
-    'End_point': endPoint,
-    'Customer_ID': customerId,
-    'Task_state': state,
+    'id': id,
+    'name': name,
+    'reward': reward,
+    'description': description,
+    'startdate': startPoint,
+    'enddate': endPoint,
+    'customerid': customerId,
+    'isActive': state,
+    'lobbyid':lobbyId
   };
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
     return TaskModel(
-      id: json['Task_ID'] ?? 0,
-      name: json['Task_name'],
-      reward: (json['Reward'] is int) ? (json['Reward'] as int).toDouble() : json['Reward'].toDouble(),
-      description: json['Description'],
-      startPoint: json['Start_point'],
-      endPoint: json['End_point'],
-      customerId: json['Customer_ID'],
-      state: json['Task_state'],
+      id: json['id'] ?? 0,
+      name: json['name'],
+      reward: (json['reward'] is int) ? (json['reward'] as int).toDouble() : json['reward'].toDouble(),
+      description: json['description'],
+      startPoint: json['startDate'],
+      endPoint: json['endDate'],
+      customerId: json['customerId'],
+      state: json['isActive'],
       isCompleted: json['isCompleted'] ?? false,
       isOverdue: json['isOverdue'] ?? false,
+      lobbyId: json['lobbyId'],
     );
   }
 

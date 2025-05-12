@@ -899,7 +899,7 @@ class _TasksScreenState extends State<TasksScreen> {
       startPoint: DateTime.now().toIso8601String(),
       reward: double.parse(_rewardController.text),
       customerId: 1,
-      state: 'Pending',
+      state: 'Pending', lobbyId: 1,
     );
 
     try {

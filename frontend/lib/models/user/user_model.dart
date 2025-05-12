@@ -53,6 +53,17 @@ class UserModel implements BaseRequest<UserModel>, BaseResponse {
     'isAdmin': isAdmin,
   };
 
+  Map<String, dynamic> registerRequest() => {
+    'login': login,
+    'password': password,
+    'email': email,
+  };
+
+  Map<String, dynamic> loginRequest() => {
+    'login': login,
+    'password': password,
+  };
+
   @override
   UserModel fromJson(Map<String, dynamic> json) {
     return UserModel.fromResponse(json);

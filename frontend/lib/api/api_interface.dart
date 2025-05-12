@@ -7,7 +7,7 @@ import '../models/wallet/wallet_model.dart';
 
 abstract class ApiInterface {
   Future<UserModel> register(UserModel request);
-  Future<UserModel> login(String username, String password);
+  Future<UserModel> login(UserModel request);
   Future<void> recoverPassword({required String email, required String login});
   Future<UserModel> updateUserProfile(UserModel request);
 
