@@ -74,6 +74,7 @@ public class LobbyService {
         return savedLobby;
     }
 
+    @Transactional
     public Lobby removeCustomerFromLobby(RemoveFromLobbyRequest request) {
         Lobby lobby = lobbyRepository.findById(request.getLobbyId())
                 .orElseThrow(() -> new IllegalArgumentException("Lobby not found"));
