@@ -27,6 +27,8 @@ public class LobbyService {
     private final WalletRepository walletRepository;
     private final CustomerRepository customerRepository;
 
+    private final WalletService walletService;
+
     public Lobby createLobby(CreateLobbyRequest request) {
         // 1. Создание пустого магазина
         Shop newShop = Shop.builder()
@@ -50,34 +52,21 @@ public class LobbyService {
 
         Integer[] currentCustomers = lobby.getCustomerId();
 
-        // Проверка на дубликат
         for (Integer id : currentCustomers) {
             if (id.equals(request.getCustomerId())) {
                 throw new RuntimeException("Пользователь уже в лобби");
             }
         }
 
-        // Добавление нового ID
         Integer[] updatedCustomers = new Integer[currentCustomers.length + 1];
         System.arraycopy(currentCustomers, 0, updatedCustomers, 0, currentCustomers.length);
         updatedCustomers[currentCustomers.length] = request.getCustomerId();
-        lobby.setCustomerId(updatedCustomers);
 
-        // Сохраняем обновлённое лобби
+        lobby.setCustomerId(updatedCustomers);
         Lobby savedLobby = lobbyRepository.save(lobby);
 
-        // Получаем пользователя
-        Customer customer = customerRepository.findById(request.getCustomerId())
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
-
-        // Создаём кошелёк для пользователя
-        Wallet wallet = Wallet.builder()
-                .customer(customer)
-                .lobby(savedLobby)
-                .balance(0)
-                .build();
-
-        walletRepository.save(wallet);
+        // Асинхронно создаём кошелёк — НЕ мешаем основной логике
+        walletService.createWalletIfAbsentAsync(request.getCustomerId(), savedLobby.getLobbyId());
 
         return savedLobby;
     }
