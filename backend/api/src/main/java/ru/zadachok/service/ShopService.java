@@ -5,10 +5,13 @@ import org.springframework.stereotype.Service;
 import ru.zadachok.model.Customer;
 import ru.zadachok.model.Product;
 import ru.zadachok.model.Shop;
+import ru.zadachok.model.Wallet;
 import ru.zadachok.repository.CustomerRepository;
 import ru.zadachok.repository.ProductRepository;
 import ru.zadachok.repository.ShopRepository;
+import ru.zadachok.repository.WalletRepository;
 import ru.zadachok.request.DeleteProductRequest;
+import ru.zadachok.request.ProductBuyRequest;
 import ru.zadachok.request.ProductCreateRequest;
 import ru.zadachok.request.UpdateProductRequest;
 
@@ -23,6 +26,7 @@ public class ShopService {
     private final ProductRepository productRepository;
     private final ShopRepository shopRepository;
     private final CustomerRepository customerRepository;
+    private final WalletRepository walletRepository;
 
     public Product createProductForShop(ProductCreateRequest request) {
         Shop shop = shopRepository.findById(request.getShopId())
@@ -78,6 +82,23 @@ public class ShopService {
         if (request.getPrice() != null) product.setPrice(request.getPrice());
 
         return productRepository.save(product);
+    }
+
+    public String buyProduct(ProductBuyRequest request) {
+        Product product = productRepository.findById(request.getProductId())
+                .orElseThrow(() -> new RuntimeException("Продукт не найден"));
+
+        Wallet wallet = walletRepository.findByCustomerId(request.getCustomerId())
+                .orElseThrow(() -> new RuntimeException("Кошелек не найден"));
+
+        if (wallet.getBalance() < product.getPrice()) {
+            throw new RuntimeException("Недостаточно средств на балансе");
+        }
+
+        wallet.setBalance(wallet.getBalance() - product.getPrice());
+        walletRepository.save(wallet);
+
+        return "Покупка прошла успешно. Остаток: " + wallet.getBalance();
     }
 
 }

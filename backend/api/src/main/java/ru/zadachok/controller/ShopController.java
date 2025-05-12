@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.zadachok.model.Product;
 import ru.zadachok.request.DeleteProductRequest;
+import ru.zadachok.request.ProductBuyRequest;
 import ru.zadachok.request.ProductCreateRequest;
 import ru.zadachok.request.UpdateProductRequest;
 import ru.zadachok.service.ShopService;
@@ -122,4 +123,33 @@ public class ShopController {
         Product updatedProduct = shopService.updateProduct(request);
         return ResponseEntity.ok(updatedProduct);
     }
+
+    @Operation(
+            summary = "Покупка товара",
+            description = "Проверяет баланс пользователя и списывает деньги за товар"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Покупка успешна",
+                    content = @Content(mediaType = "application/json", schema = @Schema(example = "Покупка прошла успешно. Остаток: 9500"))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Неверный запрос или недостаточно средств",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Товар или кошелек не найдены",
+                    content = @Content
+            )
+    })
+    @PostMapping("/product/buy") // POST — совершение действия
+    public ResponseEntity<String> buyProduct(@RequestBody ProductBuyRequest request) {
+        String message = shopService.buyProduct(request);
+        return ResponseEntity.ok(message);
+    }
+
+
 }
