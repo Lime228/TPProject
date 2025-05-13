@@ -91,7 +91,7 @@ public class ShopService {
         Wallet wallet = walletRepository.findByCustomerId(request.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("Кошелек не найден"));
 
-        if (wallet.getBalance() < product.getPrice()) {
+        if (wallet.getBalance() <= product.getPrice()) {
             throw new RuntimeException("Недостаточно средств на балансе");
         }
 
