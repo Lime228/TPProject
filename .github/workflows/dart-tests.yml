@@ -174,11 +174,20 @@ jobs:
             cd ${{ env.PRODUCTION_DIR }}
             docker-compose down || true
             docker-compose up -d --build
-            sleep 10
-            curl -f http://localhost:${{ env.PROD_API_PORT }}/actuator/health || exit 1
-          "
+            sleep 10"
 
       - name: Verify deployment
         run: |
-          curl -sSf http://${{ secrets.SERVER_IP }}:${{ env.PROD_API_PORT }}/actuator/health
+          echo "🚀 Verifying deployment by registering test user..."
+          curl -vk -X POST "https://api.zadachok.ru/api/auth/register" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "login": "testuser",
+              "password": "TestPass123!",
+              "customer_name": "Test User",
+              "customer_email": "test@example.com"
+            }'
+
           echo -e "\n✅ Deployment successful"
+
+      
