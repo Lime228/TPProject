@@ -3,6 +3,7 @@ package ru.zadachok.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.zadachok.model.Lobby;
+import ru.zadachok.model.Shop;
 import ru.zadachok.model.Task;
 import ru.zadachok.repository.LobbyRepository;
 import ru.zadachok.repository.TaskRepository;
@@ -45,5 +46,10 @@ public class TaskService {
         lobbyRepository.save(lobby);
 
         return savedTask;
+    }
+
+    public Task getTaskById(Integer taskId) {
+        return taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Магазин с ID " + taskId + " не найден"));
     }
 }

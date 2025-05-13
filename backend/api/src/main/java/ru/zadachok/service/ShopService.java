@@ -101,4 +101,8 @@ public class ShopService {
         return "Покупка прошла успешно. Остаток: " + wallet.getBalance();
     }
 
+    public Shop getShopById(Integer shopId) {
+        return shopRepository.findById(shopId)
+                .orElseThrow(() -> new RuntimeException("Магазин с ID " + shopId + " не найден"));
+    }
 }

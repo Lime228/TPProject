@@ -9,7 +9,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.zadachok.model.Lobby;
 import ru.zadachok.model.Product;
+import ru.zadachok.model.Shop;
 import ru.zadachok.request.DeleteProductRequest;
 import ru.zadachok.request.ProductBuyRequest;
 import ru.zadachok.request.ProductCreateRequest;
@@ -151,5 +153,10 @@ public class ShopController {
         return ResponseEntity.ok(message);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Shop> getLobby(@PathVariable int id) {
+        Shop gettedShop = shopService.getShopById(id);
+        return ResponseEntity.ok(gettedShop);
+    }
 
 }
