@@ -7,7 +7,6 @@ on:
       - 'api-tests/**'
       - '.github/workflows/dart-tests.yml'
       - 'docker-compose.template.yml'
-      - 'db/**'
 
 env:
   CI_API_PORT: 8081
@@ -154,16 +153,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check changed paths
-        id: filter
-        uses: dorny/paths-filter@v2
-        with:
-          filters: |
-            db:
-              - 'db/**'
-            backend:
-              - 'backend/**'
-
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
@@ -174,27 +163,13 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-      - name: Copy backend and db to server
+      - name: Copy backend to server
         run: |
           [ -d "backend" ] && scp -r -o StrictHostKeyChecking=no backend ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
-          [ -d "db" ] && scp -r -o StrictHostKeyChecking=no db ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
 
-      - name: Restart with volume removal (if db changed)
-        if: steps.filter.outputs.db == 'true'
+      - name: Restart services (soft)
         run: |
-          echo "♻️ Restarting services with -v (db changed)"
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
-            cd ${{ env.PRODUCTION_DIR }}
-            docker-compose down -v || true
-            docker-compose up -d --build
-            sleep 10
-            curl -f http://localhost:${{ env.PROD_API_PORT }}/actuator/health || exit 1
-          "
-
-      - name: Restart without volume removal (only backend changed)
-        if: steps.filter.outputs.db != 'true' && steps.filter.outputs.backend == 'true'
-        run: |
-          echo "🔁 Restarting services (only backend changed)"
+          echo "🔁 Restarting services (soft)"
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
             cd ${{ env.PRODUCTION_DIR }}
             docker-compose down || true
