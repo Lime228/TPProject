@@ -13,6 +13,7 @@ void main() {
   const productCreateUrl = '$baseUrl/api/shop/product/create';
   const productDeleteUrl = '$baseUrl/api/shop/product/delete';
   const productUpdateUrl = '$baseUrl/api/shop/product/update';
+  const productBuyUrl = '$baseUrl/api/shop/product/buy';
 
   // Генерируем уникальные тестовые данные
   final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -159,44 +160,7 @@ void main() {
       }
     });
 
-    test('5. Удаление пользователя из лобби', () async {
-      print('Попытка удаления пользователя из лобби...');
-
-      final requestData = {
-        'lobbyid': 1,
-        'customerid': testCustomerId,
-      };
-
-      print('Отправляемые данные: ${jsonEncode(requestData)}');
-
-      final response = await http.patch(
-        Uri.parse(removeUserLobbyUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(requestData),
-      );
-
-      print('Статус код: ${response.statusCode}');
-      print('Ответ сервера: ${response.body}');
-
-      expect(response.statusCode, 200,
-          reason: 'Ожидался статус 200 (Успешное удаление пользователя)');
-
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        
-        expect(responseData['lobbyId'], equals(1),
-            reason: 'ID лобби должен соответствовать переданному');
-        
-        expect(responseData['customerId'], isNot(contains(testCustomerId)),
-            reason: 'Список customerId не должен содержать удаленного пользователя');
-
-        print('Пользователь успешно удален из лобби');
-      } else {
-        print('Ошибка при удалении пользователя из лобби\n');
-      }
-    });
-
-    test('6. Создание задания', () async {
+    test('5. Создание задания', () async {
       print('Создание задачи...');
 
       final requestData = {
@@ -237,7 +201,7 @@ void main() {
       }
     });
 
-    test('7. Создание продукта', () async {
+    test('6. Создание продукта', () async {
       print('Создание продукта...');
 
       final requestData = {
@@ -245,8 +209,8 @@ void main() {
         'description': 'Это тестовый продукт для проверки',
         'photo': base64Encode(utf8.encode('test_image_data')), // Пример кодирования фото
         'state': false,
-        'price': 999,
-        'customerid': 1,
+        'price': 0,
+        'customerid': 0,
         'shopid': 1,
       };
 
@@ -278,6 +242,47 @@ void main() {
 
       } else {
         print('Ошибка при создании продукта\n');
+      }
+    });
+
+    test('7. Обновление продукта', () async {
+      print('Обновление продукта...');
+
+      final requestData = {
+        'customerId': 2,
+        'productId': 1,
+      };
+
+      print('Отправляемые данные: ${jsonEncode(requestData)}');
+
+      final response = await http.post(
+        Uri.parse(productBuyUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(requestData),
+      );
+
+      print('Статус код: ${response.statusCode}');
+      print('Ответ сервера: ${response.body}');
+
+      expect(response.statusCode, 200,
+          reason: 'Ожидался статус 200 (Успешное обновление продукта)');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        expect(responseData['name'], equals('UPDATED TEST PRODUCT'),
+            reason: 'Название продукта не обновилось');
+        expect(responseData['price'], equals(1999),
+            reason: 'Цена продукта не обновилась');
+        expect(responseData['state'], equals(false),
+            reason: 'Состояние продукта не обновилось');
+
+        print('Продукт успешно обновлён');
+
+      } else {
+        print('Ошибка при обновлении продукта\n');
       }
     });
 
@@ -326,7 +331,44 @@ void main() {
       }
     });
 
-    test('9. Удаление продукта', () async {
+    test('9. Удаление пользователя из лобби', () async {
+      print('Попытка удаления пользователя из лобби...');
+
+      final requestData = {
+        'lobbyid': 1,
+        'customerid': testCustomerId,
+      };
+
+      print('Отправляемые данные: ${jsonEncode(requestData)}');
+
+      final response = await http.patch(
+        Uri.parse(removeUserLobbyUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestData),
+      );
+
+      print('Статус код: ${response.statusCode}');
+      print('Ответ сервера: ${response.body}');
+
+      expect(response.statusCode, 200,
+          reason: 'Ожидался статус 200 (Успешное удаление пользователя)');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        expect(responseData['lobbyId'], equals(1),
+            reason: 'ID лобби должен соответствовать переданному');
+
+        expect(responseData['customerId'], isNot(contains(testCustomerId)),
+            reason: 'Список customerId не должен содержать удаленного пользователя');
+
+        print('Пользователь успешно удален из лобби');
+      } else {
+        print('Ошибка при удалении пользователя из лобби\n');
+      }
+    });
+
+    test('10. Удаление продукта', () async {
       print('Удаление продукта...');
 
       final requestData = {
