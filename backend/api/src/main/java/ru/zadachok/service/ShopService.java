@@ -105,4 +105,9 @@ public class ShopService {
         return shopRepository.findById(shopId)
                 .orElseThrow(() -> new RuntimeException("Магазин с ID " + shopId + " не найден"));
     }
+
+    public Product getProductById(Integer productId) {
+        return productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Магазин с ID " + productId + " не найден"));
+    }
 }

@@ -158,5 +158,10 @@ public class ShopController {
         Shop gettedShop = shopService.getShopById(id);
         return ResponseEntity.ok(gettedShop);
     }
+    @GetMapping("/product/{id}")
+    public ResponseEntity<Product> getProduct(@PathVariable int id) {
+        Product gettedProduct = shopService.getProductById(id);
+        return ResponseEntity.ok(gettedProduct);
+    }
 
 }
