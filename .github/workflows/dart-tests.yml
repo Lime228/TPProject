@@ -7,6 +7,7 @@ on:
       - 'api-tests/**'
       - '.github/workflows/dart-tests.yml'
       - 'docker-compose.template.yml'
+      - 'db/**'
 
 env:
   CI_API_PORT: 8081
@@ -61,7 +62,6 @@ jobs:
         run: |
           echo "🏗 Building API..."
           mvn clean package -Dspring.profiles.active=ci -DskipTests
-          # Сохраняем артефакт
           mkdir -p ../target/
           cp target/*.jar ../target/
           echo "✅ API build completed. JAR saved to backend/target/"
@@ -77,8 +77,7 @@ jobs:
           DB_PASSWORD: zadachok
           JWT_SECRET: defaultSecret
         run: |
-          echo "🐳 Starting CI containers (port ${{ env.CI_API_PORT }})..."
-          # Явно указываем контекст сборки
+          echo "🐳 Starting CI containers..."
           docker-compose -f docker-compose.template.yml build --no-cache
           docker-compose -f docker-compose.template.yml up -d
           echo "✅ CI containers started."
@@ -100,7 +99,7 @@ jobs:
               docker-compose -f docker-compose.template.yml logs db
               exit 1
             fi
-            echo "⏳ Database not healthy yet, waiting 5 seconds..."
+            echo "⏳ Waiting 5 seconds..."
             sleep 5
             ATTEMPTS=$((ATTEMPTS+1))
           done
@@ -122,12 +121,11 @@ jobs:
         env:
           API_TIMEOUT: ${{ env.API_TIMEOUT }}
         run: |
-          echo "⏳ Waiting for CI API (port ${{ env.CI_API_PORT }}) to become healthy..."
+          echo "⏳ Waiting for CI API..."
           timeout ${API_TIMEOUT}s bash -c '
             docker-compose -f docker-compose.template.yml logs --tail=20 api
             sleep 15
             curl -s http://localhost:${{ env.CI_API_PORT }}/actuator/health
-            docker-compose -f docker-compose.template.yml logs --tail=20 api
           '
 
       - name: Run Dart Tests
@@ -135,7 +133,7 @@ jobs:
         env:
           API_URL: "http://localhost:${{ env.CI_API_PORT }}"
         run: |
-          echo "🏁 Running Dart tests against port ${{ env.CI_API_PORT }}..."
+          echo "🏁 Running Dart tests..."
           dart pub get
           dart test APItests.dart
           echo "✅ Dart tests completed."
@@ -148,53 +146,64 @@ jobs:
           echo "🚨 API logs:"
           docker-compose -f docker-compose.template.yml logs api || echo "No api logs available."
 
-
   deploy:
     needs: test
     if: github.ref == 'refs/heads/backend-test'
     runs-on: ubuntu-latest
-    
+
     steps:
-    # 1. Проверяем структуру репозитория
-    - name: Check repository structure
-      run: |
-        echo "Current directory: $(pwd)"
-        echo "Repository contents:"
-        ls -la
-        echo "Backend contents:"
-        ls -la backend/ || echo "No backend directory"
-        echo "DB files:"
-        ls -la db/ || echo "No db directory"
+      - uses: actions/checkout@v4
 
-    # 2. Настройка SSH
-    - name: Install SSH key
-      uses: webfactory/ssh-agent@v0.7.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Check changed paths
+        id: filter
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            db:
+              - 'db/**'
+            backend:
+              - 'backend/**'
 
-    - name: Add to known hosts
-      run: |
-        mkdir -p ~/.ssh
-        ssh-keyscan ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    # 3. Копируем файлы напрямую из репозитория
-    - name: Deploy backend
-      run: |
-        [ -d "backend" ] && scp -r -o StrictHostKeyChecking=no backend ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
-        [ -d "db" ] && scp -r -o StrictHostKeyChecking=no db ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
-    # 4. Перезапускаем сервисы
-    - name: Restart services
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
-          cd ${{ env.PRODUCTION_DIR }}
-          docker-compose down || true
-          docker-compose up -d --build
-          sleep 10
-          curl -f http://localhost:${{ env.PROD_API_PORT }}/actuator/health || exit 1
-        "
+      - name: Add to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-    # 5. Проверка
-    - name: Verify deployment
-      run: |
-        curl -sSf http://${{ secrets.SERVER_IP }}:${{ env.PROD_API_PORT }}/actuator/health
-        echo -e "\n✅ Deployment successful"
+      - name: Copy backend and db to server
+        run: |
+          [ -d "backend" ] && scp -r -o StrictHostKeyChecking=no backend ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
+          [ -d "db" ] && scp -r -o StrictHostKeyChecking=no db ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:${{ env.PRODUCTION_DIR }}/
+
+      - name: Restart with volume removal (if db changed)
+        if: steps.filter.outputs.db == 'true'
+        run: |
+          echo "♻️ Restarting services with -v (db changed)"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
+            cd ${{ env.PRODUCTION_DIR }}
+            docker-compose down -v || true
+            docker-compose up -d --build
+            sleep 10
+            curl -f http://localhost:${{ env.PROD_API_PORT }}/actuator/health || exit 1
+          "
+
+      - name: Restart without volume removal (only backend changed)
+        if: steps.filter.outputs.db != 'true' && steps.filter.outputs.backend == 'true'
+        run: |
+          echo "🔁 Restarting services (only backend changed)"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
+            cd ${{ env.PRODUCTION_DIR }}
+            docker-compose down || true
+            docker-compose up -d --build
+            sleep 10
+            curl -f http://localhost:${{ env.PROD_API_PORT }}/actuator/health || exit 1
+          "
+
+      - name: Verify deployment
+        run: |
+          curl -sSf http://${{ secrets.SERVER_IP }}:${{ env.PROD_API_PORT }}/actuator/health
+          echo -e "\n✅ Deployment successful"
