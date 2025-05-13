@@ -15,7 +15,7 @@ import lombok.*;
             "description": "Флагманский смартфон с OLED-экраном",
             "state": false,
             "price": 99999,
-            "photo": "Base64 строка изображения",
+            "photo": "dGVzdF9pbWFnZV9kYXRh",
             "customerId": 123
         }""")
 public class ProductDto {
@@ -49,6 +49,7 @@ public class ProductDto {
     private Integer price;
 
     @Schema(description = "Фотография товара в формате Base64",
+            example = "dGVzdF9pbWFnZV9kYXRh",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private byte[] photo;
 

@@ -32,7 +32,7 @@ public class UpdateProductRequest {
 
     @JsonProperty("photo")
     @NotBlank
-    @Schema(description = "Новое фото товара в Base64", format = "byte", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Новое фото товара в Base64", example = "dGVzdF9pbWFnZV9kYXRh", requiredMode = Schema.RequiredMode.REQUIRED)
     private byte[] photo;
 
     @JsonProperty("state")

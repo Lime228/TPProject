@@ -31,6 +31,8 @@ void main() {
       print('Имя пользователя: $testUsername');
       print('Email: $testEmail');
       print('Пароль: $testPassword');
+      print('ID админа: $testCreatorId');
+      print('ID второго пользователя: $testCustomerId');
       print('-----------------------------\n');
     });
 
@@ -53,6 +55,7 @@ void main() {
         'login': testUsername,
         'password': testPassword,
         'email': testEmail,
+
       };
 
       print('Отправляемые данные: ${jsonEncode(requestData)}');
@@ -112,10 +115,7 @@ void main() {
         print('Первый customerId: $firstCustomerId');
         expect(firstCustomerId, equals(1),
             reason: 'Первый customerId должен быть равен 1');
-    
-        print('Создано новое лобби:');
-        print('ID: ${lobbyData['lobbyId']}');
-        print('ID создателя: $firstCustomerId');
+
         print('Лобби успешно создано\n');
       } else {
         print('Ошибка при создании лобби\n');
@@ -153,10 +153,7 @@ void main() {
         expect(responseData['customerId'], contains(testCustomerId),
             reason: 'Список customerId должен содержать добавленного пользователя');
 
-        print('Пользователь успешно добавлен в лобби:');
-        print('ID лобби: ${responseData['lobbyId']}');
-        print('Добавленный customerId: $testCustomerId');
-        print('Текущий список customerId: ${responseData['customerId']}\n');
+        print('Пользователь успешно добавлен в лобби');
       } else {
         print('Ошибка при добавлении пользователя в лобби\n');
       }
@@ -193,10 +190,7 @@ void main() {
         expect(responseData['customerId'], isNot(contains(testCustomerId)),
             reason: 'Список customerId не должен содержать удаленного пользователя');
 
-        print('Пользователь успешно удален из лобби:');
-        print('ID лобби: ${responseData['lobbyId']}');
-        print('Удаленный customerId: $testCustomerId');
-        print('Текущий список customerId: ${responseData['customerId']}\n');
+        print('Пользователь успешно удален из лобби');
       } else {
         print('Ошибка при удалении пользователя из лобби\n');
       }
@@ -236,14 +230,12 @@ void main() {
             reason: 'Название задания не соответствует');
         
 
-        print('Задание успешно создано:');
-        print('Название задания: ${responseData['name']}');
-        print('Описание: ${responseData['description']}');
-        print('Награда: ${responseData['reward']}\n');
+        print('Задание успешно создано');
+
       } else {
         print('Ошибка при создании задания\n');
       }
-    }); // пока не работает
+    });
 
     test('7. Создание продукта', () async {
       print('Создание продукта...');
@@ -282,11 +274,8 @@ void main() {
         expect(responseData['price'], equals(999),
             reason: 'Цена продукта не соответствует');
 
-        print('Продукт успешно создан:');
-        print('Название продукта: ${responseData['name']}');
-        print('Описание: ${responseData['description']}');
-        print('Цена: ${responseData['price']}');
-        print('Состояние: ${responseData['state'] ? "Выполнен администратором" : "Еще не выполнен"}\n');
+        print('Продукт успешно создан');
+
       } else {
         print('Ошибка при создании продукта\n');
       }
@@ -330,12 +319,8 @@ void main() {
         expect(responseData['state'], equals(false),
             reason: 'Состояние продукта не обновилось');
 
-        print('Продукт успешно обновлён:');
-        print('ID продукта: ${responseData['productid']}');
-        print('Новое название: ${responseData['name']}');
-        print('Новое описание: ${responseData['description']}');
-        print('Новая цена: ${responseData['price']}');
-        print('Новое состояние: ${responseData['state'] ? "Работает" : "Не работает"}\n');
+        print('Продукт успешно обновлён');
+
       } else {
         print('Ошибка при обновлении продукта\n');
       }
