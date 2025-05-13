@@ -25,6 +25,7 @@ public class LobbyController {
 
     private final LobbyService lobbyService;
 
+
     @Operation(
             summary = "Создать новое лобби",
             description = "Создает новое лобби с указанными параметрами"
@@ -126,4 +127,12 @@ public class LobbyController {
         return ResponseEntity.ok("Лобби и связанные сущности удалены");
     }
 
+    @Operation(
+            summary = "Получение лобби по ID"
+    )
+    @GetMapping("/{id}]")
+    public ResponseEntity<Lobby> getLobby(@PathVariable int id) {
+        Lobby gettedLobby = lobbyService.getLobbyById(id);
+        return ResponseEntity.ok(gettedLobby);
+    }
 }

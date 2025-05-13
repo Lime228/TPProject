@@ -44,6 +44,11 @@ public class LobbyService {
         return lobbyRepository.save(newLobby);
     }
 
+    public Lobby getLobbyById(int id) {
+        return lobbyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Лобби с ID " + id + " не найдено"));
+    }
+
     public Lobby addCustomerToLobby(AddInLobbyRequest request) {
         Lobby lobby = lobbyRepository.findById(request.getLobbyId())
                 .orElseThrow(() -> new RuntimeException("Лобби не найдено"));
