@@ -130,7 +130,7 @@ public class LobbyController {
     @Operation(
             summary = "Получение лобби по ID"
     )
-    @GetMapping("/{id}]")
+    @GetMapping("/{id}")
     public ResponseEntity<Lobby> getLobby(@PathVariable int id) {
         Lobby gettedLobby = lobbyService.getLobbyById(id);
         return ResponseEntity.ok(gettedLobby);
