@@ -30,7 +30,7 @@ public class Product {
     private String description;
 
     @Column(name = "\"photo\"")
-    @Schema(description = "Фото товара в формате Base64", format = "byte")
+    @Schema(description = "Фото товара в формате Base64 как String")
     private byte[] photo;
 
     @Column(name = "\"product_state\"", nullable = false)

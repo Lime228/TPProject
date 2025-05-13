@@ -26,7 +26,7 @@ public class ProductCreateRequest {
 
     @JsonProperty("photo")
     @NotBlank
-    @Schema(description = "Фото товара в Base64", format = "byte", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Фото товара в Base64", requiredMode = Schema.RequiredMode.REQUIRED)
     private byte[] photo;
 
     @JsonProperty("state")

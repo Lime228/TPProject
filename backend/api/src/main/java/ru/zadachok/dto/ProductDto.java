@@ -49,7 +49,6 @@ public class ProductDto {
     private Integer price;
 
     @Schema(description = "Фотография товара в формате Base64",
-            format = "byte",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private byte[] photo;
 
