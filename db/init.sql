@@ -54,14 +54,14 @@ CREATE TABLE IF NOT EXISTS tp.task (
     start_point date,
     end_point date,
     customer_id integer REFERENCES tp.customer(customer_id), -- убран NOT NULL
-    task_state boolean DEFAULT false
+    task_state integer DEFAULT 0 
 );
 
 -- Òàáëèöà product
 CREATE TABLE IF NOT EXISTS tp.product (
     product_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     product_name varchar(255),
-    product_state boolean DEFAULT true,
+    product_state boolean DEFAULT false,
     price integer NOT NULL,
     customer_id integer,
     photo bytea,
