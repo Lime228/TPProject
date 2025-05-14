@@ -32,16 +32,13 @@ public class ShopService {
         Shop shop = shopRepository.findById(request.getShopId())
                 .orElseThrow(() -> new IllegalArgumentException("Shop not found"));
 
-        Customer customer = customerRepository.findById(request.getCustomerId())
-                .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
-
         Product product = Product.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .photo(request.getPhoto())
                 .state(request.isState())
                 .price(request.getPrice())
-                .customer(customer)
+                .customer(null)
                 .build();
 
         Product savedProduct = productRepository.save(product);
@@ -55,6 +52,7 @@ public class ShopService {
 
         return savedProduct;
     }
+
     // service/ShopService.java
     public void deleteProduct(DeleteProductRequest request) {
         Shop shop = shopRepository.findById(request.getShopId())

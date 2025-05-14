@@ -147,6 +147,7 @@ public class ShopController {
                     content = @Content
             )
     })
+
     @PostMapping("/product/buy") // POST — совершение действия
     public ResponseEntity<String> buyProduct(@RequestBody ProductBuyRequest request) {
         String message = shopService.buyProduct(request);

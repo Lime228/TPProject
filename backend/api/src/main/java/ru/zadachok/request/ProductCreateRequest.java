@@ -39,11 +39,6 @@ public class ProductCreateRequest {
     @Schema(description = "Цена в звёздочках", example = "99900", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer price;
 
-    @JsonProperty("customerid")
-    @NotBlank
-    @Schema(description = "ID владельца товара", example = "5", requiredMode = Schema.RequiredMode.REQUIRED)
-    private Integer customerId;
-
     @JsonProperty("shopid")
     @NotBlank
     @Schema(description = "ID магазина", example = "3", requiredMode = Schema.RequiredMode.REQUIRED)
