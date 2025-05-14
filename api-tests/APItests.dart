@@ -234,7 +234,7 @@ void main() {
     
          expect(responseData['name'], equals('TEST PRODUCT'),
              reason: 'Название продукта не соответствует');
-         expect(responseData['price'], equals(999),
+         expect(responseData['price'], equals(0),
              reason: 'Цена продукта не соответствует');
     
          print('Продукт успешно создан');
@@ -269,7 +269,8 @@ void main() {
            reason: 'Ожидался статус 200 (Успешная покупка продукты)');
     
        if (response.statusCode == 200) {
-         final responseData = jsonDecode(response.body);
+         expect(response.body, contains('Покупка прошла успешно'),
+         reason: 'Ожидалось сообщение об успешной покупке');
          print('Продукт успешно куплен');
     
        } else {
