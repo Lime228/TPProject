@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS tp.product (
     product_name varchar(255),
     product_state boolean DEFAULT true,
     price integer NOT NULL,
-    customer_id integer NOT NULL REFERENCES tp.customer(customer_id),
+    customer_id integer,
     photo bytea,
     description text
 );
