@@ -59,7 +59,7 @@ public class TaskDto {
     @Schema(description = "Флаг выполнения задачи (true - выполнена false - в процессе)",
             example = "true",
             requiredMode = Schema.RequiredMode.REQUIRED)
-    private Boolean isActive;
+    private Integer isActive;
 
     @Schema(description = "ID исполнителя",
             example = "42",

@@ -30,7 +30,7 @@ public class TaskService {
                 .description(request.getDescription())
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
-                .isActive(true)
+                .isActive(0)
                 .customerId(request.getCustomerId()) // может быть null
                 .build();
 

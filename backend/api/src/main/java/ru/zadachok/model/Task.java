@@ -42,7 +42,7 @@ public class Task {
 
     @Column(name = "\"task_state\"", nullable = false)
     @Schema(description = "Статус задачи", example = "true", defaultValue = "true")
-    private Boolean isActive;
+    private Integer isActive;
 
     @Column(name = "\"customer_id\"", nullable = false)
     @Schema(description = "ID владельца задачи", example = "5", requiredMode = Schema.RequiredMode.REQUIRED)
