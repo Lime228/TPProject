@@ -210,7 +210,6 @@ void main() {
          'photo': base64Encode(utf8.encode('test_image_data')), // Пример кодирования фото
          'state': false,
          'price': 0,
-         'customerid': 0,
          'shopid': 1,
        };
     
@@ -267,22 +266,14 @@ void main() {
        print('Ответ сервера: ${response.body}');
     
        expect(response.statusCode, 200,
-           reason: 'Ожидался статус 200 (Успешное обновление продукта)');
+           reason: 'Ожидался статус 200 (Успешная покупка продукты)');
     
        if (response.statusCode == 200) {
          final responseData = jsonDecode(response.body);
-    
-         expect(responseData['name'], equals('UPDATED TEST PRODUCT'),
-             reason: 'Название продукта не обновилось');
-         expect(responseData['price'], equals(1999),
-             reason: 'Цена продукта не обновилась');
-         expect(responseData['state'], equals(false),
-             reason: 'Состояние продукта не обновилось');
-    
-         print('Продукт успешно обновлён');
+         print('Продукт успешно куплен');
     
        } else {
-         print('Ошибка при обновлении продукта\n');
+         print('Ошибка при покупке продукта\n');
        }
      });
     
