@@ -28,13 +28,17 @@ public class LobbyService {
     private final CustomerRepository customerRepository;
 
     public Lobby createLobby(CreateLobbyRequest request) {
-        // 1. Создание пустого магазина
         Shop newShop = Shop.builder()
                 .productId(new Integer[0])  // Пустой массив
                 .build();
         Shop savedShop = shopRepository.save(newShop);
 
-        // 2. Создание лобби с привязкой к новому магазину
+        Customer creator = customerRepository.findById(request.getCreatorId())
+                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
+
+        creator.setAdmin(true);
+        customerRepository.save(creator);
+
         Lobby newLobby = Lobby.builder()
                 .shopId(savedShop.getShopId())
                 .customerId(new Integer[]{request.getCreatorId()})
@@ -103,6 +107,16 @@ public class LobbyService {
     public void deleteLobby(DeleteLobbyRequest request) {
         Lobby lobby = lobbyRepository.findById(request.getLobbyId())
                 .orElseThrow(() -> new RuntimeException("Лобби не найдено"));
+
+        Integer[] customerIds = lobby.getCustomerId();
+        if (customerIds != null) {
+            for (Integer id : customerIds) {
+                customerRepository.findById(id).ifPresent(customer -> {
+                    customer.setAdmin(false);
+                    customerRepository.save(customer);
+                });
+            }
+        }
 
         walletRepository.deleteAllByLobbyId(request.getLobbyId());
 
