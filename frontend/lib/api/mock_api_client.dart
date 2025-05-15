@@ -34,8 +34,10 @@ class MockApiClient implements ApiInterface {
 
   @override
   @override
-  Future<UserModel> login(String username, String password) async {
+  Future<UserModel> login(UserModel request) async {
     // Здесь добавьте логи, чтобы проверить данные
+    String username = request.login;
+    String password = request.password;
     print("Login attempt with username: $username, password: $password");
 
     // Пример ответа
@@ -98,7 +100,7 @@ class MockApiClient implements ApiInterface {
       startPoint: 'Начальная точка',
       endPoint: 'Конечная точка',
       customerId: 1,
-      state: 'Completed',
+      state: 'Completed', lobbyId: 1,
     );
   }
 
@@ -142,7 +144,7 @@ class MockApiClient implements ApiInterface {
       endPoint: request.endPoint,
       reward: request.reward, // Сохраняем переданное значение reward
       customerId: request.customerId,
-      state: 'Pending',
+      state: 'Pending', lobbyId: 1,
     );
   }
 
@@ -163,7 +165,7 @@ class MockApiClient implements ApiInterface {
         startPoint: 'Точка A',
         endPoint: 'Точка B',
         customerId: int.parse(userId),
-        state: 'In Progress',
+        state: 'In Progress', lobbyId: 1,
       ),
       TaskModel(
         id: 2,
@@ -173,7 +175,7 @@ class MockApiClient implements ApiInterface {
         startPoint: 'Точка C',
         endPoint: 'Точка D',
         customerId: int.parse(userId),
-        state: 'Pending',
+        state: 'Pending', lobbyId: 1,
       ),
     ];
   }

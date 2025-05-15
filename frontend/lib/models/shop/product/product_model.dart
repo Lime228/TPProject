@@ -9,6 +9,7 @@ class ProductModel implements BaseRequest<ProductModel>, BaseResponse{
   final String state;
   final double price;
   final int customerId;
+  final int shopId;
   final String? link;
 
   ProductModel({
@@ -19,6 +20,7 @@ class ProductModel implements BaseRequest<ProductModel>, BaseResponse{
     required this.state,
     required this.price,
     required this.customerId,
+    required this.shopId,
     this.link,
   });
 
@@ -41,42 +43,59 @@ class ProductModel implements BaseRequest<ProductModel>, BaseResponse{
       price: price ?? this.price,
       customerId: customerId ?? this.customerId,
       link: link ?? this.link,
+      shopId: this.shopId,
     );
   }
 
   // Для создания продукта (без ID)
-  Map<String, dynamic> toCreateJson() => {
-    'Product_name': name,
-    'Description': description,
-    'Photo': photo,
-    'Product_state': state,
-    'Price': price,
-    'Customer_ID': customerId,
+  Map<String, dynamic> createRequest() => {
+    'name': name,
+    'description': description,
+    'photo': photo,
+    'state': state,
+    'price': price,
+    'customerid': customerId,
+    'shopid': shopId
+  };
+
+  Map<String, dynamic> updateRequest() => {
+    'productid': id,
+    'name': name,
+    'description': description,
+    'photo': photo,
+    'state': state,
+    'price': price,
+  };
+  Map<String, dynamic> deleteRequest() => {
+    'shopid': shopId,
+    'productid': id,
   };
 
   // Для полного JSON (с ID)
   Map<String, dynamic> toJson() => {
-    if (id != 0) 'Product_ID': id,
-    'Product_name': name,
-    'Description': description,
-    'Photo': photo,
-    'Product_state': state,
-    'Price': price,
-    'Customer_ID': customerId,
+    if (id != 0) 'id': id,
+    'name': name,
+    'description': description,
+    'photo': photo,
+    'state': state,
+    'price': price,
+    'customerid': customerId,
+    'shopid': shopId,
     if (link != null) 'Link': link,
   };
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     return ProductModel(
-      id: json['Product_ID'] ?? 0,
-      name: json['Product_name'],
-      description: json['Description'],
-      photo: json['Photo'],
-      state: json['Product_state'],
-      price: json['Price'] is int
-          ? (json['Price'] as int).toDouble()
-          : json['Price'].toDouble(),
-      customerId: json['Customer_ID'],
+      id: json['id'] ?? 0,
+      name: json['name'],
+      description: json['description'],
+      photo: json['photo'],
+      state: json['state'],
+      price: json['price'] is int
+          ? (json['price'] as int).toDouble()
+          : json['price'].toDouble(),
+      customerId: json['customerid'],
+      shopId: json['shopid'],
     );
   }
 

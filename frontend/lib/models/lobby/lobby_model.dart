@@ -4,8 +4,8 @@ import '../base_response.dart';
 class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse{
   @override
   final int id;
-  final int taskId;
   final int shopId;
+  final int taskId;
   final int customerId;
 
   LobbyModel({
@@ -16,18 +16,27 @@ class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse{
   });
 
   // Для запроса (без ID)
-  Map<String, dynamic> toCreateJson() => {
-    'Task_ID': taskId,
-    'Shop_ID': shopId,
-    'Customer_ID': customerId,
+  Map<String, dynamic> createRequest() => {
+    'creatorID': customerId,
   };
+
+  Map<String, dynamic> removeRequest() => {
+    'lobbyid': id,
+    'customerid':customerId
+  };
+
+  Map<String, dynamic> addRequest() => {
+    'lobbyid': id,
+    'customerid':customerId
+  };
+
 
   // Для ответа (с ID)
   Map<String, dynamic> toJson() => {
-    if (id != 0) 'Lobby_ID': id,
-    'Task_ID': taskId,
-    'Shop_ID': shopId,
-    'Customer_ID': customerId,
+    if (id != 0) 'lobbyId': id,
+    'taskId': taskId,
+    'shopId': shopId,
+    'customerId': customerId,
   };
 
   factory LobbyModel.fromJson(Map<String, dynamic> json) {

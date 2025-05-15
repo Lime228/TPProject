@@ -23,8 +23,8 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> login(String username, String password) async {
     try {
-
-      final user = await MockApiClient().login(username, password);
+      //временный костыль обязательно переделать
+      final user = await MockApiClient().login(new UserModel(login: username, password: password, name: '', email: '', birthdayDate:DateTime(1980, 1, 1)));
 
       _user = user;
       _isAuthorized = true;

@@ -46,9 +46,11 @@
 - [Дополнение 1 к техническому заданию](https://github.com/Lime228/TPProject/blob/main/Documentation/Дополнение%201%20к%20тз.pdf)
 - [Письмо к дополнению](https://github.com/Lime228/TPProject/blob/main/Documentation/Письмо%20к%20дополнению.pdf)
 - [PM-отчет (2 атт.)](https://github.com/Lime228/TPProject/blob/main/Documentation/PM-отчет.pdf)
+- [Отчет о тестировании](https://github.com/Lime228/TPProject/blob/main/Documentation/Otchyot_o_testirovanii.pdf)
 
 ### Проверка
 - [Чек-лист](https://github.com/Lime228/TPProject/blob/main/Documentation/ВГУ-ТП.%20Чеклист%201%20этап%20Команда%208.2.pdf)
+- [Чек-лист 2](https://github.com/Lime228/TPProject/blob/main/Documentation/ВГУК-ТП.%20Чеклист%202%20этап%20-%20Лист1.pdf)
 #### Нас проверяли
 - [Команда 8.1](https://github.com/mxnmiraii/Vkatun/tree/main)
 - [Команда 8.5](https://gitlab.com/vsu.cs/TPmain)
@@ -58,4 +60,4 @@
 ### Дополнительно
 - [О коммитах](https://youtrack.zadachok.ru/articles/TPP-A-7/O-kommitah)
 - [Как собрать frontend в Android Studio](https://github.com/Lime228/TPProject/blob/main/frontend/README.md)
-
+- API находится по адресу https://api.zadachok.ru

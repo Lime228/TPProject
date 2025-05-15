@@ -734,7 +734,7 @@ class _ShopScreenState extends State<ShopScreen> {
       state: 'Available',
       price: double.parse(_priceController.text),
       customerId: authProvider.user?.id ?? 0,
-      link: _linkController.text,
+      link: _linkController.text, shopId: 1,
     );
 
     try {

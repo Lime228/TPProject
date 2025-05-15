@@ -1,11 +1,13 @@
+import 'package:zadachok/api/endpoints_config_parse.dart';
+
 class ApiEndpoints {
-  static const String _baseUrl = "https://zadachok.ru:8090";
-  static const String _registerPath = "/api/auth/register";
-  static const String _loginPath = "/api/auth/login";
+  static final String _baseUrl = EndpointsConfigParse.baseUrl;
+  static final String _registerPath = EndpointsConfigParse.registerPath;
+  static final String _loginPath = EndpointsConfigParse.loginPath;
 
-  static const String _recoverPasswordPath = "/api/auth/recover-password";
+  static final String _recoverPasswordPath = EndpointsConfigParse.recoverPasswordPath;
 
-  static const String _tasksPath = "/api/tasks";
+  static final String _tasksPath = EndpointsConfigParse.tasksPath;
 
 
 
