@@ -188,6 +188,6 @@ jobs:
               "customer_email": "test@example.com"
             }'
 
-          echo -e "\n✅ Deployment successful"
+          echo -e "\n✅ Deployment successful" 
 
       
