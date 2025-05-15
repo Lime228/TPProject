@@ -95,12 +95,12 @@ class MockApiClient implements ApiInterface {
     return TaskModel(
       id: int.parse(taskId),
       name: 'Завершенная задача',
-      reward: 100.0,
+      reward: 100,
       description: '',
       startPoint: 'Начальная точка',
       endPoint: 'Конечная точка',
       customerId: 1,
-      state: 'Completed', lobbyId: 1,
+      state: 'Completed',
     );
   }
 
@@ -108,9 +108,7 @@ class MockApiClient implements ApiInterface {
   Future<LobbyModel> createLobby(LobbyModel request) async {
     await Future.delayed(const Duration(seconds: 1));
 
-    if (request.taskId <= 0 || request.shopId <= 0 || request.customerId <= 0) {
-      throw Exception('Неверные параметры лобби');
-    }
+
 
     return LobbyModel(
       id: DateTime.now().millisecondsSinceEpoch,
@@ -144,7 +142,7 @@ class MockApiClient implements ApiInterface {
       endPoint: request.endPoint,
       reward: request.reward, // Сохраняем переданное значение reward
       customerId: request.customerId,
-      state: 'Pending', lobbyId: 1,
+      state: 'Pending',
     );
   }
 
@@ -160,22 +158,22 @@ class MockApiClient implements ApiInterface {
       TaskModel(
         id: 1,
         name: 'Тестовая задача 1',
-        reward: 50.0,
+        reward: 50,
         description: 'Описание тестовой задачи',
         startPoint: 'Точка A',
         endPoint: 'Точка B',
         customerId: int.parse(userId),
-        state: 'In Progress', lobbyId: 1,
+        state: 'In Progress',
       ),
       TaskModel(
         id: 2,
         name: 'Тестовая задача 2',
-        reward: 75.0,
+        reward: 75,
         description: 'Описание второй задачи',
         startPoint: 'Точка C',
         endPoint: 'Точка D',
         customerId: int.parse(userId),
-        state: 'Pending', lobbyId: 1,
+        state: 'Pending',
       ),
     ];
   }
