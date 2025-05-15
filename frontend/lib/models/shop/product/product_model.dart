@@ -84,7 +84,7 @@ class ProductModel implements BaseRequest<ProductModel>, BaseResponse{
     if (link != null) 'Link': link,
   };
 
-  factory ProductModel.fromJson(Map<String, dynamic> json) {
+  factory ProductModel.fromResponse(Map<String, dynamic> json) {
     return ProductModel(
       id: json['id'] ?? 0,
       name: json['name'],
@@ -101,7 +101,7 @@ class ProductModel implements BaseRequest<ProductModel>, BaseResponse{
 
   // Для списка продуктов
   static List<ProductModel> listFromJson(List<dynamic> json) {
-    return json.map((item) => ProductModel.fromJson(item)).toList();
+    return json.map((item) => ProductModel.fromResponse(item)).toList();
   }
 
   static List<Map<String, dynamic>> listToJson(List<ProductModel> products) {

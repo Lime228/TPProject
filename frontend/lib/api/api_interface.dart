@@ -16,9 +16,9 @@ abstract class ApiInterface {
 
 
   Future<TaskModel> createTask(TaskModel request, int lId);
-  Future<List<TaskModel>> getUserTasks(String userId);
+  Future<List<TaskModel>> getUserTasks(LobbyModel lobby, UserModel user);
   Future<TaskModel> completeTask(TaskModel task, UserModel user);
-  Future<void> deleteTask(String taskId);
+  Future<void> deleteTask(TaskModel task);
   Future<TaskModel> updateTask(TaskModel task);
 
   Future<List<ProductModel>> getShopItems();

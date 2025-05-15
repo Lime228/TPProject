@@ -161,22 +161,17 @@ class ApiClient implements ApiInterface {
   }
 
   @override
-  //TODO
   Future<ProductModel> createShopItem(ProductModel request) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/shop/items');
+    final url = Uri.parse(ApiEndpoints.shopProductCreateUrl);
 
     try {
       final response = await _client.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: json.encode(request.toJson()),
+        body: json.encode(request.createRequest()),
       ).timeout(const Duration(seconds: 10));
 
-      if (response.statusCode == 201) {
-        return ProductModel.fromJson(json.decode(response.body));
-      } else {
-        throw Exception('Failed to create item: ${response.statusCode}');
-      }
+      return _handleProductResponse(response);
     } catch (e) {
       throw Exception('Error creating shop item: ${e.toString()}');
     }
@@ -192,7 +187,7 @@ class ApiClient implements ApiInterface {
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = json.decode(response.body);
-        return jsonList.map((json) => ProductModel.fromJson(json)).toList();
+        return jsonList.map((json) => ProductModel.fromResponse(json)).toList();
       } else {
         throw Exception('Failed to load shop items: ${response.statusCode}');
       }
@@ -214,7 +209,7 @@ class ApiClient implements ApiInterface {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        return ProductModel.fromJson(json.decode(response.body));
+        return ProductModel.fromResponse(json.decode(response.body));
       } else {
         throw Exception('Failed to update item: ${response.statusCode}');
       }
@@ -243,16 +238,29 @@ class ApiClient implements ApiInterface {
 
   @override
   //TODO
-  Future<List<TaskModel>> getUserTasks(String userId) {
-    // TODO: implement getUserTasks
-    throw UnimplementedError();
-  }
+  Future<UserModel> updateUserProfile(UserModel user) async {
+    // Валидация (как в mock)
+    if (user.name.isEmpty || user.email.isEmpty) {
+      throw Exception('Имя и email обязательны');
+    }
 
-  @override
-  //TODO
-  Future<UserModel> updateUserProfile(UserModel request) {
-    // TODO: implement updateUserProfile
-    throw UnimplementedError();
+    final url = Uri.parse('OGO ZABYLI ENDPOINT');
+
+    try {
+      final response = await _client.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(user.toJson()),
+      ).timeout(const Duration(seconds: 10));
+
+      return _handleUserResponse(response);
+    } on http.ClientException catch (e) {
+      throw Exception('Ошибка сети: ${e.message}');
+    } on Exception catch (e) {
+      throw Exception('Ошибка: ${e.toString()}');
+    }
   }
 
   @override
@@ -263,17 +271,51 @@ class ApiClient implements ApiInterface {
   }
 
   @override
-  //TODO
-  Future<void> deleteTask(String taskId) {
-    // TODO: implement deleteTask
-    throw UnimplementedError();
+  Future<void> deleteTask(TaskModel task) async {
+    if (task.id <=0) {
+      throw Exception('ID задачи не может быть меньше 1');
+    }
+
+    final url = Uri.parse(ApiEndpoints.taskDeleteUrl);
+
+    try {
+      final response = await _client.delete(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(task.deleteRequest()),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception('Ошибка при удалении задачи: ${response.statusCode}');
+      }
+    } on http.ClientException catch (e) {
+      throw Exception('Ошибка подключения: ${e.message}');
+    } on Exception catch (e) {
+      throw Exception('Ошибка: $e');
+    }
   }
 
   @override
-  //TODO
-  Future<TaskModel> updateTask(TaskModel task) {
-    // TODO: implement updateTask
-    throw UnimplementedError();
+  Future<TaskModel> updateTask(TaskModel task) async {
+    if (task.id <= 0) {
+      throw Exception('ID задачи не может быть пустым');
+    }
+
+    final url = Uri.parse(ApiEndpoints.taskUpdateUrl);
+
+    try {
+      final response = await _client.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(task.updateRequest()),
+      ).timeout(const Duration(seconds: 10));
+
+      return _handleTaskResponse(response);
+    } on http.ClientException catch (e) {
+      throw Exception('Ошибка подключения: ${e.message}');
+    } on Exception catch (e) {
+      throw Exception('Ошибка: $e');
+    }
   }
 
 
@@ -342,9 +384,61 @@ class ApiClient implements ApiInterface {
     }
   }
 
+  ProductModel _handleProductResponse(http.Response response) {
+    switch (response.statusCode) {
+      case 200:
+      case 201:
+        return ProductModel.fromResponse(json.decode(response.body));
+      case 400:
+        throw Exception('Неверный запрос: ${response.body}');
+      case 401:
+        throw Exception('Ошибка авторизации');
+      case 500:
+        throw Exception('Ошибка сервера: ${response.body}');
+      default:
+        throw Exception('Ошибка: ${response.statusCode}');
+    }
+  }
+
   @override
   void dispose() {
     _client.close();
+  }
+
+  @override
+  Future<List<TaskModel>> getUserTasks(LobbyModel lobby, UserModel user) async {
+    try {
+      if (lobby.taskId.isEmpty) {
+        return [];
+      }
+
+      final List<TaskModel> userTasks = [];
+
+      for (final taskId in lobby.taskId) {
+        final taskUrl = Uri.parse('${ApiEndpoints.taskGetUrl}/$taskId');
+        final taskResponse = await _client.get(taskUrl)
+            .timeout(const Duration(seconds: 10));
+
+        if (taskResponse.statusCode == 200) {
+          final taskJson = json.decode(taskResponse.body);
+          final task = TaskModel.fromResponse(taskJson);
+
+          if ((task.customerId == null ||
+              task.customerId == user.id) &&
+              lobby.customerId.contains(user.id)) {
+            userTasks.add(task);
+          }
+        } else {
+          throw Exception('Ошибка при получении задачи $taskId: ${taskResponse.statusCode}');
+        }
+      }
+
+      return userTasks;
+    } on http.ClientException catch (e) {
+      throw Exception('Ошибка подключения: ${e.message}');
+    } on Exception catch (e) {
+      throw Exception('Ошибка при получении задач: ${e.toString()}');
+    }
   }
 
 }

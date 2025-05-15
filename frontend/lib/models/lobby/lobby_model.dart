@@ -49,7 +49,7 @@ class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse{
   };
 
   factory LobbyModel.fromResponse(Map<String, dynamic> json) {
-    return LobbyModel(
+    return LobbyModel(//НЕСООТВЕТСТВУЕТ ДЕЙСТВИТЕЛЬНОСТИ, ПЕРЕДЕЛАТЬ
       id: json['Lobby_ID'] ?? 0,
       taskId: json['Task_ID'],
       shopId: json['Shop_ID'],
