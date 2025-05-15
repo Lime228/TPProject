@@ -6,10 +6,10 @@ class ProductModel implements BaseRequest<ProductModel>, BaseResponse{
   final String name;
   final String description;
   final String photo;
-  final String state;
-  final double price;
+  final bool state;
+  final int price;
   final int customerId;
-  final int shopId;
+  // final int shopId;
   final String? link;
 
   ProductModel({
@@ -20,7 +20,7 @@ class ProductModel implements BaseRequest<ProductModel>, BaseResponse{
     required this.state,
     required this.price,
     required this.customerId,
-    required this.shopId,
+    // required this.shopId,
     this.link,
   });
 
@@ -29,8 +29,8 @@ class ProductModel implements BaseRequest<ProductModel>, BaseResponse{
     String? name,
     String? description,
     String? photo,
-    String? state,
-    double? price,
+    bool? state,
+    int? price,
     int? customerId,
     String? link,
   }) {
@@ -43,7 +43,7 @@ class ProductModel implements BaseRequest<ProductModel>, BaseResponse{
       price: price ?? this.price,
       customerId: customerId ?? this.customerId,
       link: link ?? this.link,
-      shopId: this.shopId,
+      // shopId: this.shopId,
     );
   }
 
@@ -55,7 +55,7 @@ class ProductModel implements BaseRequest<ProductModel>, BaseResponse{
     'state': state,
     'price': price,
     'customerid': customerId,
-    'shopid': shopId
+    // 'shopid': shopId
   };
 
   Map<String, dynamic> updateRequest() => {
@@ -67,7 +67,7 @@ class ProductModel implements BaseRequest<ProductModel>, BaseResponse{
     'price': price,
   };
   Map<String, dynamic> deleteRequest() => {
-    'shopid': shopId,
+    // 'shopid': shopId,
     'productid': id,
   };
 
@@ -80,7 +80,7 @@ class ProductModel implements BaseRequest<ProductModel>, BaseResponse{
     'state': state,
     'price': price,
     'customerid': customerId,
-    'shopid': shopId,
+    // 'shopid': shopId,
     if (link != null) 'Link': link,
   };
 
@@ -95,7 +95,7 @@ class ProductModel implements BaseRequest<ProductModel>, BaseResponse{
           ? (json['price'] as int).toDouble()
           : json['price'].toDouble(),
       customerId: json['customerid'],
-      shopId: json['shopid'],
+      // shopId: json['shopid'],
     );
   }
 

@@ -5,8 +5,8 @@ class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse{
   @override
   final int id;
   final int shopId;
-  final int taskId;
-  final int customerId;
+  final List<int> taskId;
+  final List<int> customerId;
 
   LobbyModel({
     this.id = 0, // 0 означает новый объект (для создания)
@@ -28,6 +28,15 @@ class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse{
   Map<String, dynamic> addRequest() => {
     'lobbyid': id,
     'customerid':customerId
+  };
+
+  Map<String, dynamic> getRequest() => { // переделать это явно не так
+    'lobbyid': id,
+    'customerid':customerId
+  };
+
+  Map<String, dynamic> deleteRequest() => {
+    'lobbyid': id,
   };
 
 

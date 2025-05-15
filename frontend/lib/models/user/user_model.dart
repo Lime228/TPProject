@@ -9,6 +9,7 @@ class UserModel implements BaseRequest<UserModel>, BaseResponse {
   final DateTime birthdayDate;
   final String login;
   final bool isAdmin;
+  final String photo;
   final String password;
 
   UserModel({
@@ -17,6 +18,7 @@ class UserModel implements BaseRequest<UserModel>, BaseResponse {
     required this.email,
     required this.birthdayDate,
     required this.login,
+    this.photo = '',
     this.password = '',
     this.isAdmin = false,
   });

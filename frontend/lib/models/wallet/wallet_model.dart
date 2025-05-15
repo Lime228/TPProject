@@ -6,7 +6,7 @@ class WalletModel implements BaseRequest<WalletModel>, BaseResponse {
   final int id;
   final int customerId;
   final int lobbyId;
-  final double balance;
+  final int balance;
 
   WalletModel({
     this.id = 0, // 0 для новых кошельков
