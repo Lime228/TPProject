@@ -172,8 +172,8 @@ jobs:
           echo "🔁 Restarting services (soft)"
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
             cd ${{ env.PRODUCTION_DIR }}
-            docker-compose down || true
-            docker-compose up -d --build
+            docker compose down || true
+            docker compose up -d --build
             sleep 10"
 
       - name: Verify deployment
