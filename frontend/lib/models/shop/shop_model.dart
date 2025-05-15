@@ -4,8 +4,8 @@ import '../base_request.dart';
 import '../base_response.dart';
 
 class ShopModel implements BaseRequest<ShopModel>, BaseResponse{
-  final int id;
-  final List<int> productId;
+  int id;
+  List<int> productId;
 
   ShopModel({
     this.id = 0, // 0 означает новый объект (для создания)

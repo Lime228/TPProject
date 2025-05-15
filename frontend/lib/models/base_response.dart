@@ -1,5 +1,5 @@
 abstract class BaseResponse {
-  final int id;
+  int id;
 
   BaseResponse({required this.id});
 

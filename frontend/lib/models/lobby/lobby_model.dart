@@ -3,10 +3,10 @@ import '../base_response.dart';
 
 class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse{
   @override
-  final int id;
-  final int shopId;
-  final List<int> taskId;
-  final List<int> customerId;
+  int id;
+  int shopId;
+  List<int> taskId;
+  List<int> customerId;
 
   LobbyModel({
     this.id = 0, // 0 означает новый объект (для создания)

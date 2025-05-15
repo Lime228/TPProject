@@ -3,10 +3,10 @@ import '../base_response.dart';
 
 class WalletModel implements BaseRequest<WalletModel>, BaseResponse {
   @override
-  final int id;
-  final int customerId;
-  final int lobbyId;
-  final int balance;
+  int id;
+  int customerId;
+  int lobbyId;
+  int balance;
 
   WalletModel({
     this.id = 0, // 0 для новых кошельков

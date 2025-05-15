@@ -3,14 +3,14 @@ import '../base_response.dart';
 
 class UserModel implements BaseRequest<UserModel>, BaseResponse {
   @override
-  final int id;
-  final String name;
-  final String email;
-  final DateTime birthdayDate;
-  final String login;
-  final bool isAdmin;
-  final String photo;
-  final String password;
+  int id;
+  String name;
+  String email;
+  DateTime birthdayDate;
+  String login;
+  bool isAdmin;
+  String photo;
+  String password;
 
   UserModel({
     this.id = 0,

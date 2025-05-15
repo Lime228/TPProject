@@ -2,15 +2,15 @@ import '../../base_request.dart';
 import '../../base_response.dart';
 
 class ProductModel implements BaseRequest<ProductModel>, BaseResponse{
-  final int id;
-  final String name;
-  final String description;
-  final String photo;
-  final bool state;
-  final int price;
-  final int customerId;
-  // final int shopId;
-  final String? link;
+  int id;
+  String name;
+  String description;
+  String photo;
+  bool state;
+  int price;
+  int customerId;
+  // int shopId;
+  String? link;
 
   ProductModel({
     this.id = 0, // 0 для новых продуктов

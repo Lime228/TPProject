@@ -3,14 +3,14 @@ import '../base_response.dart';
 
 class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
   @override
-  final int id;
-  final String name;
-  final int reward;
-  final String description;
-  final String startPoint;
-  final String endPoint;
-  final String state;
-  final int customerId;
+  int id;
+  String name;
+  int reward;
+  String description;
+  String startPoint;
+  String endPoint;
+  int state;
+  int customerId;
 
   bool isCompleted;
   bool isOverdue;
@@ -55,7 +55,7 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
     String? startPoint,
     String? endPoint,
     int? customerId,
-    String? state,
+    int? state,
     bool? isCompleted,
     bool? isOverdue,
   }) {
@@ -92,6 +92,7 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
     'startdate': startPoint,
     'enddate': endPoint,
     // 'customerid': customerId, его там нету пока, надо добавить
+    //'state': state
     // не забыть про гет
   };
 
@@ -111,7 +112,7 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
     'isActive': state,
   };
 
-  factory TaskModel.fromJson(Map<String, dynamic> json) {
+  factory TaskModel.fromResponse(Map<String, dynamic> json) {
     return TaskModel(
       id: json['id'] ?? 0,
       name: json['name'],
@@ -128,10 +129,10 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
 
   @override
   TaskModel fromJson(Map<String, dynamic> json) {
-    return TaskModel.fromJson(json);
+    return TaskModel.fromResponse(json);
   }
 
   static List<TaskModel> listFromJson(List<dynamic> jsonList) {
-    return jsonList.map((json) => TaskModel.fromJson(json)).toList();
+    return jsonList.map((json) => TaskModel.fromResponse(json)).toList();
   }
 }
