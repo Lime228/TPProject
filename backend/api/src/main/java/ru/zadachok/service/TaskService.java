@@ -48,6 +48,28 @@ public class TaskService {
         return savedTask;
     }
 
+    public void deleteTask(Integer taskId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Задача не найдена"));
+
+        // Удаляем taskId из Lobby
+        List<Lobby> lobbies = lobbyRepository.findAll(); // если у тебя 1 lobby per task, можно findByTaskId
+
+        for (Lobby lobby : lobbies) {
+            Integer[] taskIds = lobby.getTaskId();
+            if (taskIds != null && Arrays.asList(taskIds).contains(taskId)) {
+                List<Integer> updated = new ArrayList<>(Arrays.asList(taskIds));
+                updated.remove(taskId);
+                lobby.setTaskId(updated.toArray(new Integer[0]));
+                lobbyRepository.save(lobby);
+                break; // прерываем, если задача найдена (оптимизация)
+            }
+        }
+
+        taskRepository.deleteById(taskId);
+    }
+
+
     public Task getTaskById(Integer taskId) {
         return taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Магазин с ID " + taskId + " не найден"));

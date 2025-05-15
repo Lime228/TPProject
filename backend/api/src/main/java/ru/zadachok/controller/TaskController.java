@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.zadachok.model.Shop;
 import ru.zadachok.model.Task;
 import ru.zadachok.request.CreateTaskRequest;
+import ru.zadachok.request.DeleteTaskRequest;
 import ru.zadachok.service.TaskService;
 
 @RestController
@@ -55,6 +56,31 @@ public class TaskController {
     public ResponseEntity<Task> create(@RequestBody CreateTaskRequest request) {
         Task task = taskService.createTask(request);
         return ResponseEntity.ok(task);
+    }
+
+    @Operation(
+            summary = "Удалить задачу",
+            description = "Удаляет задачу по её ID и убирает её из привязанного лобби"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Задача успешно удалена",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(example = "Задача удалена")
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Задача не найдена",
+                    content = @Content
+            )
+    })
+    @DeleteMapping("/delete")
+    public ResponseEntity<String> deleteTask(@RequestBody DeleteTaskRequest request) {
+        taskService.deleteTask(request.getTaskId());
+        return ResponseEntity.ok("Задача удалена");
     }
 
     @GetMapping("/{id}")
