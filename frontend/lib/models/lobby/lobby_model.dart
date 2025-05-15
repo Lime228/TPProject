@@ -48,7 +48,7 @@ class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse{
     'customerId': customerId,
   };
 
-  factory LobbyModel.fromJson(Map<String, dynamic> json) {
+  factory LobbyModel.fromResponse(Map<String, dynamic> json) {
     return LobbyModel(
       id: json['Lobby_ID'] ?? 0,
       taskId: json['Task_ID'],
@@ -59,12 +59,12 @@ class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse{
 
   // Для списка лобби по customerId
   static List<LobbyModel> listFromJson(List<dynamic> jsonList) {
-    return jsonList.map((json) => LobbyModel.fromJson(json)).toList();
+    return jsonList.map((json) => LobbyModel.fromResponse(json)).toList();
   }
 
   @override
   @override
   LobbyModel fromJson(Map<String, dynamic> json) {
-    return LobbyModel.fromJson(json);
+    return LobbyModel.fromResponse(json);
   }
 }

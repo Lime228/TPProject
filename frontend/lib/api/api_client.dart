@@ -16,6 +16,15 @@ class ApiClient implements ApiInterface {
 
   @override
   Future<UserModel> register(UserModel request) async {
+
+    if (request.login.isEmpty || request.password.isEmpty) {
+      throw Exception('Все поля обязательны для заполнения');
+    }
+
+    if (request.password.length < 6) {
+      throw Exception('Пароль должен содержать минимум 6 символов');
+    }
+
     final url = Uri.parse(ApiEndpoints.registerUrl);
 
     try {
@@ -25,7 +34,8 @@ class ApiClient implements ApiInterface {
         body: json.encode(request.registerRequest()),
       ).timeout(const Duration(seconds: 10));
 
-      return _handleResponse(response);
+
+      return _handleUserResponse(response);
     } on http.ClientException catch (e) {
       throw Exception('Ошибка подключения: ${e.message}');
     } on Exception catch (e) {
@@ -36,7 +46,7 @@ class ApiClient implements ApiInterface {
   @override
   Future<UserModel> login(UserModel request) async {
     final url = Uri.parse(ApiEndpoints.loginUrl);
-
+   //TODO
     try {
       final response = await _client.post(
         url,
@@ -44,7 +54,7 @@ class ApiClient implements ApiInterface {
         body: json.encode(request.loginRequest()),
       ).timeout(const Duration(seconds: 10));
 
-      return _handleResponse(response);
+      return _handleUserResponse(response);
     } on http.ClientException catch (e) {
       throw Exception('Ошибка подключения: ${e.message}');
     } on Exception catch (e) {
@@ -53,8 +63,8 @@ class ApiClient implements ApiInterface {
   }
 
 
-
   @override
+  //TODO
   Future<void> recoverPassword({required String email,required String login}) async {
     final url = Uri.parse(ApiEndpoints.recoverPasswordUrl);
 
@@ -76,56 +86,82 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  void _handlePasswordRecoveryResponse(http.Response response) {
-    switch (response.statusCode) {
-      case 200:
-      case 201:
-        return;
-      case 400:
-        throw Exception('Неверный запрос: ${response.body}');
-      case 404:
-        throw Exception('Пользователь не найден');
-      case 500:
-        throw Exception('Ошибка сервера: ${response.body}');
-      default:
-        throw Exception('Ошибка: ${response.statusCode}');
-    }
-  }
 
-  UserModel _handleResponse(http.Response response) {
-    switch (response.statusCode) {
-      case 200:
-      case 201:
-        return UserModel.fromResponse(json.decode(response.body));
-      case 400:
-        throw Exception('Неверный запрос: ${response.body}');
-      case 401:
-        throw Exception('Ошибка авторизации');
-      case 500:
-        throw Exception('Ошибка сервера: ${response.body}');
-      default:
-        throw Exception('Ошибка: ${response.statusCode}');
+  @override
+  Future<TaskModel> createTask(TaskModel request, int lId) async {
+    if (request.name.isEmpty) {
+      throw Exception('Название задачи не может быть пустым');
+    }
+
+    if (request.endPoint.isEmpty) {
+      throw Exception('Дедлайн должен быть указан');
+    }
+
+    final url = Uri.parse(ApiEndpoints.taskCreateUrl);
+
+    try {
+      final response = await _client.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(request.createRequest(lId)),
+      ).timeout(const Duration(seconds: 10));
+
+      return _handleTaskResponse(response);
+    } on http.ClientException catch (e) {
+      throw Exception('Ошибка подключения: ${e.message}');
+    } on Exception catch (e) {
+      throw Exception('Ошибка: $e');
     }
   }
 
   @override
-  void dispose() {
-    _client.close();
+  Future<TaskModel> completeTask(TaskModel task, UserModel user) async {
+    if (task.id <= 0) {
+      throw Exception('ID задачи не может быть меньше 1');
+    }
+
+    final url = Uri.parse(ApiEndpoints.taskCreateUrl);
+    if (user.isAdmin) {
+      task.state = 2;
+    } else {
+      task.state = 1;
+    }
+
+    try {
+      final response = await _client.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(task.updateRequest()),
+      ).timeout(const Duration(seconds: 10));
+
+      return _handleTaskResponse(response);
+    } on http.ClientException catch (e) {
+      throw Exception('Ошибка подключения: ${e.message}');
+    } on Exception catch (e) {
+      throw Exception('Ошибка: $e');
+    }
   }
 
   @override
-  Future<TaskModel> completeTask(String taskId) {
-    // TODO: implement completeTask
-    throw UnimplementedError();
+  Future<LobbyModel> createLobby(LobbyModel request) async {
+    final url = Uri.parse(ApiEndpoints.lobbyCreateUrl);
+    try {
+      final response = await _client.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(request.createRequest()),
+      ).timeout(const Duration(seconds: 10));
+
+      return _handleLobbyResponse(response);
+    } on http.ClientException catch (e) {
+      throw Exception('Ошибка подключения: ${e.message}');
+    } on Exception catch (e) {
+      throw Exception('Ошибка: $e');
+    }
   }
 
   @override
-  Future<LobbyModel> createLobby(LobbyModel request) {
-    // TODO: implement createLobby
-    throw UnimplementedError();
-  }
-
-  @override
+  //TODO
   Future<ProductModel> createShopItem(ProductModel request) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}/shop/items');
 
@@ -147,6 +183,7 @@ class ApiClient implements ApiInterface {
   }
 
   @override
+  //TODO
   Future<List<ProductModel>> getShopItems() async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}/shop/items');
 
@@ -165,6 +202,7 @@ class ApiClient implements ApiInterface {
   }
 
   @override
+  //TODO
   Future<ProductModel> updateShopItem(ProductModel request) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}/shop/items/${request.id}');
 
@@ -186,6 +224,7 @@ class ApiClient implements ApiInterface {
   }
 
   @override
+  //TODO
   Future<void> deleteShopItem(String itemId) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}/shop/items/$itemId');
 
@@ -200,39 +239,112 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override
-  Future<TaskModel> createTask(TaskModel request) {
-    // TODO: implement createTask
-    throw UnimplementedError();
-  }
+
 
   @override
+  //TODO
   Future<List<TaskModel>> getUserTasks(String userId) {
     // TODO: implement getUserTasks
     throw UnimplementedError();
   }
 
   @override
+  //TODO
   Future<UserModel> updateUserProfile(UserModel request) {
     // TODO: implement updateUserProfile
     throw UnimplementedError();
   }
 
   @override
+  //TODO
   Future<WalletModel> updateWallet(WalletModel request) {
     // TODO: implement updateWallet
     throw UnimplementedError();
   }
 
   @override
+  //TODO
   Future<void> deleteTask(String taskId) {
     // TODO: implement deleteTask
     throw UnimplementedError();
   }
 
   @override
+  //TODO
   Future<TaskModel> updateTask(TaskModel task) {
     // TODO: implement updateTask
     throw UnimplementedError();
   }
+
+
+
+  void _handlePasswordRecoveryResponse(http.Response response) {
+    switch (response.statusCode) {
+      case 200:
+      case 201:
+        return;
+      case 400:
+        throw Exception('Неверный запрос: ${response.body}');
+      case 404:
+        throw Exception('Пользователь не найден');
+      case 500:
+        throw Exception('Ошибка сервера: ${response.body}');
+      default:
+        throw Exception('Ошибка: ${response.statusCode}');
+    }
+  }
+
+  UserModel _handleUserResponse(http.Response response) {
+    switch (response.statusCode) {
+      case 200:
+      case 201:
+        return UserModel.fromResponse(json.decode(response.body));
+      case 400:
+        throw Exception('Неверный запрос: ${response.body}');
+      case 401:
+        throw Exception('Ошибка авторизации');
+      case 500:
+        throw Exception('Ошибка сервера: ${response.body}');
+      default:
+        throw Exception('Ошибка: ${response.statusCode}');
+    }
+  }
+
+  TaskModel _handleTaskResponse(http.Response response) {
+    switch (response.statusCode) {
+      case 200:
+      case 201:
+        return TaskModel.fromResponse(json.decode(response.body));
+      case 400:
+        throw Exception('Неверный запрос: ${response.body}');
+      case 401:
+        throw Exception('Ошибка авторизации');
+      case 500:
+        throw Exception('Ошибка сервера: ${response.body}');
+      default:
+        throw Exception('Ошибка: ${response.statusCode}');
+    }
+  }
+
+  LobbyModel _handleLobbyResponse(http.Response response) {
+    switch (response.statusCode) {
+      case 200:
+      case 201:
+        return LobbyModel.fromResponse(json.decode(response.body));
+      case 400:
+        throw Exception('Неверный запрос: ${response.body}');
+      case 401:
+        throw Exception('Ошибка авторизации');
+      case 500:
+        throw Exception('Ошибка сервера: ${response.body}');
+      default:
+        throw Exception('Ошибка: ${response.statusCode}');
+    }
+  }
+
+  @override
+  void dispose() {
+    _client.close();
+  }
+
 }

@@ -85,22 +85,22 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<TaskModel> completeTask(String taskId) async {
+  Future<TaskModel> completeTask(TaskModel task, UserModel user) async {
     await Future.delayed(const Duration(seconds: 1));
 
-    if (taskId.isEmpty) {
+    if (task.id<=0) {
       throw Exception('ID задачи не может быть пустым');
     }
 
     return TaskModel(
-      id: int.parse(taskId),
+      id: task.id,
       name: 'Завершенная задача',
       reward: 100,
       description: '',
       startPoint: 'Начальная точка',
       endPoint: 'Конечная точка',
       customerId: 1,
-      state: 'Completed',
+      state: 1,
     );
   }
 
@@ -121,7 +121,7 @@ class MockApiClient implements ApiInterface {
 
 
   @override
-  Future<TaskModel> createTask(TaskModel request) async {
+  Future<TaskModel> createTask(TaskModel request, int id) async {
     debugPrint('Создаем задачу: ${request.toJson()}'); // Логируем запрос
 
     await Future.delayed(const Duration(seconds: 1)); // Имитация задержки сети
@@ -142,7 +142,7 @@ class MockApiClient implements ApiInterface {
       endPoint: request.endPoint,
       reward: request.reward, // Сохраняем переданное значение reward
       customerId: request.customerId,
-      state: 'Pending',
+      state: 1,
     );
   }
 
@@ -163,7 +163,7 @@ class MockApiClient implements ApiInterface {
         startPoint: 'Точка A',
         endPoint: 'Точка B',
         customerId: int.parse(userId),
-        state: 'In Progress',
+        state: 0,
       ),
       TaskModel(
         id: 2,
@@ -173,7 +173,7 @@ class MockApiClient implements ApiInterface {
         startPoint: 'Точка C',
         endPoint: 'Точка D',
         customerId: int.parse(userId),
-        state: 'Pending',
+        state: 1,
       ),
     ];
   }
