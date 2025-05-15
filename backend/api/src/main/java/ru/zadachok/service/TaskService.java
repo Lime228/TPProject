@@ -8,6 +8,7 @@ import ru.zadachok.model.Task;
 import ru.zadachok.repository.LobbyRepository;
 import ru.zadachok.repository.TaskRepository;
 import ru.zadachok.request.CreateTaskRequest;
+import ru.zadachok.request.UpdateTaskRequest;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,6 +68,19 @@ public class TaskService {
         }
 
         taskRepository.deleteById(taskId);
+    }
+
+    public Task updateTask(UpdateTaskRequest request) {
+        Task task = taskRepository.findById(request.getTaskId())
+                .orElseThrow(() -> new RuntimeException("Задача не найдена"));
+
+        if (request.getName() != null) task.setName(request.getName());
+        if (request.getDescription() != null) task.setDescription(request.getDescription());
+        if (request.getStartDate() != null) task.setStartDate(request.getStartDate());
+        if (request.getEndDate() != null) task.setEndDate(request.getEndDate());
+        if (request.getReward() != null) task.setReward(request.getReward());
+
+        return taskRepository.save(task);
     }
 
 

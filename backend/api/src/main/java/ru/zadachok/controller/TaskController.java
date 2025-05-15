@@ -13,6 +13,7 @@ import ru.zadachok.model.Shop;
 import ru.zadachok.model.Task;
 import ru.zadachok.request.CreateTaskRequest;
 import ru.zadachok.request.DeleteTaskRequest;
+import ru.zadachok.request.UpdateTaskRequest;
 import ru.zadachok.service.TaskService;
 
 @RestController
@@ -82,6 +83,37 @@ public class TaskController {
         taskService.deleteTask(request.getTaskId());
         return ResponseEntity.ok("Задача удалена");
     }
+
+    @Operation(
+            summary = "Обновить задачу",
+            description = "Обновляет существующую задачу по ID"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Задача успешно обновлена",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Task.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Неверные параметры запроса",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Задача не найдена",
+                    content = @Content
+            )
+    })
+    @PatchMapping("/update")
+    public ResponseEntity<Task> updateTask(@RequestBody UpdateTaskRequest request) {
+        Task updated = taskService.updateTask(request);
+        return ResponseEntity.ok(updated);
+    }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<Task> getTask(@PathVariable int id) {
