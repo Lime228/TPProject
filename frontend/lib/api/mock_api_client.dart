@@ -85,22 +85,22 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<TaskModel> completeTask(String taskId) async {
+  Future<TaskModel> completeTask(TaskModel task, UserModel user) async {
     await Future.delayed(const Duration(seconds: 1));
 
-    if (taskId.isEmpty) {
+    if (task.id<=0) {
       throw Exception('ID задачи не может быть пустым');
     }
 
     return TaskModel(
-      id: int.parse(taskId),
+      id: task.id,
       name: 'Завершенная задача',
-      reward: 100.0,
+      reward: 100,
       description: '',
       startPoint: 'Начальная точка',
       endPoint: 'Конечная точка',
       customerId: 1,
-      state: 'Completed', lobbyId: 1,
+      state: 1,
     );
   }
 
@@ -108,9 +108,7 @@ class MockApiClient implements ApiInterface {
   Future<LobbyModel> createLobby(LobbyModel request) async {
     await Future.delayed(const Duration(seconds: 1));
 
-    if (request.taskId <= 0 || request.shopId <= 0 || request.customerId <= 0) {
-      throw Exception('Неверные параметры лобби');
-    }
+
 
     return LobbyModel(
       id: DateTime.now().millisecondsSinceEpoch,
@@ -123,7 +121,7 @@ class MockApiClient implements ApiInterface {
 
 
   @override
-  Future<TaskModel> createTask(TaskModel request) async {
+  Future<TaskModel> createTask(TaskModel request, int id) async {
     debugPrint('Создаем задачу: ${request.toJson()}'); // Логируем запрос
 
     await Future.delayed(const Duration(seconds: 1)); // Имитация задержки сети
@@ -144,7 +142,7 @@ class MockApiClient implements ApiInterface {
       endPoint: request.endPoint,
       reward: request.reward, // Сохраняем переданное значение reward
       customerId: request.customerId,
-      state: 'Pending', lobbyId: 1,
+      state: 1,
     );
   }
 
@@ -160,22 +158,22 @@ class MockApiClient implements ApiInterface {
       TaskModel(
         id: 1,
         name: 'Тестовая задача 1',
-        reward: 50.0,
+        reward: 50,
         description: 'Описание тестовой задачи',
         startPoint: 'Точка A',
         endPoint: 'Точка B',
         customerId: int.parse(userId),
-        state: 'In Progress', lobbyId: 1,
+        state: 0,
       ),
       TaskModel(
         id: 2,
         name: 'Тестовая задача 2',
-        reward: 75.0,
+        reward: 75,
         description: 'Описание второй задачи',
         startPoint: 'Точка C',
         endPoint: 'Точка D',
         customerId: int.parse(userId),
-        state: 'Pending', lobbyId: 1,
+        state: 1,
       ),
     ];
   }

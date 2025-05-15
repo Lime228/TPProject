@@ -618,7 +618,7 @@ class _TasksScreenState extends State<TasksScreen> {
 
 
 
-  Widget _buildRewardBadge(double reward) {
+  Widget _buildRewardBadge(int reward) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
@@ -897,9 +897,9 @@ class _TasksScreenState extends State<TasksScreen> {
       description: _descController.text.trim(),
       endPoint: _deadline!.toIso8601String(),
       startPoint: DateTime.now().toIso8601String(),
-      reward: double.parse(_rewardController.text),
+      reward: int.parse(_rewardController.text),
       customerId: 1,
-      state: 'Pending', lobbyId: 1,
+      state: 'Pending',
     );
 
     try {
@@ -1350,7 +1350,7 @@ class _TasksScreenState extends State<TasksScreen> {
               final updatedTask = task.copyWith(
                 name: _editTitleController.text,
                 description: _editDescController.text,
-                reward: double.tryParse(_editRewardController.text) ?? task.reward,
+                reward: int.tryParse(_editRewardController.text) ?? task.reward,
               );
               await taskProvider.updateTask(updatedTask);
               if (mounted) Navigator.pop(ctx);
