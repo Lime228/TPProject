@@ -178,6 +178,19 @@ jobs:
 
       - name: Verify deployment
         run: |
+          echo "🚀 Waiting for API to become healthy..."
+
+          # Пытаемся дождаться, пока API отдаст 200 или 400
+          for i in {1..30}; do
+            STATUS=$(curl -sk -o /dev/null -w "%{http_code}" https://api.zadachok.ru/api/auth/register)
+            if [ "$STATUS" = "200" ] || [ "$STATUS" = "400" ]; then
+              echo "✅ API is up (HTTP $STATUS)"
+              break
+            fi
+            echo "⏳ API not ready yet (HTTP $STATUS), retrying in 3s..."
+            sleep 3
+          done
+
           echo "🚀 Verifying deployment by registering test user..."
           curl -vk -X POST "https://api.zadachok.ru/api/auth/register" \
             -H "Content-Type: application/json" \
@@ -188,6 +201,4 @@ jobs:
               "customer_email": "test@example.com"
             }'
 
-          echo -e "\n✅ Deployment successful" 
-
-      
+          echo -e "\n✅ Deployment successful"
