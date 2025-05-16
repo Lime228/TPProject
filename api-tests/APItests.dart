@@ -391,6 +391,36 @@ void main() {
         print('Ошибка при удалении продукта\n');
       }
     });
+    test('11. Удаление лобби', () async {
+      print('Удаление лобби...');
+    
+      final requestData = {
+        'lobbyid': 1,
+      };
+    
+      print('Отправляемые данные: ${jsonEncode(requestData)}');
+    
+      final response = await http.delete(
+        Uri.parse('http://<ТВОЙ_ХОСТ>/api/lobby/delete'), // Заменить на переменную, если есть
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(requestData),
+      );
+    
+      print('Статус код: ${response.statusCode}');
+      print('Ответ сервера: ${response.body}');
+    
+      if (response.statusCode == 200) {
+        expect(response.body, contains('Лобби успешно удалено'),
+            reason: 'Ответ сервера не содержит подтверждения удаления');
+    
+        print('Успех: ${response.body}');
+        print('Лобби с lobbyid=1 удалено\n');
+      } else {
+        print('Ошибка при удалении лобби\n');
+      }
+    });
   });
   tearDownAll(() {
     print('Тестирование завершено');
