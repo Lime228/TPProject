@@ -22,7 +22,7 @@ public class CustomerDto {
     @Schema(description = "Уникальный идентификатор пользователя",
             example = "123",
             requiredMode = Schema.RequiredMode.REQUIRED)
-    private Long customer_ID;
+    private Integer customer_ID;
 
     @Schema(description = "Логин пользователя",
             example = "user123",

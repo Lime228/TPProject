@@ -10,7 +10,9 @@ import ru.zadachok.dto.CustomerDto;
 import ru.zadachok.exception.CustomerAlreadyExistsException;
 import ru.zadachok.model.Customer;
 import ru.zadachok.repository.CustomerRepository;
+import ru.zadachok.request.DeleteCustomerRequest;
 import ru.zadachok.request.RegisterRequest;
+import ru.zadachok.request.UpdateCustomerRequest;
 
 @Service
 @RequiredArgsConstructor
@@ -42,7 +44,7 @@ public class CustomerService {
 
         // Конвертируем в DTO
         return CustomerDto.builder()
-                .customer_ID(savedCustomer.getCustomer_ID().longValue())
+                .customer_ID(savedCustomer.getCustomer_ID())
                 .login(savedCustomer.getLogin())
                 .customer_email(savedCustomer.getCustomer_email())
                 .admin(savedCustomer.isAdmin() ? "ADMIN" : "USER")
@@ -56,5 +58,37 @@ public class CustomerService {
     public UserDetails loadCustomerByCustomername(String login) throws UsernameNotFoundException {
         return customerRepository.findByLogin(login)
                 .orElseThrow(() -> new UsernameNotFoundException("Customer not found"));
+    }
+
+
+    public CustomerDto updateCustomer(UpdateCustomerRequest request) {
+        Customer customer = customerRepository.findById(request.getCustomer_ID())
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден"));
+
+        if (request.getBirthday_date() != null) {
+            customer.setBirthday_date(request.getBirthday_date());
+        }
+        if (request.getCustomer_name() != null) {
+            customer.setCustomer_name(request.getCustomer_name());
+        }
+        if (request.getCustomer_photo() != null) {
+            customer.setCustomer_photo(request.getCustomer_photo());
+        }
+
+        Customer updatedCustomer = customerRepository.save(customer);
+
+        return CustomerDto.builder()
+                .customer_ID(updatedCustomer.getCustomer_ID())
+                .login(updatedCustomer.getLogin())
+                .customer_email(updatedCustomer.getCustomer_email())
+                .admin(updatedCustomer.isAdmin() ? "ADMIN" : "USER")
+                .birthday_date(updatedCustomer.getBirthday_date())
+                .customer_name(updatedCustomer.getCustomer_name())
+                .customer_photo(updatedCustomer.getCustomer_photo())
+                .build();
+    }
+
+    public void deleteCustomer(DeleteCustomerRequest request) {
+        //TODO: правильное удаление, даже из лоббешников
     }
 }
