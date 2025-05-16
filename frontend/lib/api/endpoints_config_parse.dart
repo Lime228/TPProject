@@ -5,7 +5,7 @@ class EndpointsConfigParse {
   static late Map<String, dynamic> _config;
 
   static Future<void> load() async {
-    final configString = await rootBundle.loadString('assets/config.json');
+    final configString = await rootBundle.loadString('lib/assets/config.json');
     _config = jsonDecode(configString) as Map<String, dynamic>;
   }
 

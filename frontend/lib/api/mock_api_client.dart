@@ -35,13 +35,13 @@ class MockApiClient implements ApiInterface {
   @override
   @override
   Future<UserModel> login(UserModel request) async {
-    // Здесь добавьте логи, чтобы проверить данные
+
     String username = request.login;
     String password = request.password;
     print("Login attempt with username: $username, password: $password");
 
-    // Пример ответа
-    await Future.delayed(Duration(seconds: 2));  // имитируем задержку сети
+
+    await Future.delayed(Duration(seconds: 2));
 
 
     if (username == 'admin' && password == 'admin') {
@@ -62,7 +62,7 @@ class MockApiClient implements ApiInterface {
   Future<Map<String, dynamic>> checkGroupMembership(String userId) async {
     await Future.delayed(const Duration(milliseconds: 500));
 
-    // Возвращаем пустые данные - группа не присваивается автоматически
+
     return {
       'isMember': false,
       'isAdmin': false,
@@ -122,9 +122,9 @@ class MockApiClient implements ApiInterface {
 
   @override
   Future<TaskModel> createTask(TaskModel request, int id) async {
-    debugPrint('Создаем задачу: ${request.toJson()}'); // Логируем запрос
+    debugPrint('Создаем задачу: ${request.toJson()}');
 
-    await Future.delayed(const Duration(seconds: 1)); // Имитация задержки сети
+    await Future.delayed(const Duration(seconds: 1));
 
     if (request.name.isEmpty) {
       throw Exception('Название задачи не может быть пустым');
@@ -140,17 +140,17 @@ class MockApiClient implements ApiInterface {
       description: request.description,
       startPoint: DateTime.now().toIso8601String(),
       endPoint: request.endPoint,
-      reward: request.reward, // Сохраняем переданное значение reward
+      reward: request.reward,
       customerId: request.customerId,
       state: 1,
     );
   }
 
   @override
-  Future<List<TaskModel>> getUserTasks(String userId) async {
+  Future<List<TaskModel>> getUserTasks(LobbyModel lobby, UserModel user) async {
     await Future.delayed(const Duration(seconds: 1));
 
-    if (userId.isEmpty) {
+    if (user.id <= 0) {
       throw Exception('ID пользователя не может быть пустым');
     }
 
@@ -162,7 +162,7 @@ class MockApiClient implements ApiInterface {
         description: 'Описание тестовой задачи',
         startPoint: 'Точка A',
         endPoint: 'Точка B',
-        customerId: int.parse(userId),
+        customerId: (user.id),
         state: 0,
       ),
       TaskModel(
@@ -172,7 +172,7 @@ class MockApiClient implements ApiInterface {
         description: 'Описание второй задачи',
         startPoint: 'Точка C',
         endPoint: 'Точка D',
-        customerId: int.parse(userId),
+        customerId: (user.id),
         state: 1,
       ),
     ];
@@ -218,14 +218,14 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<void> deleteTask(String taskId) async {
-    debugPrint('Удаление задачи ID: $taskId');
-    await Future.delayed(const Duration(milliseconds: 500)); // Имитация задержки
+  Future<void> deleteTask(TaskModel task) async {
+    debugPrint('Удаление задачи ID: $task');
+    await Future.delayed(const Duration(milliseconds: 500));
 
-    if (taskId.isEmpty) {
+    if (task.id <= 0) {
       throw Exception('ID задачи не может быть пустым');
     }
-    // В mock-реализации просто логируем удаление
+
   }
 
   @override
@@ -237,19 +237,19 @@ class MockApiClient implements ApiInterface {
   @override
   Future<List<ProductModel>> getShopItems() async {
     await Future.delayed(const Duration(seconds: 1));
-    return []; // Начнем с пустого списка
+    return [];
   }
 
   @override
   Future<ProductModel> createShopItem(ProductModel request) async {
     await Future.delayed(const Duration(seconds: 1));
-    return request; // Просто возвращаем переданный товар
+    return request;
   }
 
   @override
   Future<ProductModel> updateShopItem(ProductModel request) async {
     await Future.delayed(const Duration(seconds: 1));
-    return request; // Возвращаем обновленный товар
+    return request;
   }
 
   @override

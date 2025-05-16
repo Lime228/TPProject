@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:zadachok/api/mock_api_client.dart';
 import '../providers/auth_provider.dart';
 import 'package:zadachok/routes/transitions.dart';
 import '/screens/calendar_screen.dart';
@@ -7,6 +8,7 @@ import '/screens/login_screen.dart';
 import '/screens/settings_screen.dart';
 import '/screens/shop_screen.dart';
 import '/screens/tasks_screen.dart';
+import 'package:zadachok/api/api_client.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -31,6 +33,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   List<Widget> _getScreens(BuildContext context) {
     final isAuthorized = Provider.of<AuthProvider>(context).isAuthorized;
+    final apiClient = ApiClient();
+
     if (isAuthorized) {
       return [
         const CalendarScreen(key: PageStorageKey('calendar_screen')),
@@ -41,7 +45,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     } else {
       return [
         const CalendarScreen(key: PageStorageKey('calendar_screen')),
-        const LoginScreen(key: PageStorageKey('login_screen')),
+        LoginScreen(
+          key: const PageStorageKey('login_screen'),
+          apiClient: MockApiClient(), //здесь на apiclient
+        ),
         const SettingsScreen(key: PageStorageKey('settings_screen')),
       ];
     }

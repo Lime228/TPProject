@@ -3,7 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:zadachok/api/mock_api_client.dart'; // Импортируем MockApiClient
+import 'package:zadachok/api/api_client.dart';
 import 'package:zadachok/providers/auth_provider.dart';
 import 'package:zadachok/providers/group_provider.dart';
 import 'package:zadachok/providers/settings_provider.dart';
@@ -11,13 +11,16 @@ import 'package:zadachok/providers/shop_provider.dart';
 import 'package:zadachok/providers/task_provider.dart';
 import 'package:zadachok/screens/splash_screen.dart';
 
+import 'api/endpoints_config_parse.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('ru');
   final prefs = await SharedPreferences.getInstance();
+  await EndpointsConfigParse.load();
 
 
-  final mockApiClient = MockApiClient();
+  final apiClient = ApiClient();
 
   runApp(
     MultiProvider(
@@ -31,15 +34,14 @@ void main() async {
           authProvider ?? AuthProvider(groupProvider: groupProvider),
         ),
         ChangeNotifierProvider(
-          create: (_) => TaskProvider(apiClient: mockApiClient),
+          create: (_) => TaskProvider(apiClient: apiClient),
         ),
         ChangeNotifierProvider(
           create: (_) => SettingsProvider()..loadSettings(),
         ),
-        // Исправленная строка - передаем mockApiClient
         ChangeNotifierProvider(
           create: (_) => ShopProvider(
-            apiClient: mockApiClient,
+            apiClient: apiClient,
             prefs: prefs,
           ),
         ),
