@@ -108,6 +108,7 @@ public class LobbyService {
         Lobby lobby = lobbyRepository.findById(request.getLobbyId())
                 .orElseThrow(() -> new RuntimeException("Лобби не найдено"));
 
+        // Сброс статуса admin для всех участников
         Integer[] customerIds = lobby.getCustomerId();
         if (customerIds != null) {
             for (Integer id : customerIds) {
@@ -118,8 +119,10 @@ public class LobbyService {
             }
         }
 
+        // Удаление всех кошельков, привязанных к лобби
         walletRepository.deleteAllByLobbyId(request.getLobbyId());
 
+        // Удаление всех задач
         Integer[] taskIds = lobby.getTaskId();
         if (taskIds != null) {
             for (Integer id : taskIds) {
@@ -127,6 +130,10 @@ public class LobbyService {
             }
         }
 
+        // ВАЖНО: сначала удаляем lobby, чтобы освободить внешний ключ на shop
+        lobbyRepository.delete(lobby);
+
+        // Теперь можно безопасно удалить магазин и его продукты
         Shop shop = shopRepository.findById(lobby.getShopId())
                 .orElseThrow(() -> new RuntimeException("Магазин не найден"));
 
@@ -138,7 +145,7 @@ public class LobbyService {
         }
 
         shopRepository.delete(shop);
-        lobbyRepository.delete(lobby);
     }
+
 }
 
