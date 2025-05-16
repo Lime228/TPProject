@@ -73,15 +73,17 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
     );
   }
 
-  // Реализация BaseRequest
+
+  @override
   Map<String, dynamic> createRequest(int lId) => {
     'name': name,
-    'reward': reward,
+    'reward': reward.toInt(),
     'description': description,
     'startdate': startPoint,
     'enddate': endPoint,
     'customerid': customerId,
-    'lobbyid': lId
+    'lobbyid': lId,
+    'state': state,
   };
 
   Map<String, dynamic> updateRequest() => {
@@ -99,7 +101,7 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
   Map<String, dynamic> deleteRequest() => {
     'taskId':id
   };
-  // Реализация BaseResponse
+
   @override
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -116,7 +118,7 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
     return TaskModel(
       id: json['id'] ?? 0,
       name: json['name'],
-      reward: (json['reward'] is int) ? (json['reward'] as int).toDouble() : json['reward'].toDouble(),
+      reward: json['reward']?.toInt() ?? 0,
       description: json['description'],
       startPoint: json['startDate'],
       endPoint: json['endDate'],
