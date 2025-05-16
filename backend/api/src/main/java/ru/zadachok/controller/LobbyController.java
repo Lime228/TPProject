@@ -124,7 +124,7 @@ public class LobbyController {
     @DeleteMapping("/delete")
     public ResponseEntity<String> deleteLobby(@RequestBody DeleteLobbyRequest request) {
         lobbyService.deleteLobby(request);
-        return ResponseEntity.ok("Лобби и связанные сущности удалены");
+        return ResponseEntity.ok("Лобби успешно удалено");
     }
 
     @Operation(
