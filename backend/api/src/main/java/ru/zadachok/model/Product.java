@@ -47,8 +47,7 @@ public class Product {
     @Schema(hidden = true)
     private Customer customer;
 
-    //расскомментить когда в бд будет
-//    @Column(name = "\"link\"")
-//    @Schema(description = "Ссылка на товар", example = "https://tochno.magaz.ru/bike", requiredMode = Schema.RequiredMode.REQUIRED)
-//    private String link;
+    @Column(name = "\"link\"")
+    @Schema(description = "Ссылка на товар", example = "https://tochno.magaz.ru/bike", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String link;
 }

@@ -58,8 +58,8 @@ public class ProductDto {
             requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer customerId;
 
-//    @Schema(description = "Ссылка на товар",
-//            example = "https://tochno.magaz.ru/bike",
-//            requiredMode = Schema.RequiredMode.REQUIRED)
-//    private String link;
+    @Schema(description = "Ссылка на товар",
+            example = "https://tochno.magaz.ru/bike",
+            requiredMode = Schema.RequiredMode.REQUIRED)
+    private String link;
 }

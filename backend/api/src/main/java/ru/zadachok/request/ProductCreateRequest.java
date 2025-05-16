@@ -44,9 +44,8 @@ public class ProductCreateRequest {
     @Schema(description = "ID магазина", example = "3", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer shopId;
 
-    //раскомментить когда надо будет
-//    @JsonProperty("link")
-//    @NotBlank
-//    @Schema(description = "Ссылка на товар", example = "https://tochno.magaz.ru/bike", requiredMode = Schema.RequiredMode.REQUIRED)
-//    private String link;
+    @JsonProperty("link")
+    @NotBlank
+    @Schema(description = "Ссылка на товар", example = "https://tochno.magaz.ru/bike", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String link;
 }
