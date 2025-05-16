@@ -88,6 +88,6 @@ public class TaskService {
 
     public Task getTaskById(Integer taskId) {
         return taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Магазин с ID " + taskId + " не найден"));
+                .orElseThrow(() -> new RuntimeException("Задание с ID " + taskId + " не найден"));
     }
 }
