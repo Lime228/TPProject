@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import ru.zadachok.dto.CustomerDto;
 import ru.zadachok.exception.CustomerAlreadyExistsException;
 import ru.zadachok.model.Customer;
+import ru.zadachok.model.Product;
 import ru.zadachok.repository.CustomerRepository;
 import ru.zadachok.request.DeleteCustomerRequest;
 import ru.zadachok.request.RegisterRequest;
@@ -90,5 +91,20 @@ public class CustomerService {
 
     public void deleteCustomer(DeleteCustomerRequest request) {
         //TODO: правильное удаление, даже из лоббешников
+    }
+
+    public CustomerDto getCustomerById(int id) {
+        Customer customer =customerRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Пользователь с ID " + id + " не найден"));
+
+        return CustomerDto.builder()
+                .customer_ID(customer.getCustomer_ID())
+                .login(customer.getLogin())
+                .customer_email(customer.getCustomer_email())
+                .admin(customer.isAdmin() ? "ADMIN" : "USER")
+                .birthday_date(customer.getBirthday_date())
+                .customer_name(customer.getCustomer_name())
+                .customer_photo(customer.getCustomer_photo())
+                .build();
     }
 }

@@ -15,6 +15,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import ru.zadachok.config.JwtTokenProvider;
+import ru.zadachok.model.Product;
 import ru.zadachok.request.AuthRequest;
 import ru.zadachok.dto.CustomerDto;
 import ru.zadachok.exception.CustomerAlreadyExistsException;
@@ -79,7 +80,20 @@ public class AuthController {
             );
         }
     }
-    //TODO: обновление данных пользователя
+
+    @Operation(summary = "Получение данных пользователя")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Данные пользователя успешно получены",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CustomerDto.class))}),
+            @ApiResponse(responseCode = "404", description = "Пользователь не найден",
+                    content = @Content)
+    })
+    @GetMapping("/{id}")
+    public ResponseEntity<CustomerDto> getCustomer(@PathVariable int id) {
+        CustomerDto gettedCustomer = customerService.getCustomerById(id);
+        return ResponseEntity.ok(gettedCustomer);
+    }
 
     @Operation(summary = "Обновление данных пользователя")
     @ApiResponses(value = {
