@@ -14,6 +14,8 @@ class EndpointsConfigParse {
   static String get registerPath => _config["api"]["endpoints"]["register"];
   static String get loginPath => _config["api"]["endpoints"]["login"];
   static String get recoverPasswordPath => _config["api"]["endpoints"]["recoverPassword"];
+  static String get updateCustomerPath => _config["api"]["endpoints"]["updateCustomer"];
+  static String get getCustomerPath => _config["api"]["endpoints"]["getCustomer"];
 
   static String get taskCreatePath => _config["api"]["endpoints"]["taskCreate"];
   static String get taskUpdatePath => _config["api"]["endpoints"]["taskUpdate"];
