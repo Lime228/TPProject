@@ -2,17 +2,21 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zadachok/models/lobby/lobby_model.dart';
+import '../api/api_client.dart';
 
 class GroupProvider with ChangeNotifier {
   String? _groupCode;
   String? _groupName;
   List<GroupMember> _members = [];
   GroupMember? _currentUser;
+  LobbyModel? _lobby;
 
   String? get groupCode => _groupCode;
   String? get groupName => _groupName;
   List<GroupMember> get members => _members;
   GroupMember? get currentUser => _currentUser;
+  int get lobbyId => _lobby?.id ?? 0;
 
   bool get isAuthenticated => _currentUser != null;
   bool get isInGroup => _groupCode != null;
@@ -33,8 +37,6 @@ class GroupProvider with ChangeNotifier {
   }
 
 
-
-
   Future<void> createGroup(String name) async {
     if (name.isEmpty || name.length < 3) throw Exception('Название слишком короткое');
 
@@ -42,20 +44,47 @@ class GroupProvider with ChangeNotifier {
     _groupCode = _generateRandomCode();
     _members = [_currentUser!];
 
-    await saveGroupData();
-    notifyListeners();
+    try {
+      final apiClient = ApiClient();
+      final lobbyRequest = LobbyModel(
+        taskId: [],
+        shopId: 0,
+        customerId: [2], //ID
+      );
+
+      _lobby = await apiClient.createLobby(lobbyRequest);
+
+
+      await saveGroupData();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Ошибка при создании лобби: $e');
+      rethrow;
+    }
   }
+
 
   Future<bool> joinGroup(String code) async {
     if (code == _groupCode && _currentUser != null) {
       if (!_members.any((m) => m.name == _currentUser!.name)) {
         _members.add(_currentUser!);
+
+
+        if (_lobby != null) {
+          _lobby!.customerId.add(getCurrentUserId());
+        }
+
         await saveGroupData();
         notifyListeners();
       }
       return true;
     }
     return false;
+  }
+
+
+  int getCurrentUserId() {
+    return _currentUser?.name.hashCode ?? 0;
   }
 
   Future <void> leaveGroup() async {
@@ -113,6 +142,7 @@ class GroupProvider with ChangeNotifier {
 
   List<String> get memberNames => _members.map((e) => e.name).toList();
   int get memberCount => _members.length;
+
 
   String _generateRandomCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
