@@ -46,4 +46,8 @@ public class Product {
     @JsonIgnore
     @Schema(hidden = true)
     private Customer customer;
+
+    @Column(name = "\"link\"")
+    @Schema(description = "Ссылка на товар", example = "https://tochno.magaz.ru/bike", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String link;
 }

@@ -147,18 +147,76 @@ public class ShopController {
                     content = @Content
             )
     })
-
     @PostMapping("/product/buy") // POST — совершение действия
     public ResponseEntity<String> buyProduct(@RequestBody ProductBuyRequest request) {
         String message = shopService.buyProduct(request);
         return ResponseEntity.ok(message);
     }
 
+    @Operation(
+            summary = "Получить магазин по ID",
+            description = "Возвращает магазин с данными"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Магазин получен",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Product.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Неверные параметры запроса",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Магазин не найден",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Доступ запрещен",
+                    content = @Content
+            )
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<Shop> getLobby(@PathVariable int id) {
+    public ResponseEntity<Shop> getShop(@PathVariable int id) {
         Shop gettedShop = shopService.getShopById(id);
         return ResponseEntity.ok(gettedShop);
     }
+
+    @Operation(
+            summary = "Получить товар по ID",
+            description = "Возвращает товар"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Товар получен",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Product.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Неверные параметры запроса",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Товар не найден",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Доступ запрещен",
+                    content = @Content
+            )
+    })
     @GetMapping("/product/{id}")
     public ResponseEntity<Product> getProduct(@PathVariable int id) {
         Product gettedProduct = shopService.getProductById(id);

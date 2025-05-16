@@ -56,8 +56,8 @@ public class TaskDto {
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private LocalDate endDate;
 
-    @Schema(description = "Флаг выполнения задачи (true - выполнена false - в процессе)",
-            example = "true",
+    @Schema(description = "Флаг выполнения задачи (0 - в процессе 1 - отмечена пользователем 2 - проверена админом)",
+            example = "1",
             requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer isActive;
 

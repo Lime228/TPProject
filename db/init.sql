@@ -65,7 +65,8 @@ CREATE TABLE IF NOT EXISTS tp.product (
     price integer NOT NULL,
     customer_id integer,
     photo bytea,
-    description text
+    description text,
+    link varchar(255)
 );
 
 -- Òàáëèöà lobby

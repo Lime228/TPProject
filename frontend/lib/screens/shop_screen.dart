@@ -49,24 +49,47 @@ class _ShopScreenState extends State<ShopScreen> {
   File? _tempProductImage;
   final _addProductFormKey = GlobalKey<FormState>();
   final _editProductFormKey = GlobalKey<FormState>();
+  late final GroupProvider _groupProvider;
+  late final ShopProvider _shopProvider;
+  bool _isMounted = false;
 
   File? _avatarImage;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isMounted) {
+      _groupProvider = Provider.of<GroupProvider>(context, listen: false);
+      _shopProvider = Provider.of<ShopProvider>(context, listen: false);
+      _groupProvider.addListener(_handleGroupChange);
+      _isMounted = true;
+      _loadData();
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
+    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+    groupProvider.addListener(_handleGroupChange);
+  }
+
+  void _handleGroupChange() {
+    if (_isMounted) {
+      _loadData();
+    }
   }
 
   @override
   void dispose() {
-    _joinCodeController.dispose();
-    _nameController.dispose();
-    _descController.dispose();
-    _priceController.dispose();
-    _linkController.dispose();
-    _groupNameController.dispose();
-    _searchController.dispose();
+    _isMounted = false;
+    // Удаляем слушатель безопасно
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_groupProvider.hasListeners) {
+        _groupProvider.removeListener(_handleGroupChange);
+      }
+    });
     super.dispose();
   }
 
@@ -92,21 +115,10 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Future<void> _loadData() async {
-    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
-    final shopProvider = Provider.of<ShopProvider>(context, listen: false);
-
-    groupProvider.addListener(() async {
-      if (groupProvider.isInGroup) {
-        await shopProvider.loadProducts();
-      } else {
-        shopProvider.clearProducts();
-      }
-    });
-
-    if (groupProvider.isInGroup) {
-      await shopProvider.loadProducts();
+    if (_groupProvider.isInGroup) {
+      await _shopProvider.loadProducts();
     } else {
-      shopProvider.clearProducts();
+      _shopProvider.clearProducts();
     }
   }
 
@@ -234,26 +246,33 @@ class _ShopScreenState extends State<ShopScreen> {
 
     return Column(
       children: [
+        // Поиск и сортировка всегда видны
         _buildSearchAndSortBar(),
+
+
+
         Expanded(
-          child: GridView.builder(
-            padding: const EdgeInsets.only(top: 8),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.8,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
+          child: RefreshIndicator(
+            onRefresh: _loadData,
+            child: GridView.builder(
+              padding: const EdgeInsets.only(top: 8),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.8,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              itemCount: shopProvider.filteredProducts.length,
+              itemBuilder: (context, index) {
+                return GestureDetector(
+                  onTap: () => _showProductDetails(shopProvider.filteredProducts[index]),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: _buildProductCard(shopProvider.filteredProducts[index]),
+                  ),
+                );
+              },
             ),
-            itemCount: shopProvider.filteredProducts.length,
-            itemBuilder: (context, index) {
-              return GestureDetector(
-                onTap: () => _showProductDetails(shopProvider.filteredProducts[index]),
-                child: Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: _buildProductCard(shopProvider.filteredProducts[index]),
-                ),
-              );
-            },
           ),
         ),
       ],
@@ -731,10 +750,10 @@ class _ShopScreenState extends State<ShopScreen> {
       name: _nameController.text,
       description: _descController.text,
       photo: _tempProductImage?.path ?? '',
-      state: 'Available',
-      price: double.parse(_priceController.text),
+      state: true,
+      price: int.parse(_priceController.text),
       customerId: authProvider.user?.id ?? 0,
-      link: _linkController.text, shopId: 1,
+      link: _linkController.text,
     );
 
     try {
@@ -1015,7 +1034,7 @@ class _ShopScreenState extends State<ShopScreen> {
       name: _nameController.text,
       description: _descController.text,
       photo: _tempProductImage?.path ?? product.photo,
-      price: double.parse(_priceController.text),
+      price: int.parse(_priceController.text),
       link: _linkController.text,
     );
 

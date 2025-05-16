@@ -3,10 +3,10 @@ import '../base_response.dart';
 
 class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse{
   @override
-  final int id;
-  final int shopId;
-  final int taskId;
-  final int customerId;
+  int id;
+  int shopId;
+  List<int> taskId;
+  List<int> customerId;
 
   LobbyModel({
     this.id = 0, // 0 означает новый объект (для создания)
@@ -30,6 +30,15 @@ class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse{
     'customerid':customerId
   };
 
+  Map<String, dynamic> getRequest() => { // переделать это явно не так
+    'lobbyid': id,
+    'customerid':customerId
+  };
+
+  Map<String, dynamic> deleteRequest() => {
+    'lobbyid': id,
+  };
+
 
   // Для ответа (с ID)
   Map<String, dynamic> toJson() => {
@@ -39,8 +48,8 @@ class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse{
     'customerId': customerId,
   };
 
-  factory LobbyModel.fromJson(Map<String, dynamic> json) {
-    return LobbyModel(
+  factory LobbyModel.fromResponse(Map<String, dynamic> json) {
+    return LobbyModel(//НЕСООТВЕТСТВУЕТ ДЕЙСТВИТЕЛЬНОСТИ, ПЕРЕДЕЛАТЬ
       id: json['Lobby_ID'] ?? 0,
       taskId: json['Task_ID'],
       shopId: json['Shop_ID'],
@@ -50,12 +59,12 @@ class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse{
 
   // Для списка лобби по customerId
   static List<LobbyModel> listFromJson(List<dynamic> jsonList) {
-    return jsonList.map((json) => LobbyModel.fromJson(json)).toList();
+    return jsonList.map((json) => LobbyModel.fromResponse(json)).toList();
   }
 
   @override
   @override
   LobbyModel fromJson(Map<String, dynamic> json) {
-    return LobbyModel.fromJson(json);
+    return LobbyModel.fromResponse(json);
   }
 }

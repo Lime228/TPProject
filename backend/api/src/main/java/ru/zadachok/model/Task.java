@@ -41,7 +41,7 @@ public class Task {
     private LocalDate endDate;
 
     @Column(name = "\"task_state\"", nullable = false)
-    @Schema(description = "Статус задачи", example = "true", defaultValue = "true")
+    @Schema(description = "Статус задачи", example = "0", defaultValue = "0")
     private Integer isActive;
 
     @Column(name = "\"customer_id\"", nullable = false)

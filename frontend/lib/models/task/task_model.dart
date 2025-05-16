@@ -3,15 +3,14 @@ import '../base_response.dart';
 
 class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
   @override
-  final int id;
-  final String name;
-  final double reward;
-  final String description;
-  final String startPoint;
-  final String endPoint;
-  final int customerId;
-  final String state;
-  final int lobbyId;
+  int id;
+  String name;
+  int reward;
+  String description;
+  String startPoint;
+  String endPoint;
+  int state;
+  int customerId;
 
   bool isCompleted;
   bool isOverdue;
@@ -25,7 +24,6 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
     required this.endPoint,
     required this.customerId,
     required this.state,
-    required this.lobbyId,
     this.isCompleted = false,
     this.isOverdue = false,
   });
@@ -52,12 +50,12 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
   TaskModel copyWith({
     int? id,
     String? name,
-    double? reward,
+    int? reward,
     String? description,
     String? startPoint,
     String? endPoint,
     int? customerId,
-    String? state,
+    int? state,
     bool? isCompleted,
     bool? isOverdue,
   }) {
@@ -72,21 +70,35 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
       state: state ?? this.state,
       isCompleted: isCompleted ?? this.isCompleted,
       isOverdue: isOverdue ?? this.isOverdue,
-      lobbyId: this.lobbyId,
     );
   }
 
   // Реализация BaseRequest
-  Map<String, dynamic> createRequest() => {
+  Map<String, dynamic> createRequest(int lId) => {
     'name': name,
     'reward': reward,
     'description': description,
     'startdate': startPoint,
     'enddate': endPoint,
     'customerid': customerId,
-    'lobbyid': lobbyId,
+    'lobbyid': lId
   };
 
+  Map<String, dynamic> updateRequest() => {
+    'taskId': id,
+    'name': name,
+    'reward': reward,
+    'description': description,
+    'startdate': startPoint,
+    'enddate': endPoint,
+    // 'customerid': customerId, его там нету пока, надо добавить
+    //'state': state
+    // не забыть про гет
+  };
+
+  Map<String, dynamic> deleteRequest() => {
+    'taskId':id
+  };
   // Реализация BaseResponse
   @override
   Map<String, dynamic> toJson() => {
@@ -98,10 +110,9 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
     'enddate': endPoint,
     'customerid': customerId,
     'isActive': state,
-    'lobbyid':lobbyId
   };
 
-  factory TaskModel.fromJson(Map<String, dynamic> json) {
+  factory TaskModel.fromResponse(Map<String, dynamic> json) {
     return TaskModel(
       id: json['id'] ?? 0,
       name: json['name'],
@@ -113,16 +124,15 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
       state: json['isActive'],
       isCompleted: json['isCompleted'] ?? false,
       isOverdue: json['isOverdue'] ?? false,
-      lobbyId: json['lobbyId'],
     );
   }
 
   @override
   TaskModel fromJson(Map<String, dynamic> json) {
-    return TaskModel.fromJson(json);
+    return TaskModel.fromResponse(json);
   }
 
   static List<TaskModel> listFromJson(List<dynamic> jsonList) {
-    return jsonList.map((json) => TaskModel.fromJson(json)).toList();
+    return jsonList.map((json) => TaskModel.fromResponse(json)).toList();
   }
 }

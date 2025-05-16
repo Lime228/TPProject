@@ -114,7 +114,28 @@ public class TaskController {
         return ResponseEntity.ok(updated);
     }
 
-
+    @Operation(
+            summary = "Получить задание по ID"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Задача успешно получена",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Task.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Задача не найдена",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Неверные параметры запроса",
+                    content = @Content
+            )})
     @GetMapping("/{id}")
     public ResponseEntity<Task> getTask(@PathVariable int id) {
         Task gettedTask = taskService.getTaskById(id);
