@@ -120,7 +120,7 @@ class ApiClient implements ApiInterface {
       throw Exception('ID задачи не может быть меньше 1');
     }
 
-    final url = Uri.parse(ApiEndpoints.taskCreateUrl);
+    final url = Uri.parse(ApiEndpoints.taskUpdateUrl);
     if (user.isAdmin) {
       task.state = 2;
     } else {
@@ -128,7 +128,7 @@ class ApiClient implements ApiInterface {
     }
 
     try {
-      final response = await _client.post(
+      final response = await _client.patch(
         url,
         headers: {'Content-Type': 'application/json'},
         body: json.encode(task.updateRequest()),
@@ -197,12 +197,11 @@ class ApiClient implements ApiInterface {
   }
 
   @override
-  //TODO
   Future<ProductModel> updateShopItem(ProductModel request) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/shop/items/${request.id}');
+    final url = Uri.parse(ApiEndpoints.shopProductUpdateUrl);
 
     try {
-      final response = await _client.put(
+      final response = await _client.patch(
         url,
         headers: {'Content-Type': 'application/json'},
         body: json.encode(request.toJson()),
@@ -304,7 +303,7 @@ class ApiClient implements ApiInterface {
     final url = Uri.parse(ApiEndpoints.taskUpdateUrl);
 
     try {
-      final response = await _client.put(
+      final response = await _client.patch(
         url,
         headers: {'Content-Type': 'application/json'},
         body: json.encode(task.updateRequest()),
@@ -317,8 +316,6 @@ class ApiClient implements ApiInterface {
       throw Exception('Ошибка: $e');
     }
   }
-
-
 
   void _handlePasswordRecoveryResponse(http.Response response) {
     switch (response.statusCode) {
