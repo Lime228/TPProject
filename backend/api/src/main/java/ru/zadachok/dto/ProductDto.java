@@ -37,8 +37,8 @@ public class ProductDto {
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String description;
 
-    @Schema(description = "Статус выполненности товара (true - администратор подтвердил покупку, false - отклонил)",
-            example = "true",
+    @Schema(description = "Статус выполненности товара (true - администратор подтвердил покупку, false - еще не купил)",
+            example = "false",
             requiredMode = Schema.RequiredMode.REQUIRED)
     private boolean state;
 
@@ -57,4 +57,9 @@ public class ProductDto {
             example = "123",
             requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer customerId;
+
+//    @Schema(description = "Ссылка на товар",
+//            example = "https://tochno.magaz.ru/bike",
+//            requiredMode = Schema.RequiredMode.REQUIRED)
+//    private String link;
 }

@@ -44,4 +44,9 @@ public class UpdateProductRequest {
     @NotBlank
     @Schema(description = "Новая цена в копейках", example = "109900", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer price;
+
+    @JsonProperty("link")
+    @NotBlank
+    @Schema(description = "Ссылка на товар", example = "https://tochno.magaz.ru/bike", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String link;
 }

@@ -33,4 +33,14 @@ public class UpdateTaskRequest {
     @JsonProperty("endDate")
     @Schema(description = "Новая дата окончания", example = "2025-05-20")
     private LocalDate endDate;
+
+    @JsonProperty("state")
+    @Schema(description = "Состояние задачи 0-2", example = "0")
+    private Integer state;
+
+    @JsonProperty("customerId")
+    @Schema(description = "ID исполнителя", example = "3")
+    private Integer customerId;
+
+    //TODO: state и customerID
 }

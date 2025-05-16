@@ -76,7 +76,7 @@ public class AuthController {
             );
         }
     }
-
+    //TODO: обновление данных пользователя
 
 //    @PostMapping("/login")
 //    public ResponseEntity<?> login(@RequestBody AuthRequest request) {

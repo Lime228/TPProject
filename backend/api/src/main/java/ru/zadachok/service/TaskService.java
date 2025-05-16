@@ -79,6 +79,8 @@ public class TaskService {
         if (request.getStartDate() != null) task.setStartDate(request.getStartDate());
         if (request.getEndDate() != null) task.setEndDate(request.getEndDate());
         if (request.getReward() != null) task.setReward(request.getReward());
+        if (request.getState() != null) task.setIsActive(request.getReward());
+        if (request.getCustomerId() != null) task.setCustomerId(request.getCustomerId());
 
         return taskRepository.save(task);
     }
