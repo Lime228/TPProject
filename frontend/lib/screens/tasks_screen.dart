@@ -892,23 +892,26 @@ class _TasksScreenState extends State<TasksScreen> {
       return;
     }
 
+    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+
     final newTask = TaskModel(
       name: _titleController.text.trim(),
       description: _descController.text.trim(),
       endPoint: _deadline!.toIso8601String(),
       startPoint: DateTime.now().toIso8601String(),
-      reward: int.parse(_rewardController.text),
-      customerId: 1,
-      state: 'Pending',
+      reward: int.tryParse(_rewardController.text) ?? 0,
+      customerId: 2, //ID
+      state: 0,
     );
 
     try {
       setState(() => _isLoading = true);
       final success = await Provider.of<TaskProvider>(context, listen: false)
-          .addTask(newTask, context);
+          .addTask(newTask, context, groupProvider.lobbyId); //lobbyId
 
       if (success && mounted) {
         _resetForm();
+        Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) _showError("Ошибка: ${e.toString()}");
@@ -935,11 +938,19 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   Future<void> _completeTask(TaskProvider taskProvider, int taskId) async {
-    await taskProvider.completeTask(taskId);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Задача завершена')),
-      );
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    try {
+      await taskProvider.completeTask(taskId, authProvider.user!);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Задача завершена')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        _showError("Ошибка при завершении задачи: ${e.toString()}");
+      }
     }
   }
 

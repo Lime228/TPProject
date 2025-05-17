@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:zadachok/api/api_client.dart';
 import 'package:zadachok/api/api_interface.dart';
 import 'package:zadachok/models/user/user_model.dart';
 import 'package:zadachok/providers/auth_provider.dart';
@@ -14,7 +15,7 @@ class LoginScreen extends StatefulWidget {
 
   const LoginScreen({
     Key? key,
-    this.apiClient = const MockApiClient(),
+    required this.apiClient,
   }) : super(key: key);
 
   @override

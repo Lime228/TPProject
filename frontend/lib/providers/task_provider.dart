@@ -4,6 +4,8 @@ import 'package:zadachok/models/task/task_model.dart';
 import 'package:zadachok/api/api_interface.dart';
 import 'package:zadachok/providers/group_provider.dart';
 
+import '../models/user/user_model.dart';
+
 class TaskProvider with ChangeNotifier {
   final ApiInterface apiClient;
   List<TaskModel> _tasks = [];
@@ -42,20 +44,9 @@ class TaskProvider with ChangeNotifier {
     return getTasksForDate(date).fold(0, (sum, task) => sum + task.reward);
   }
 
-  Future<void> loadTasks(String userId) async {
-    _setLoadingTasks(true);
-    _error = null;
-    try {
-      final response = await apiClient.getUserTasks(userId);
-      _tasks = TaskModel.listFromJson(response);
-    } catch (e) {
-      _error = 'Ошибка загрузки задач: ${e.toString()}';
-    } finally {
-      _setLoadingTasks(false);
-    }
-  }
 
-  Future<bool> addTask(TaskModel task, BuildContext context) async {
+
+  Future<bool> addTask(TaskModel task, BuildContext context, int lobbyId) async {
     _setLoadingTaskCreation(true);
     _error = null;
 
@@ -70,9 +61,26 @@ class TaskProvider with ChangeNotifier {
         throw Exception('Только администратор может создавать задачи');
       }
 
-      debugPrint('Создание задачи с reward: ${task.reward}');
-      final newTask = await apiClient.createTask(task);
-      debugPrint('Получена задача с reward: ${newTask.reward}');
+
+      if (task.name.isEmpty) {
+        throw Exception('Название задачи не может быть пустым');
+      }
+      if (task.endPoint.isEmpty) {
+        throw Exception('Дедлайн должен быть указан');
+      }
+      if (task.reward <= 0) {
+        throw Exception('Награда должна быть положительной');
+      }
+
+
+      final taskToCreate = task.copyWith(
+        customerId: 2, //ID
+        startPoint: DateTime.now().toIso8601String(),
+      );
+
+      debugPrint('Создание задачи с reward: ${taskToCreate.reward} и lobbyId: $lobbyId');
+      final newTask = await apiClient.createTask(taskToCreate, lobbyId);
+      debugPrint('Получена задача с reward: ${newTask.reward} и id: ${newTask.id}');
 
       _tasks.add(newTask);
       notifyListeners();
@@ -92,7 +100,19 @@ class TaskProvider with ChangeNotifier {
 
     try {
       debugPrint('Попытка удаления задачи: $taskId');
-      await apiClient.deleteTask(taskId.toString());
+
+      final taskToDelete = TaskModel(
+        id: taskId,
+        name: '',
+        reward: 0,
+        description: '',
+        startPoint: '',
+        endPoint: '',
+        customerId: 0,
+        state: 0,
+      );
+
+      await apiClient.deleteTask(taskToDelete);
 
       _tasks.removeWhere((task) => task.id == taskId);
       notifyListeners();
@@ -118,15 +138,22 @@ class TaskProvider with ChangeNotifier {
     }).toList();
   }
 
-  Future<void> completeTask(int taskId) async {
+  Future<void> completeTask(int taskId, UserModel user) async {
     try {
       final task = _tasks.firstWhere((t) => t.id == taskId);
-      final updatedTask = await apiClient.completeTask(taskId.toString());
+
+
+      final updatedTask = await apiClient.completeTask(task, user);
+
+
       _tasks.removeWhere((t) => t.id == taskId);
       _tasks.add(updatedTask);
+
       notifyListeners();
     } catch (e) {
       _error = 'Ошибка завершения задачи: ${e.toString()}';
+      debugPrint(_error!);
+      rethrow;
     }
   }
 

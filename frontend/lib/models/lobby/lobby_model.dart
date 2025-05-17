@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+
 import '../base_request.dart';
 import '../base_response.dart';
 
@@ -15,9 +17,10 @@ class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse{
     required this.customerId,
   });
 
-  // Для запроса (без ID)
+
+  @override
   Map<String, dynamic> createRequest() => {
-    'creatorID': customerId,
+    'creatorID': customerId[0],
   };
 
   Map<String, dynamic> removeRequest() => {
@@ -40,24 +43,34 @@ class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse{
   };
 
 
-  // Для ответа (с ID)
+
+  @override
   Map<String, dynamic> toJson() => {
-    if (id != 0) 'lobbyId': id,
-    'taskId': taskId,
+    if (id != 0) 'id': id,
     'shopId': shopId,
+    'taskId': taskId,
     'customerId': customerId,
   };
 
+  @override
   factory LobbyModel.fromResponse(Map<String, dynamic> json) {
-    return LobbyModel(//НЕСООТВЕТСТВУЕТ ДЕЙСТВИТЕЛЬНОСТИ, ПЕРЕДЕЛАТЬ
-      id: json['Lobby_ID'] ?? 0,
-      taskId: json['Task_ID'],
-      shopId: json['Shop_ID'],
-      customerId: json['Customer_ID'],
-    );
+    try {
+      final id = json['id'] ?? json['lobbyId'] ?? json['data']['id'] ?? 0;
+      if (id == 0) throw Exception('ID лобби не найден в ответе');
+
+      return LobbyModel(
+        id: id,
+        shopId: json['shopId'] ?? 0,
+        taskId: List<int>.from(json['taskId'] ?? []),
+        customerId: List<int>.from(json['customerId'] ?? []),
+      );
+    } catch (e) {
+      debugPrint('Ошибка парсинга LobbyModel: $e\nResponse: $json');
+      rethrow;
+    }
   }
 
-  // Для списка лобби по customerId
+
   static List<LobbyModel> listFromJson(List<dynamic> jsonList) {
     return jsonList.map((json) => LobbyModel.fromResponse(json)).toList();
   }
