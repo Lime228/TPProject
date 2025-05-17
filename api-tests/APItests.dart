@@ -22,6 +22,7 @@ void main() {
   const testPassword = 'TestPassword123!';
   const testCreatorId = 1;
   const testCustomerId = 2;
+  String? lobbyCode;
 
 
   group('API Integration Tests', () {
@@ -106,7 +107,12 @@ void main() {
         
         expect(lobbyData['lobbyId'], isNotNull,
             reason: 'ID лобби не должен быть null');
-    
+
+        // Сохраняем код лобби для использования в следующем тесте
+        lobbyCode = lobbyData['code'];
+        expect(lobbyCode, isNotNull, reason: 'Код лобби не должен быть null');
+        print('Полученный код лобби: $lobbyCode');
+
         // Проверка первого customerId
         final customerIds = lobbyData['customerId'] as List;
         expect(customerIds.isNotEmpty, true,
@@ -127,7 +133,7 @@ void main() {
       print('Попытка добавления пользователя в лобби...');
 
       final requestData = {
-        'lobbyid': 1,
+        'code': lobbyCode,
         'customerid': testCustomerId,
       };
 
@@ -148,7 +154,7 @@ void main() {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         
-        expect(responseData['lobbyId'], equals(1),
+        expect(responseData['code'], equals(lobbyCode),
             reason: 'ID лобби должен соответствовать переданному');
         
         expect(responseData['customerId'], contains(testCustomerId),
