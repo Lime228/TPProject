@@ -22,6 +22,9 @@ public class CustomerService {
     private final PasswordEncoder passwordEncoder;
 
     public CustomerDto register(RegisterRequest request) {
+        if (request.getLogin().matches(".*[а-яА-ЯёЁ].*")) {
+            throw new CustomerAlreadyExistsException("Логин не должен содержать русские буквы");
+        }
         // Проверяем уникальность логина и email
         if (customerRepository.existsByLogin(request.getLogin())) {
             throw new CustomerAlreadyExistsException("Логин уже занят");

@@ -2,6 +2,7 @@ package ru.zadachok.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Pattern;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -57,6 +58,7 @@ public class Customer implements UserDetails {
     private Date birthday_date;
 
     @Column(name = "\"login\"", nullable = false, unique = true)
+    @Pattern(regexp = "^[a-zA-Z0-9_.-]+$", message = "Логин должен содержать только латинские буквы, цифры и символы _.-")
     @Schema(description = "Уникальный логин для входа в систему",
             example = "user123",
             requiredMode = Schema.RequiredMode.REQUIRED,

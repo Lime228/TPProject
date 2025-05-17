@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -50,6 +51,10 @@ public class AuthController {
         } catch (CustomerAlreadyExistsException e) {
             return ResponseEntity.badRequest().body(
                     Map.of("error", e.getMessage())
+            );
+        } catch (ConstraintViolationException e) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("error", e.getConstraintViolations().iterator().next().getMessage())
             );
         }
     }
@@ -129,6 +134,9 @@ public class AuthController {
         return ResponseEntity.ok("Лобби и связанные сущности удалены");
     }
 
+
+}
+
 //    @Operation(summary = "Запрос на восстановление пароля")
 //    @ApiResponses(value = {
 //            @ApiResponse(responseCode = "200", description = "Ссылка для сброса пароля отправлена на email",
@@ -174,4 +182,3 @@ public class AuthController {
 //            );
 //        }
 //    }
-}

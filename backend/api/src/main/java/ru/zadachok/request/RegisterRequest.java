@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
@@ -16,6 +17,7 @@ public class RegisterRequest {
     @JsonProperty("login")
     @NotBlank
     @Size(min = 3, max = 20)
+    @Pattern(regexp = "^[a-zA-Z0-9_.-]+$", message = "Логин должен содержать только латинские буквы, цифры и символы _.-")
     @Schema(description = "Логин пользователя",
             example = "newuser",
             requiredMode = Schema.RequiredMode.REQUIRED,
