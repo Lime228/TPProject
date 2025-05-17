@@ -44,13 +44,14 @@ class _ShopScreenState extends State<ShopScreen> {
   final TextEditingController _linkController = TextEditingController();
   final TextEditingController _groupNameController = TextEditingController();
   final _searchController = TextEditingController();
+
   String _sortOption = 'all';
 
   File? _tempProductImage;
   final _addProductFormKey = GlobalKey<FormState>();
   final _editProductFormKey = GlobalKey<FormState>();
-  late final GroupProvider _groupProvider;
-  late final ShopProvider _shopProvider;
+  GroupProvider? _groupProvider;
+  ShopProvider? _shopProvider;
   bool _isMounted = false;
 
   File? _avatarImage;
@@ -59,20 +60,28 @@ class _ShopScreenState extends State<ShopScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_isMounted) {
-      _groupProvider = Provider.of<GroupProvider>(context, listen: false);
-      _shopProvider = Provider.of<ShopProvider>(context, listen: false);
-      _groupProvider.addListener(_handleGroupChange);
       _isMounted = true;
-      _loadData();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadData();
+      });
     }
   }
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
-    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
-    groupProvider.addListener(_handleGroupChange);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _initializeProviders();
+      }
+    });
+  }
+
+  void _initializeProviders() {
+    _groupProvider = Provider.of<GroupProvider>(context, listen: false);
+    _shopProvider = Provider.of<ShopProvider>(context, listen: false);
+    _groupProvider?.addListener(_handleGroupChange);
+    _loadData();
   }
 
   void _handleGroupChange() {
@@ -83,13 +92,14 @@ class _ShopScreenState extends State<ShopScreen> {
 
   @override
   void dispose() {
-    _isMounted = false;
-    // Удаляем слушатель безопасно
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_groupProvider.hasListeners) {
-        _groupProvider.removeListener(_handleGroupChange);
-      }
-    });
+    _groupProvider?.removeListener(_handleGroupChange);
+    _joinCodeController.dispose();
+    _nameController.dispose();
+    _descController.dispose();
+    _priceController.dispose();
+    _linkController.dispose();
+    _groupNameController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -115,10 +125,23 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Future<void> _loadData() async {
-    if (_groupProvider.isInGroup) {
-      await _shopProvider.loadProducts();
-    } else {
-      _shopProvider.clearProducts();
+    if (!mounted) return;
+
+    try {
+      if (_groupProvider?.isInGroup ?? false) {
+        await _shopProvider?.loadProducts();
+        if (mounted) {
+          setState(() {});
+        }
+      } else {
+        _shopProvider?.clearProducts();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка загрузки: ${e.toString()}')),
+        );
+      }
     }
   }
 
@@ -236,46 +259,105 @@ class _ShopScreenState extends State<ShopScreen> {
       return _buildNoGroupView();
     }
 
-    if (shopProvider.isLoading && shopProvider.products.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+    void _debugPrintProducts() {
+      debugPrint('Текущие товары: ${shopProvider.products.map((p) => p.toJson())}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Всего товаров: ${shopProvider.products.length}')),
+      );
     }
 
-    if (shopProvider.error != null) {
-      return Center(child: Text(shopProvider.error!));
-    }
 
-    return Column(
-      children: [
-        // Поиск и сортировка всегда видны
-        _buildSearchAndSortBar(),
-
-
-
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: _loadData,
-            child: GridView.builder(
-              padding: const EdgeInsets.only(top: 8),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.8,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-              ),
-              itemCount: shopProvider.filteredProducts.length,
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () => _showProductDetails(shopProvider.filteredProducts[index]),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: _buildProductCard(shopProvider.filteredProducts[index]),
-                  ),
-                );
-              },
+    if (!shopProvider.isLoading && shopProvider.products.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.shopping_bag_outlined, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text('Нет товаров', style: TextStyle(fontSize: 18)),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: _loadData,
+              child: const Text('Обновить'),
             ),
-          ),
+          ],
         ),
-      ],
+      );
+    }
+
+    return FutureBuilder(
+      future: shopProvider.isLoading ? null : Future.value(true),
+      builder: (context, snapshot) {
+        if (shopProvider.isLoading && shopProvider.products.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (shopProvider.error != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(shopProvider.error!),
+                ElevatedButton(
+                  onPressed: _loadData,
+                  child: const Text('Повторить попытку'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Column(
+          children: [
+            ElevatedButton(
+              onPressed: _debugPrintProducts,
+              child: const Text('DEBUG: Показать товары'),
+            ),
+            _buildSearchAndSortBar(),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _loadData,
+                child: shopProvider.filteredProducts.isEmpty
+                    ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.search_off, size: 64, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      const Text('Ничего не найдено'),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: _resetFilters,
+                        child: const Text('Сбросить фильтры'),
+                      ),
+                    ],
+                  ),
+                )
+                    : GridView.builder(
+                  padding: const EdgeInsets.only(top: 8),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.8,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: shopProvider.filteredProducts.length,
+                  itemBuilder: (context, index) {
+                    final product = shopProvider.filteredProducts[index];
+                    return GestureDetector(
+                      onTap: () => _showProductDetails(product),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: _buildProductCard(product),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -742,37 +824,61 @@ class _ShopScreenState extends State<ShopScreen> {
   Future<void> _handleAddProduct(BuildContext dialogContext) async {
     if (!_addProductFormKey.currentState!.validate()) return;
 
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
-
-    final newProduct = ProductModel(
-      id: DateTime.now().millisecondsSinceEpoch,
-      name: _nameController.text,
-      description: _descController.text,
-      photo: _tempProductImage?.path ?? '',
-      state: true,
-      price: int.parse(_priceController.text),
-      customerId: authProvider.user?.id ?? 0,
-      link: _linkController.text,
-    );
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     try {
-      await shopProvider.addProduct(newProduct);
-      if (mounted) {
-        _tempProductImage = null;
+      final newProduct = ProductModel(
+        id: DateTime.now().millisecondsSinceEpoch,
+        name: _nameController.text,
+        description: _descController.text,
+        photo: _tempProductImage?.path ?? '',
+        state: true,
+        price: int.tryParse(_priceController.text) ?? 0,
+        customerId: authProvider.user?.id ?? 0,
+        link: _linkController.text,
+      );
+
+      final success = await shopProvider.createProduct(newProduct);
+
+      if (!mounted) return;
+
+      if (success) {
+        setState(() {
+          _tempProductImage = null;
+        });
+
         Navigator.pop(dialogContext);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Товар добавлен')),
+          const SnackBar(content: Text('Товар успешно добавлен!')),
+        );
+
+        await shopProvider.loadProducts();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: ${shopProvider.error ?? "Неизвестная ошибка"}')),
         );
       }
     } catch (e) {
+      debugPrint('Ошибка при добавлении товара: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Ошибка: ${e.toString()}')),
         );
       }
+    } finally {
+      _nameController.clear();
+      _descController.clear();
+      _priceController.clear();
+      _linkController.clear();
+      if (mounted) {
+        setState(() {
+          _tempProductImage = null;
+        });
+      }
     }
   }
+
 
   void _showProductListForEdit() {
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
@@ -791,13 +897,18 @@ class _ShopScreenState extends State<ShopScreen> {
         title: const Text('Управление товарами'),
         content: SizedBox(
           width: double.maxFinite,
-          child: ListView.builder(
+          child: shopProvider.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : shopProvider.products.isEmpty
+              ? const Center(child: Text('Нет товаров для отображения'))
+              : ListView.builder(
             shrinkWrap: true,
             itemCount: shopProvider.products.length,
             itemBuilder: (context, index) {
               final product = shopProvider.products[index];
               return ListTile(
                 title: Text(product.name),
+                subtitle: Text('${product.price} звёзд'),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -810,7 +921,41 @@ class _ShopScreenState extends State<ShopScreen> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => shopProvider.removeProduct(product.id),
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Подтверждение'),
+                            content: const Text('Удалить этот товар?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Отмена'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('Удалить', style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirm == true) {
+                          final success = await shopProvider.removeProduct(product.id);
+                          if (mounted) {
+                            if (success) {
+                              await shopProvider.refreshProducts();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Товар удалён')),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Ошибка: ${shopProvider.error}')),
+                              );
+                            }
+                          }
+                        }
+                      },
                     ),
                   ],
                 ),
@@ -1039,13 +1184,19 @@ class _ShopScreenState extends State<ShopScreen> {
     );
 
     try {
-      await shopProvider.updateProduct(updatedProduct);
+      final success = await shopProvider.updateProduct(updatedProduct);
       if (mounted) {
-        _tempProductImage = null;
-        Navigator.pop(dialogContext);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Товар обновлен')),
-        );
+        if (success) {
+          _tempProductImage = null;
+          Navigator.pop(dialogContext);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Товар успешно обновлен')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Ошибка: ${shopProvider.error}')),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -1057,19 +1208,21 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   void _showJoinGroupDialog() {
-    _joinCodeController.clear();
-
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
         title: const Text("Вступить в группу"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: _joinCodeController,
-              decoration: const InputDecoration(labelText: "Код группы"),
+              decoration: const InputDecoration(
+                labelText: "Код группы",
+                hintText: "Введите 6-значный код",
+              ),
+              maxLength: 6,
+              textCapitalization: TextCapitalization.characters,
             ),
           ],
         ),
@@ -1080,28 +1233,29 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
           TextButton(
             onPressed: () async {
-              final scaffold = ScaffoldMessenger.of(context);
-              try {
-                final success = await Provider.of<GroupProvider>(context, listen: false)
-                    .joinGroup(_joinCodeController.text.trim());
+              final code = _joinCodeController.text.trim();
+              if (code.length != 6) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text("Код должен содержать 6 символов")),
+                );
+                return;
+              }
 
-                if (success && mounted) {
-                  Navigator.pop(context);
-                  scaffold.showSnackBar(
-                    const SnackBar(content: Text('Вы успешно вступили в группу!')),
-                  );
-                } else {
-                  scaffold.showSnackBar(
-                    const SnackBar(content: Text('Неверный код группы')),
-                  );
-                }
-              } catch (e) {
-                scaffold.showSnackBar(
-                  SnackBar(content: Text('Ошибка: ${e.toString()}')),
+              final success = await Provider.of<GroupProvider>(context, listen: false)
+                  .joinGroup(code);
+
+              if (success && mounted) {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Вы успешно присоединились!")),
+                );
+              } else {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text("Ошибка присоединения")),
                 );
               }
             },
-            child: const Text("Вступить"),
+            child: const Text("Присоединиться"),
           ),
         ],
       ),
@@ -1110,7 +1264,6 @@ class _ShopScreenState extends State<ShopScreen> {
 
   void _showCreateGroupDialog() {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
-    _groupNameController.clear();
 
     if (groupProvider.isInGroup) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1122,46 +1275,28 @@ class _ShopScreenState extends State<ShopScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text('Создать группу'),
-        content: TextField(
-          controller: _groupNameController,
-          decoration: const InputDecoration(
-            labelText: 'Название группы',
-            hintText: 'Минимум 3 символа',
-          ),
-        ),
+        title: const Text("Создать новую группу"),
+        content: const Text("Нажмите 'Создать' для генерации группы с уникальным кодом"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена'),
+            child: const Text("Отмена"),
           ),
           TextButton(
             onPressed: () async {
-              final scaffold = ScaffoldMessenger.of(context);
+              Navigator.pop(ctx);
               try {
-                final name = _groupNameController.text.trim();
-                if (name.isEmpty) {
-                  scaffold.showSnackBar(
-                    const SnackBar(content: Text('Введите название группы')),
-                  );
-                  return;
-                }
-
-                await groupProvider.createGroup(name);
-                if (mounted) {
-                  Navigator.pop(ctx);
-                  scaffold.showSnackBar(
-                    const SnackBar(content: Text('Группа создана!')),
-                  );
-                }
+                await groupProvider.createGroup();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Группа создана! Код: ${groupProvider.groupCode}')),
+                );
               } catch (e) {
-                scaffold.showSnackBar(
+                ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Ошибка: ${e.toString()}')),
                 );
               }
             },
-            child: const Text('Создать'),
+            child: const Text("Создать"),
           ),
         ],
       ),
