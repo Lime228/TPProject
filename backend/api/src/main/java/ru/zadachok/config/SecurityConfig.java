@@ -14,9 +14,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
+import java.util.List;
 
 
 @Configuration
@@ -30,6 +31,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Добавлено явное CORS
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/swagger-ui.html",
@@ -39,13 +41,7 @@ public class SecurityConfig {
                                 "/api/auth/register",
                                 "/api/auth/login"
                         ).permitAll()
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/api/lobby/**",
-                                "/api/task/**",
-                                "/api/shop/**",
-                                "/"
-                        ).authenticated()    // остальные требуют авторизации
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -55,6 +51,20 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // Явная CORS-конфигурация
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("*"));
+        configuration.setAllowedMethods(List.of("*"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setExposedHeaders(List.of("Authorization"));
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+    // Остальные бины остаются без изменений
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -63,17 +73,5 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
-    }
-
-    @Bean
-    public CorsFilter corsFilter() {
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(false); // ← Убрать поддержку cookies
-        config.addAllowedOriginPattern("*");
-        config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
-        source.registerCorsConfiguration("/**", config);
-        return new CorsFilter(source);
     }
 }
