@@ -65,26 +65,46 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final user = await widget.apiClient.login( // временный костыль, обязательно переделать
-        new UserModel(login: _usernameController.text, password: _passwordController.text,name: '', email: '', birthdayDate:DateTime(1980, 1, 1))
+      final user = await widget.apiClient.login(
+        UserModel(
+          login: _usernameController.text,
+          password: _passwordController.text,
+          name: '',
+          email: '',
+          birthdayDate: DateTime(1980, 1, 1),
+        ),
       );
 
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+      debugPrint('User ID after login: ${user.id}');
+      final token = widget.apiClient.getAuthToken();
+      debugPrint('Получен токен: $token');
 
-      groupProvider.setCurrentUser(user.name, isAdmin: user.isAdmin);
-      await authProvider.setUser(user);
-
-      if (user.isAdmin && !groupProvider.isInGroup) {
-        await groupProvider.createGroup('Администраторы');
+      if (token == null) {
+        throw Exception('Токен не получен');
       }
+
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.setUserAndToken(
+        user: user,
+        token: token,
+      );
+
+      debugPrint('User ID in authProvider: ${authProvider.user?.id}');
+
+
+      widget.apiClient.setAuthToken(token);
 
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
       );
     } catch (e) {
-      setState(() => _errorMessage = e.toString());
+      final errorMessage = e.toString()
+          .replaceAll('Exception: ', '')
+          .replaceAll('type \'Null\' is not a subtype of type \'String\'',
+          'Ошибка сервера: некорректные данные');
+
+      setState(() => _errorMessage = errorMessage);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

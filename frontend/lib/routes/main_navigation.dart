@@ -47,7 +47,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         const CalendarScreen(key: PageStorageKey('calendar_screen')),
         LoginScreen(
           key: const PageStorageKey('login_screen'),
-          apiClient: MockApiClient(), //здесь на apiclient
+          apiClient: ApiClient(),
         ),
         const SettingsScreen(key: PageStorageKey('settings_screen')),
       ];
