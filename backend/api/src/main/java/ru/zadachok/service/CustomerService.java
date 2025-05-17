@@ -110,4 +110,19 @@ public class CustomerService {
                 .customer_photo(customer.getCustomer_photo())
                 .build();
     }
+
+    public CustomerDto getCustomerByLogin(String login) {
+        Customer customer =customerRepository.findByLogin(login)
+                .orElseThrow(() -> new RuntimeException("Пользователь с логином " + login + " не найден"));
+
+        return CustomerDto.builder()
+                .customer_ID(customer.getCustomer_ID())
+                .login(customer.getLogin())
+                .customer_email(customer.getCustomer_email())
+                .admin(customer.isAdmin() ? "ADMIN" : "USER")
+                .birthday_date(customer.getBirthday_date())
+                .customer_name(customer.getCustomer_name())
+                .customer_photo(customer.getCustomer_photo())
+                .build();
+    }
 }

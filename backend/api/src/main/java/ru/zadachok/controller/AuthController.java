@@ -100,6 +100,20 @@ public class AuthController {
         return ResponseEntity.ok(gettedCustomer);
     }
 
+    @Operation(summary = "Получение данных пользователя по логину")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Данные пользователя успешно получены",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CustomerDto.class))}),
+            @ApiResponse(responseCode = "404", description = "Пользователь не найден",
+                    content = @Content)
+    })
+    @GetMapping("/login/{log}")
+    public ResponseEntity<CustomerDto> getCustomer(@PathVariable String log) {
+        CustomerDto gettedCustomer = customerService.getCustomerByLogin(log);
+        return ResponseEntity.ok(gettedCustomer);
+    }
+
     @Operation(summary = "Обновление данных пользователя")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Данные пользователя успешно обновлены",
