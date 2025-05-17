@@ -36,13 +36,14 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/api-docs/**",
-                                "/api/auth/**",
+                                "/api/auth/**"
+                        ).permitAll()
+                        .requestMatchers(
                                 "/api/lobby/**",
                                 "/api/task/**",
                                 "/api/shop/**",
                                 "/"
-                        ).permitAll()
-                        .anyRequest().authenticated()
+                        ).authenticated()    // остальные требуют авторизации
                 )
                 .sessionManagement(sess -> sess
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
