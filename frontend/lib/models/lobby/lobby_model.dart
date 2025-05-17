@@ -18,9 +18,9 @@ class LobbyModel {
     'creatorID': creatorID,
   };
 
-  Map<String, dynamic> removeRequest() => {
+  Map<String, dynamic> removeRequest(int userID) => {
     'lobbyid': id,
-    'customerid': customerId,
+    'customerid': userID,
   };
 
   Map<String, dynamic> addRequest(int userID) => {
