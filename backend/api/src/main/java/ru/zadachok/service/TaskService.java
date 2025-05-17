@@ -25,6 +25,15 @@ public class TaskService {
         Lobby lobby = lobbyRepository.findById(request.getLobbyId())
                 .orElseThrow(() -> new RuntimeException("Лобби не найдено"));
 
+        if (request.getCustomerId() != null) {
+            boolean isUserInLobby = lobby.getCustomerId() != null &&
+                    Arrays.asList(lobby.getCustomerId()).contains(request.getCustomerId());
+
+            if (!isUserInLobby) {
+                throw new RuntimeException("Пользователь не найден в лобби");
+            }
+        }
+
         Task task = Task.builder()
                 .name(request.getName())
                 .reward(request.getReward())
