@@ -163,7 +163,7 @@ public class ShopController {
                     description = "Магазин получен",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = Product.class)
+                            schema = @Schema(implementation = Shop.class)
                     )
             ),
             @ApiResponse(
