@@ -36,7 +36,7 @@ services:
       spring.jpa.properties.hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
       spring.jpa.properties.hibernate.default_schema: tp
       spring.jpa.show-sql: true
-      jwt.secret: ${JWT_SECRET:-defaultSecret}
+      jwt.secret: aSBoYXZlIG5vIGtleSBidXQgaSBtdXN0IGVuY3J5cHQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
       jwt.expiration: 3600
     volumes:
       - ./backend/config:/app/config:ro
