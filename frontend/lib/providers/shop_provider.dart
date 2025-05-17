@@ -41,7 +41,7 @@ class ShopProvider with ChangeNotifier {
     _error = null;
 
     try {
-      _products = await apiClient.getShopItems();
+      _products = await apiClient.getShopProducts();
       _applyFilters();
       notifyListeners();
     } catch (e) {

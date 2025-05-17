@@ -1,7 +1,4 @@
-import '../base_request.dart';
-import '../base_response.dart';
-
-class WalletModel implements BaseRequest<WalletModel>, BaseResponse {
+class WalletModel{
   @override
   int id;
   int customerId;
@@ -9,30 +6,15 @@ class WalletModel implements BaseRequest<WalletModel>, BaseResponse {
   int balance;
 
   WalletModel({
-    this.id = 0, // 0 для новых кошельков
+    this.id = 0,
     required this.customerId,
     required this.lobbyId,
     required this.balance,
   });
 
-  // Реализация BaseRequest - для создания/обновления
-  @override
-  Map<String, dynamic> toCreateJson() => {
-    'Customer_ID': customerId,
-    'Lobby_ID': lobbyId,
-    'Balance': balance,
-  };
 
-  // Реализация BaseResponse - для полных данных
-  @override
-  Map<String, dynamic> toJson() => {
-    'Wallet_ID': id,
-    'Customer_ID': customerId,
-    'Lobby_ID': lobbyId,
-    'Balance': balance,
-  };
 
-  // Парсинг из JSON
+  //ну тут пока ничего не могу гарантировать, но точно не так будет
   WalletModel fromJson(Map<String, dynamic> json) {
     return WalletModel(
       id: json['Wallet_ID'] ?? 0,
@@ -44,20 +26,4 @@ class WalletModel implements BaseRequest<WalletModel>, BaseResponse {
     );
   }
 
-  // Для списка кошельков (заменяет WalletListResponse)
-  List<WalletModel> listFromJson(List<dynamic> jsonList) {
-    return jsonList.map((json) => fromJson(json)).toList();
-  }
-
-  // Для кошельков по customerId (заменяет WalletByCustomerResponse)
-  List<WalletModel> listByCustomerFromJson(List<dynamic> jsonList) {
-    return listFromJson(jsonList);
-  }
-
-  // Валидация
-  void validate() {
-    if (customerId <= 0) throw ArgumentError('Customer ID must be positive');
-    if (lobbyId < 0) throw ArgumentError('Lobby ID cannot be negative');
-    if (balance < 0) throw ArgumentError('Balance cannot be negative');
-  }
 }

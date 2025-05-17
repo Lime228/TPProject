@@ -1,8 +1,4 @@
-import '../base_request.dart';
-import '../base_response.dart';
-
-class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
-  @override
+class TaskModel{
   int id;
   String name;
   int reward;
@@ -66,8 +62,9 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
       description: description ?? this.description,
       startPoint: startPoint ?? this.startPoint,
       endPoint: endPoint ?? this.endPoint,
-      customerId: customerId ?? this.customerId,
       state: state ?? this.state,
+      customerId: customerId ?? this.customerId,
+
       isCompleted: isCompleted ?? this.isCompleted,
       isOverdue: isOverdue ?? this.isOverdue,
     );
@@ -81,38 +78,25 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
     'description': description,
     'startdate': startPoint,
     'enddate': endPoint,
-    'customerid': customerId,
     'lobbyid': lId,
-    'state': state,
+    'customerid': customerId,
   };
 
   Map<String, dynamic> updateRequest() => {
     'taskId': id,
     'name': name,
-    'reward': reward,
     'description': description,
+    'reward': reward,
     'startdate': startPoint,
     'enddate': endPoint,
-    // 'customerid': customerId, его там нету пока, надо добавить
-    //'state': state
-    // не забыть про гет
+    'state': state,
+    'customerid': customerId,
   };
 
   Map<String, dynamic> deleteRequest() => {
     'taskId':id
   };
 
-  @override
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'reward': reward,
-    'description': description,
-    'startdate': startPoint,
-    'enddate': endPoint,
-    'customerid': customerId,
-    'isActive': state,
-  };
 
   factory TaskModel.fromResponse(Map<String, dynamic> json) {
     return TaskModel(
@@ -124,17 +108,14 @@ class TaskModel implements BaseRequest<TaskModel>, BaseResponse {
       endPoint: json['endDate'],
       customerId: json['customerId'],
       state: json['isActive'],
-      isCompleted: json['isCompleted'] ?? false,
+
+      isCompleted: json['isCompleted'] ?? false, // это че то лишнее надо с этим что то сделать
       isOverdue: json['isOverdue'] ?? false,
     );
   }
 
-  @override
-  TaskModel fromJson(Map<String, dynamic> json) {
-    return TaskModel.fromResponse(json);
-  }
 
-  static List<TaskModel> listFromJson(List<dynamic> jsonList) {
-    return jsonList.map((json) => TaskModel.fromResponse(json)).toList();
-  }
+  // static List<TaskModel> listFromJson(List<dynamic> jsonList) {
+  //   return jsonList.map((json) => TaskModel.fromResponse(json)).toList();
+  // }
 }

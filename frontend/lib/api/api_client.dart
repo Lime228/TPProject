@@ -37,7 +37,7 @@ class ApiClient implements ApiInterface {
     return headers;
   }
 
-  @override
+  @override // работает проверяли
   Future<UserModel> register(UserModel request) async {
     final registerUrl = Uri.parse(ApiEndpoints.registerUrl);
     try {
@@ -78,9 +78,7 @@ class ApiClient implements ApiInterface {
     }
   }
 
-
-
-  @override
+  @override // работает проверяли
   Future<UserModel> login(UserModel request) async {
     final loginUrl = Uri.parse(ApiEndpoints.loginUrl);
     try {
@@ -126,16 +124,15 @@ class ApiClient implements ApiInterface {
     }
   }
 
-
-  @override
+  @override // в теории работает
   Future<LobbyModel> lobbyAddUser(String code, int userId) async {
-    final url = Uri.parse('${ApiEndpoints.lobbyAddUserUrl}/$code');
-
+    final url = Uri.parse(ApiEndpoints.lobbyAddUserUrl);
+    LobbyModel lobby = new LobbyModel(taskId: [0], shopId: 0, customerId: [0], code: code);
     try {
       final response = await _client.post(
         url,
         headers: _getHeaders(),
-        body: json.encode({'userId': userId}),
+        body: json.encode(lobby.addRequest(userId)),
       ).timeout(const Duration(seconds: 10));
 
       return _handleLobbyResponse(response);
@@ -146,7 +143,7 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override
+  @override // еще не существует
   Future<void> recoverPassword({required String email, required String login}) async {
     final url = Uri.parse(ApiEndpoints.recoverPasswordUrl);
 
@@ -168,7 +165,7 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override
+  @override // в теории работает
   Future<TaskModel> createTask(TaskModel request, int lId) async {
     if (request.name.isEmpty) {
       throw Exception('Название задачи не может быть пустым');
@@ -195,7 +192,7 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override
+  @override // в теории работает
   Future<TaskModel> completeTask(TaskModel task, UserModel user) async {
     if (task.id <= 0) {
       throw Exception('ID задачи не может быть меньше 1');
@@ -223,7 +220,7 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override
+  @override // вроде проверяли, работает (не уверен)
   Future<LobbyModel> createLobby(int creatorID) async {
     final url = Uri.parse(ApiEndpoints.lobbyCreateUrl);
     try {
@@ -250,9 +247,9 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override
-  Future<LobbyModel> getLobby(String code) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/lobbies/$code');
+  @override // в теории работает
+  Future<LobbyModel> getLobby(int lobbyID) async {
+    final url = Uri.parse('${ApiEndpoints.lobbyGetUrl}/${lobbyID}');
     try {
       final response = await _client.get(
         url,
@@ -267,8 +264,8 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override
-  Future<ProductModel> createShopProduct(ShopModel shop, ProductModel product) async {
+  @override // в теории работает
+  Future<ProductModel> createShopItem(ShopModel shop, ProductModel product) async {
     final url = Uri.parse(ApiEndpoints.shopProductCreateUrl);
 
     try {
@@ -284,24 +281,35 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override
-  Future<List<ProductModel>> getShopItems() async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/products');
+  @override // в теории должно работать
+  Future<List<ProductModel>> getShopProducts(int shopID) async {
+    final url = Uri.parse('${ApiEndpoints.shopGetUrl}/${shopID}');
 
     try {
       final response = await _client.get(
         url,
         headers: _getHeaders(),
       );
-      final List<dynamic> jsonList = json.decode(response.body);
-      return jsonList.map((json) => ProductModel.fromResponse(json)).toList();
+      ShopModel shop = new ShopModel.fromResponse(json.decode(response.body));
+
+      List<ProductModel> products = [];
+      for (int productId in shop.productId) {
+        final productUrl = Uri.parse('${ApiEndpoints.shopProductGetUrl}/${productId}');
+        final productResponse = await _client.get(
+          productUrl,
+          headers: _getHeaders(),
+        );
+        products.add(_handleProductResponse(productResponse));
+      }
+      return products;
     } catch (e) {
       throw Exception('Failed to load products: ${e.toString()}');
     }
   }
 
-  @override
-  Future<ProductModel> createShopItem(ProductModel product) async {
+
+  @override // откуда то появился дубль метода, используйте createShopItem
+  Future<ProductModel> createShopProduct(ProductModel product) async {
     if (product.name.isEmpty) {
       throw Exception('Название товара не может быть пустым');
     }
@@ -311,12 +319,12 @@ class ApiClient implements ApiInterface {
     }
 
     final url = Uri.parse(ApiEndpoints.shopProductCreateUrl);
-
+    final ShopModel shop = new ShopModel(productId: [0]);
     try {
       final response = await _client.post(
         url,
         headers: _getHeaders(),
-        body: json.encode(product.createRequest()),
+        body: json.encode(shop.productCreateRequest(product)),
       ).timeout(const Duration(seconds: 10));
 
       return _handleProductResponse(response);
@@ -327,19 +335,19 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override
+  @override // в теории работает
   Future<UserModel> updateUserProfile(UserModel user) async {
     if (user.name.isEmpty || user.email.isEmpty) {
       throw Exception('Имя и email обязательны');
     }
 
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/user/profile');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/api/auth/update'); // напомните добавить эндпоинт по человечески
 
     try {
       final response = await _client.put(
         url,
         headers: _getHeaders(),
-        body: json.encode(user.toJson()),
+        body: json.encode(user.updateDetailsRequest()),
       ).timeout(const Duration(seconds: 10));
 
       return _handleUserResponse(response);
@@ -350,7 +358,7 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override
+  @override // в теории работает
   Future<void> deleteTask(TaskModel task) async {
     if (task.id <= 0) {
       throw Exception('ID задачи не может быть меньше 1');
@@ -375,7 +383,7 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override
+  @override // в теории работает
   Future<TaskModel> updateTask(TaskModel task) async {
     if (task.id <= 0) {
       throw Exception('ID задачи не может быть пустым');
@@ -398,7 +406,7 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override
+  @override // ОБЯЗАНО РАБОТАТЬ, В ПРОТИВНОМ СЛУЧАЕ Я БРЕЮСЬ НАЛЫСО
   Future<List<TaskModel>> getUserTasks(LobbyModel lobby, UserModel user) async {
     try {
       if (lobby.taskId.isEmpty) {
@@ -435,7 +443,7 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override
+  @override // в теории работает
   Future<void> deleteShopItem(String itemId) async {
     if (itemId.isEmpty) {
       throw Exception('ID товара не может быть пустым');
@@ -460,7 +468,7 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override
+  @override // в теории работает
   Future<ProductModel> updateShopItem(ProductModel product) async {
     if (product.id <= 0) {
       throw Exception('ID товара не может быть пустым');
@@ -471,12 +479,12 @@ class ApiClient implements ApiInterface {
     }
 
     final url = Uri.parse(ApiEndpoints.shopProductUpdateUrl);
-
+    final ShopModel shop = new ShopModel(productId: [0]);
     try {
       final response = await _client.patch(
         url,
         headers: _getHeaders(),
-        body: json.encode(product.updateRequest()),
+        body: json.encode(shop.productUpdateRequest(product)),
       ).timeout(const Duration(seconds: 10));
 
       return _handleProductResponse(response);

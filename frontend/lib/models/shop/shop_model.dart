@@ -1,9 +1,6 @@
 import 'package:zadachok/models/shop/product/product_model.dart';
 
-import '../base_request.dart';
-import '../base_response.dart';
-
-class ShopModel implements BaseRequest<ShopModel>, BaseResponse{
+class ShopModel {
   int id;
   List<int> productId;
 
@@ -20,6 +17,7 @@ class ShopModel implements BaseRequest<ShopModel>, BaseResponse{
     'state': p.state,
     'price': p.price,
     'shopid': id,
+    'link': p.link,
   };
 
   Map<String, dynamic> productBuyRequest(int cId, int pId) => {
@@ -34,6 +32,7 @@ class ShopModel implements BaseRequest<ShopModel>, BaseResponse{
     'photo': p.photo,
     'state': p.state,
     'price': p.price,
+    'link': p.link,
   };
 
   //че то с гетами подумать
@@ -44,22 +43,22 @@ class ShopModel implements BaseRequest<ShopModel>, BaseResponse{
   };
 
   // Для полного JSON (с ID)
-  Map<String, dynamic> toJson() => {
-    if (id != 0) 'Shop_ID': id,
-    'Product_ID': productId,
-  };
+  // Map<String, dynamic> toJson() => {
+  //   if (id != 0) 'Shop_ID': id,
+  //   'Product_ID': productId,
+  // };
 
-  factory ShopModel.fromJson(Map<String, dynamic> json) {
+  factory ShopModel.fromResponse(Map<String, dynamic> json) {
     return ShopModel(
-      id: json['Shop_ID'] ?? 0,
-      productId: json['Product_ID'],
+      id: json['shopId'] ?? 0,
+      productId: List<int>.from(json['productId'] ?? []),
     );
   }
 
   // Для списка магазинов по productId
-  static List<ShopModel> listByProductFromJson(List<dynamic> jsonList) {
-    return jsonList.map((json) => ShopModel.fromJson(json)).toList();
-  }
+  // static List<ShopModel> listByProductFromJson(List<dynamic> jsonList) {
+  //   return jsonList.map((json) => ShopModel.fromJson(json)).toList();
+  // }
 
   // Валидация
   void validate() {
@@ -68,9 +67,4 @@ class ShopModel implements BaseRequest<ShopModel>, BaseResponse{
     }
   }
 
-  @override
-  ShopModel fromJson(Map<String, dynamic> json) {
-    // TODO: implement fromJson
-    throw UnimplementedError();
-  }
 }

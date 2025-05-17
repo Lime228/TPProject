@@ -234,7 +234,7 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<List<ProductModel>> getShopItems() async {
+  Future<List<ProductModel>> getShopProducts() async {
     await Future.delayed(const Duration(seconds: 1));
     return [];
   }

@@ -1,10 +1,4 @@
-import 'package:flutter/cupertino.dart';
-
-import '../base_request.dart';
-import '../base_response.dart';
-
-class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse {
-  @override
+class LobbyModel {
   int id;
   int shopId;
   List<int> taskId;
@@ -21,7 +15,6 @@ class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse {
 
   @override
   Map<String, dynamic> createRequest(int creatorID) => {
-
     'creatorID': creatorID,
   };
 
@@ -30,9 +23,9 @@ class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse {
     'customerid': customerId,
   };
 
-  Map<String, dynamic> addRequest() => {
+  Map<String, dynamic> addRequest(int userID) => {
     'code': code,
-    'customerid': customerId,
+    'customerid': userID,
   };
 
 
@@ -40,16 +33,6 @@ class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse {
     'lobbyid': id,
   };
 
-  @override
-  Map<String, dynamic> toJson() => {
-    if (id != 0) 'id': id,
-    'shopId': shopId,
-    'taskId': taskId,
-    'customerId': customerId,
-    if (code != null) 'code': code,
-  }; //udalit
-
-  @override
   factory LobbyModel.fromResponse(Map<String, dynamic> json) {
     return LobbyModel(
       id: json['lobbyId'] ?? 0,
@@ -60,12 +43,4 @@ class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse {
     );
   }
 
-  static List<LobbyModel> listFromJson(List<dynamic> jsonList) {
-    return jsonList.map((json) => LobbyModel.fromResponse(json)).toList();
-  }
-
-  @override
-  LobbyModel fromJson(Map<String, dynamic> json) {
-    return LobbyModel.fromResponse(json);
-  }
 }

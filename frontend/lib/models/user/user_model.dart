@@ -1,8 +1,4 @@
-import '../base_request.dart';
-import '../base_response.dart';
-
-class UserModel implements BaseRequest<UserModel>, BaseResponse {
-  @override
+class UserModel{
   int id;
   String name;
   String email;
@@ -23,44 +19,19 @@ class UserModel implements BaseRequest<UserModel>, BaseResponse {
     this.isAdmin = false,
   });
 
-  // Для запроса
-  factory UserModel.fromRequest(Map<String, dynamic> json) {
-    return UserModel(
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
-      birthdayDate: DateTime.parse(json['birthdayDate'] ?? DateTime.now().toString()),
-      login: json['login'] ?? '',
-    );
-  }
-
   // Для ответа
   factory UserModel.fromResponse(Map<String, dynamic> json) {
-    final dynamic idValue = json['customer_ID'] ?? json['id'] ?? json['user_id'] ?? 0;
-    final int id = int.tryParse(idValue.toString()) ?? 0;
-
-    if (id == 0) {
-      throw FormatException('Invalid user ID in response. Fields: ${json.keys}');
-    }
-
     return UserModel(
       id: json['customer_ID'] ?? 0,
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
-      birthdayDate: DateTime.parse(json['birthdayDate'] ?? DateTime.now().toString()),
       login: json['login'] ?? '',
+      email: json['customer_email'] ?? '',
       isAdmin: json['isAdmin'] ?? false,
+      birthdayDate: DateTime.parse(json['birthdayDate'] ?? DateTime.now().toString()),
+      photo: json['photo'],
+      name: json['name'] ?? '',
     );
   }
 
-  @override
-  Map<String, dynamic> toJson() => {
-    'customer_ID': id,
-    'name': name,
-    'email': email,
-    'birthdayDate': birthdayDate.toIso8601String(),
-    'login': login,
-    'isAdmin': isAdmin,
-  };
 
   Map<String, dynamic> registerRequest() => {
     'login': login,
@@ -73,8 +44,13 @@ class UserModel implements BaseRequest<UserModel>, BaseResponse {
     'password': password,
   };
 
-  @override
-  UserModel fromJson(Map<String, dynamic> json) {
-    return UserModel.fromResponse(json);
-  }
+  Map<String, dynamic> updateDetailsRequest() => {
+    'customerId': id,
+    'birthday': birthdayDate, // вероятно тут надо как то по другому передавать
+    'photo': photo,
+    'name': name
+  };
+
+
+
 }
