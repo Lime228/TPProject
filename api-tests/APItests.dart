@@ -23,7 +23,7 @@ void main() {
   const testCreatorId = 1;
   const testCustomerId = 2;
   String? lobbyCode;
-
+  String? authToken;
 
   group('API Integration Tests', () {
     setUpAll(() async {
@@ -57,7 +57,6 @@ void main() {
         'login': testUsername,
         'password': testPassword,
         'email': testEmail,
-
       };
 
       print('Отправляемые данные: ${jsonEncode(requestData)}');
@@ -80,13 +79,13 @@ void main() {
         print('Ошибка при регистрации пользователя\n');
       }
     });
+
     test('2.2 Регистрация нового пользователя', () async {
       print('Попытка регистрации пользователя...');
       final requestData = {
         'login': 'kuzya',
         'password': testPassword,
         'email': 'kuzya@example,com',
-
       };
 
       print('Отправляемые данные: ${jsonEncode(requestData)}');
@@ -109,44 +108,76 @@ void main() {
         print('Ошибка при регистрации пользователя\n');
       }
     });
-    
-    test('3. Создание нового лобби', () async {
-      print('Попытка создания лобби...');
-    
+
+    test('2.3 Логин пользователя и получение токена', () async {
+      print('Попытка входа пользователя...');
       final requestData = {
-        'creatorID': testCreatorId,
+        'login': testUsername,
+        'password': testPassword,
       };
-    
+
       print('Отправляемые данные: ${jsonEncode(requestData)}');
-    
+
       final response = await http.post(
-        Uri.parse(createLobbyUrl),
+        Uri.parse(loginUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestData),
       );
-    
+
       print('Статус код: ${response.statusCode}');
       print('Ответ сервера: ${response.body}');
-    
+
+      expect(response.statusCode, 200,
+          reason: 'Ожидался статус 200 (Успешный вход)');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        authToken = responseData['token'];
+        expect(authToken, isNotNull, reason: 'Токен не должен быть null');
+        print('Токен успешно получен\n');
+      } else {
+        print('Ошибка при входе пользователя\n');
+      }
+    });
+
+    test('3. Создание нового лобби', () async {
+      print('Попытка создания лобби...');
+
+      final requestData = {
+        'creatorID': testCreatorId,
+      };
+
+      print('Отправляемые данные: ${jsonEncode(requestData)}');
+
+      final response = await http.post(
+        Uri.parse(createLobbyUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode(requestData),
+      );
+
+      print('Статус код: ${response.statusCode}');
+      print('Ответ сервера: ${response.body}');
+
       expect(response.statusCode, 200,
           reason: 'Ожидался статус 200 (Успешное создание лобби)');
-    
+
       if (response.statusCode == 200) {
         final lobbyData = jsonDecode(response.body);
-        
+
         expect(lobbyData['lobbyId'], isNotNull,
             reason: 'ID лобби не должен быть null');
 
-        // Сохраняем код лобби для использования в следующем тесте
         lobbyCode = lobbyData['code'];
         expect(lobbyCode, isNotNull, reason: 'Код лобби не должен быть null');
         print('Полученный код лобби: $lobbyCode');
 
-        // Проверка первого customerId
         final customerIds = lobbyData['customerId'] as List;
         expect(customerIds.isNotEmpty, true,
             reason: 'Список customerId не должен быть пустым');
-        
+
         final firstCustomerId = customerIds[0];
         print('Первый customerId: $firstCustomerId');
         expect(firstCustomerId, equals(1),
@@ -170,7 +201,10 @@ void main() {
 
       final response = await http.patch(
         Uri.parse(addUserLobbyUrl),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
         body: jsonEncode(requestData),
       );
 
@@ -182,10 +216,10 @@ void main() {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        
+
         expect(responseData['code'], equals(lobbyCode),
             reason: 'ID лобби должен соответствовать переданному');
-        
+
         expect(responseData['customerId'], contains(testCustomerId),
             reason: 'Список customerId должен содержать добавленного пользователя');
 
@@ -212,7 +246,10 @@ void main() {
 
       final response = await http.post(
         Uri.parse(taskCreateUrl),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
         body: jsonEncode(requestData),
       );
 
@@ -224,10 +261,10 @@ void main() {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        
+
         expect(responseData['name'], equals('TEST TASK'),
             reason: 'Название задания не соответствует');
-        
+
 
         print('Задание успешно создано');
 
@@ -235,128 +272,131 @@ void main() {
         print('Ошибка при создании задания\n');
       }
     });
-    
-     test('6. Создание продукта', () async {
-       print('Создание продукта...');
-    
-       final requestData = {
-         'name': 'TEST PRODUCT',
-         'description': 'Это тестовый продукт для проверки',
-         'photo': base64Encode(utf8.encode('test_image_data')), // Пример кодирования фото
-         'state': false,
-         'price': 0,
-         'shopid': 1,
-       };
-    
-       print('Отправляемые данные: ${jsonEncode(requestData)}');
-    
-       final response = await http.post(
-         Uri.parse(productCreateUrl),
-         headers: {
-           'Content-Type': 'application/json',
-         },
-         body: jsonEncode(requestData),
-       );
-    
-       print('Статус код: ${response.statusCode}');
-       print('Ответ сервера: ${response.body}');
-    
-       expect(response.statusCode, 200,
-           reason: 'Ожидался статус 200 (Успешное создание продукта)');
-    
-       if (response.statusCode == 200) {
-         final responseData = jsonDecode(response.body);
-    
-         expect(responseData['name'], equals('TEST PRODUCT'),
-             reason: 'Название продукта не соответствует');
-         expect(responseData['price'], equals(0),
-             reason: 'Цена продукта не соответствует');
-    
-         print('Продукт успешно создан');
-    
-       } else {
-         print('Ошибка при создании продукта\n');
-       }
-     });
-    
-     test('7. Покупка продукта', () async {
-       print('Обновление продукта...');
-    
-       final requestData = {
-         'customerId': 2,
-         'productId': 1,
-       };
-    
-       print('Отправляемые данные: ${jsonEncode(requestData)}');
-    
-       final response = await http.post(
-         Uri.parse(productBuyUrl),
-         headers: {
-           'Content-Type': 'application/json',
-         },
-         body: jsonEncode(requestData),
-       );
-    
-       print('Статус код: ${response.statusCode}');
-       print('Ответ сервера: ${response.body}');
-    
-       expect(response.statusCode, 200,
-           reason: 'Ожидался статус 200 (Успешная покупка продукты)');
-    
-       if (response.statusCode == 200) {
-         expect(response.body, contains('Покупка прошла успешно'),
-         reason: 'Ожидалось сообщение об успешной покупке');
-         print('Продукт успешно куплен');
-    
-       } else {
-         print('Ошибка при покупке продукта\n');
-       }
-     });
-    
-     test('8. Обновление продукта', () async {
-       print('Обновление продукта...');
-    
-       final requestData = {
-         'productid': 1,
-         'name': 'UPDATED TEST PRODUCT',
-         'description': 'Обновлённое описание тестового продукта',
-         'photo': base64Encode(utf8.encode('updated_test_image_data')),
-         'state': false,
-         'price': 1999,
-       };
-    
-       print('Отправляемые данные: ${jsonEncode(requestData)}');
-    
-       final response = await http.patch(
-         Uri.parse(productUpdateUrl),
-         headers: {
-           'Content-Type': 'application/json',
-         },
-         body: jsonEncode(requestData),
-       );
-    
-       print('Статус код: ${response.statusCode}');
-       print('Ответ сервера: ${response.body}');
-    
-       expect(response.statusCode, 200,
-           reason: 'Ожидался статус 200 (Успешное обновление продукта)');
-    
-       if (response.statusCode == 200) {
-         final responseData = jsonDecode(response.body);
-    
-         expect(responseData['name'], equals('UPDATED TEST PRODUCT'),
-             reason: 'Название продукта не обновилось');
-         expect(responseData['price'], equals(1999),
-             reason: 'Цена продукта не обновилась');
-         expect(responseData['state'], equals(false),
-             reason: 'Состояние продукта не обновилось');
-    
-         print('Продукт успешно обновлён');
-    
-       } else {
-         print('Ошибка при обновлении продукта\n');
-       }
-     });
+
+    test('6. Создание продукта', () async {
+      print('Создание продукта...');
+
+      final requestData = {
+        'name': 'TEST PRODUCT',
+        'description': 'Это тестовый продукт для проверки',
+        'photo': base64Encode(utf8.encode('test_image_data')),
+        'state': false,
+        'price': 0,
+        'shopid': 1,
+      };
+
+      print('Отправляемые данные: ${jsonEncode(requestData)}');
+
+      final response = await http.post(
+        Uri.parse(productCreateUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode(requestData),
+      );
+
+      print('Статус код: ${response.statusCode}');
+      print('Ответ сервера: ${response.body}');
+
+      expect(response.statusCode, 200,
+          reason: 'Ожидался статус 200 (Успешное создание продукта)');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        expect(responseData['name'], equals('TEST PRODUCT'),
+            reason: 'Название продукта не соответствует');
+        expect(responseData['price'], equals(0),
+            reason: 'Цена продукта не соответствует');
+
+        print('Продукт успешно создан');
+
+      } else {
+        print('Ошибка при создании продукта\n');
+      }
+    });
+
+    test('7. Покупка продукта', () async {
+      print('Обновление продукта...');
+
+      final requestData = {
+        'customerId': 2,
+        'productId': 1,
+      };
+
+      print('Отправляемые данные: ${jsonEncode(requestData)}');
+
+      final response = await http.post(
+        Uri.parse(productBuyUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode(requestData),
+      );
+
+      print('Статус код: ${response.statusCode}');
+      print('Ответ сервера: ${response.body}');
+
+      expect(response.statusCode, 200,
+          reason: 'Ожидался статус 200 (Успешная покупка продукты)');
+
+      if (response.statusCode == 200) {
+        expect(response.body, contains('Покупка прошла успешно'),
+            reason: 'Ожидалось сообщение об успешной покупке');
+        print('Продукт успешно куплен');
+
+      } else {
+        print('Ошибка при покупке продукта\n');
+      }
+    });
+
+    test('8. Обновление продукта', () async {
+      print('Обновление продукта...');
+
+      final requestData = {
+        'productid': 1,
+        'name': 'UPDATED TEST PRODUCT',
+        'description': 'Обновлённое описание тестового продукта',
+        'photo': base64Encode(utf8.encode('updated_test_image_data')),
+        'state': false,
+        'price': 1999,
+      };
+
+      print('Отправляемые данные: ${jsonEncode(requestData)}');
+
+      final response = await http.patch(
+        Uri.parse(productUpdateUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode(requestData),
+      );
+
+      print('Статус код: ${response.statusCode}');
+      print('Ответ сервера: ${response.body}');
+
+      expect(response.statusCode, 200,
+          reason: 'Ожидался статус 200 (Успешное обновление продукта)');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        expect(responseData['name'], equals('UPDATED TEST PRODUCT'),
+            reason: 'Название продукта не обновилось');
+        expect(responseData['price'], equals(1999),
+            reason: 'Цена продукта не обновилась');
+        expect(responseData['state'], equals(false),
+            reason: 'Состояние продукта не обновилось');
+
+        print('Продукт успешно обновлён');
+
+      } else {
+        print('Ошибка при обновлении продукта\n');
+      }
+    });
 
     test('9. Удаление пользователя из лобби', () async {
       print('Попытка удаления пользователя из лобби...');
@@ -370,7 +410,10 @@ void main() {
 
       final response = await http.patch(
         Uri.parse(removeUserLobbyUrl),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
         body: jsonEncode(requestData),
       );
 
@@ -409,6 +452,7 @@ void main() {
         Uri.parse(productDeleteUrl),
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
         },
         body: jsonEncode(requestData),
       );
@@ -427,7 +471,7 @@ void main() {
       }
     });
 
-        test('11. Удаление лобби', () async {
+    test('11. Удаление лобби', () async {
       print('Удаление лобби...');
 
       final requestData = {
@@ -440,6 +484,7 @@ void main() {
         Uri.parse('$baseUrl/api/lobby/delete'),
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
         },
         body: jsonEncode(requestData),
       );
@@ -459,6 +504,7 @@ void main() {
       }
     });
   });
+
   tearDownAll(() {
     print('Тестирование завершено');
   });
