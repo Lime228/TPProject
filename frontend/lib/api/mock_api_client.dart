@@ -105,16 +105,15 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<LobbyModel> createLobby(LobbyModel request) async {
+  Future<LobbyModel> createLobby(int creatorID) async {
     await Future.delayed(const Duration(seconds: 1));
 
 
 
-    return LobbyModel(
-      id: DateTime.now().millisecondsSinceEpoch,
-      taskId: request.taskId,
-      shopId: request.shopId,
-      customerId: request.customerId,
+    return  LobbyModel(
+      taskId: [],
+      shopId: 0,
+      customerId: [],
     );
   }
 
@@ -255,5 +254,16 @@ class MockApiClient implements ApiInterface {
   @override
   Future<void> deleteShopItem(String itemId) async {
     await Future.delayed(const Duration(seconds: 1));
+  }
+
+  @override
+  String? getAuthToken() {
+    // TODO: implement getAuthToken
+    throw UnimplementedError();
+  }
+
+  @override
+  void setAuthToken(String token) {
+    // TODO: implement setAuthToken
   }
 }

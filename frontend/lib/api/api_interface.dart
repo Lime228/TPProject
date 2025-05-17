@@ -11,8 +11,11 @@ abstract class ApiInterface {
   Future<void> recoverPassword({required String email, required String login});
   Future<UserModel> updateUserProfile(UserModel request);
 
+  String? getAuthToken();
+  void setAuthToken(String token);
 
-  Future<LobbyModel> createLobby(LobbyModel request);
+
+  Future<LobbyModel> createLobby(int creatorID);
 
 
   Future<TaskModel> createTask(TaskModel request, int lId);

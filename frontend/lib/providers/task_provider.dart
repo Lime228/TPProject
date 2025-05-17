@@ -4,7 +4,9 @@ import 'package:zadachok/models/task/task_model.dart';
 import 'package:zadachok/api/api_interface.dart';
 import 'package:zadachok/providers/group_provider.dart';
 
+import '../models/lobby/lobby_model.dart';
 import '../models/user/user_model.dart';
+import 'auth_provider.dart';
 
 class TaskProvider with ChangeNotifier {
   final ApiInterface apiClient;
@@ -14,6 +16,7 @@ class TaskProvider with ChangeNotifier {
   bool _isLoadingTaskCreation = false;
   bool _isLoadingTaskDeletion = false;
   String? _error;
+  UserModel? _user;
 
   TaskProvider({required this.apiClient});
 
@@ -28,6 +31,11 @@ class TaskProvider with ChangeNotifier {
   List<TaskModel> get filteredTasks => _filteredTasks.isNotEmpty && _searchQuery.isNotEmpty
       ? _filteredTasks
       : _tasks;
+
+  void setUser(UserModel user) {
+    _user = user;
+    notifyListeners();
+  }
 
 
   List<TaskModel> getTasksForDate(DateTime date) {
@@ -44,50 +52,53 @@ class TaskProvider with ChangeNotifier {
     return getTasksForDate(date).fold(0, (sum, task) => sum + task.reward);
   }
 
+  Future<void> loadTasks(int lobbyId) async {
+    if (_user == null) {
+      throw Exception('Пользователь не авторизован');
+    }
+
+    _setLoadingTasks(true);
+    _error = null;
+
+    try {
+      final lobby = LobbyModel(
+        id: lobbyId,
+        taskId: [],
+        shopId: 0,
+        customerId: [_user!.id],
+      );
+
+      _tasks = await apiClient.getUserTasks(lobby, _user!);
+      notifyListeners();
+    } catch (e) {
+      _error = 'Ошибка загрузки задач: ${e.toString()}';
+      debugPrint(_error!);
+    } finally {
+      _setLoadingTasks(false);
+    }
+  }
 
 
-  Future<bool> addTask(TaskModel task, BuildContext context, int lobbyId) async {
+
+  Future<bool> addTask({
+    required TaskModel task,
+    required int lobbyId,
+  }) async {
     _setLoadingTaskCreation(true);
     _error = null;
 
     try {
-      final groupProvider = Provider.of<GroupProvider>(context, listen: false);
-
-      if (!groupProvider.isInGroup) {
-        throw Exception('Вы должны быть в группе для создания задач');
-      }
-
-      if (!groupProvider.isOwner) {
-        throw Exception('Только администратор может создавать задачи');
-      }
-
-
       if (task.name.isEmpty) {
         throw Exception('Название задачи не может быть пустым');
       }
-      if (task.endPoint.isEmpty) {
-        throw Exception('Дедлайн должен быть указан');
-      }
-      if (task.reward <= 0) {
-        throw Exception('Награда должна быть положительной');
-      }
 
-
-      final taskToCreate = task.copyWith(
-        customerId: 2, //ID
-        startPoint: DateTime.now().toIso8601String(),
-      );
-
-      debugPrint('Создание задачи с reward: ${taskToCreate.reward} и lobbyId: $lobbyId');
-      final newTask = await apiClient.createTask(taskToCreate, lobbyId);
-      debugPrint('Получена задача с reward: ${newTask.reward} и id: ${newTask.id}');
-
+      final newTask = await apiClient.createTask(task, lobbyId);
       _tasks.add(newTask);
       notifyListeners();
       return true;
     } catch (e) {
-      debugPrint('Ошибка при создании задачи: $e');
       _error = e.toString();
+      debugPrint('Ошибка создания задачи: $e');
       return false;
     } finally {
       _setLoadingTaskCreation(false);
@@ -141,10 +152,7 @@ class TaskProvider with ChangeNotifier {
   Future<void> completeTask(int taskId, UserModel user) async {
     try {
       final task = _tasks.firstWhere((t) => t.id == taskId);
-
-
       final updatedTask = await apiClient.completeTask(task, user);
-
 
       _tasks.removeWhere((t) => t.id == taskId);
       _tasks.add(updatedTask);

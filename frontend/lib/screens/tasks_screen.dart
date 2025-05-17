@@ -54,6 +54,32 @@ class _TasksScreenState extends State<TasksScreen> {
   bool _isFormVisible = false;
 
   @override
+  void initState() {
+    super.initState();
+    _loadTasks();
+  }
+
+  Future<void> _loadTasks() async {
+    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+
+    if (groupProvider.isInGroup) {
+      await taskProvider.loadTasks(groupProvider.lobbyId);
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final groupProvider = Provider.of<GroupProvider>(context);
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+
+    if (groupProvider.isInGroup) {
+      taskProvider.loadTasks(groupProvider.lobbyId);
+    }
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     _titleController.dispose();
@@ -891,8 +917,8 @@ class _TasksScreenState extends State<TasksScreen> {
       _showError("Выберите дедлайн для задачи");
       return;
     }
-
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+
 
     final newTask = TaskModel(
       name: _titleController.text.trim(),
@@ -907,7 +933,8 @@ class _TasksScreenState extends State<TasksScreen> {
     try {
       setState(() => _isLoading = true);
       final success = await Provider.of<TaskProvider>(context, listen: false)
-          .addTask(newTask, context, groupProvider.lobbyId); //lobbyId
+          .addTask(task: newTask, lobbyId: groupProvider.lobbyId);
+
 
       if (success && mounted) {
         _resetForm();
@@ -1215,56 +1242,39 @@ class _TasksScreenState extends State<TasksScreen> {
 
   void _showCreateGroupDialog() {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
-    final TextEditingController nameController = TextEditingController();
 
     if (groupProvider.isInGroup) {
-      _showError('Вы уже в группе');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Вы уже в группе')),
+      );
       return;
     }
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text('Создать группу'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(
-            labelText: 'Название группы',
-            hintText: 'Минимум 3 символа',
-          ),
-        ),
+        title: const Text("Создать новую группу"),
+        content: const Text("Нажмите 'Создать' для генерации группы с уникальным кодом"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена'),
+            child: const Text("Отмена"),
           ),
           TextButton(
             onPressed: () async {
-              final scaffold = ScaffoldMessenger.of(context);
+              Navigator.pop(ctx);
               try {
-                final name = nameController.text.trim();
-                if (name.isEmpty) {
-                  scaffold.showSnackBar(
-                    const SnackBar(content: Text('Введите название группы')),
-                  );
-                  return;
-                }
-
-                await groupProvider.createGroup(name);
-                if (mounted) {
-                  Navigator.pop(ctx);
-                  scaffold.showSnackBar(
-                    const SnackBar(content: Text('Группа создана!')),
-                  );
-                }
+                await groupProvider.createGroup();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Группа создана! Код: ${groupProvider.groupCode}')),
+                );
               } catch (e) {
-                scaffold.showSnackBar(
+                ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Ошибка: ${e.toString()}')),
                 );
               }
             },
-            child: const Text('Создать'),
+            child: const Text("Создать"),
           ),
         ],
       ),
@@ -1275,14 +1285,18 @@ class _TasksScreenState extends State<TasksScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
         title: const Text("Вступить в группу"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: _joinCodeController,
-              decoration: const InputDecoration(labelText: "Код группы"),
+              decoration: const InputDecoration(
+                labelText: "Код группы",
+                hintText: "Введите 6-значный код",
+              ),
+              maxLength: 6,
+              textCapitalization: TextCapitalization.characters,
             ),
           ],
         ),
@@ -1293,29 +1307,29 @@ class _TasksScreenState extends State<TasksScreen> {
           ),
           TextButton(
             onPressed: () async {
-              final scaffold = ScaffoldMessenger.of(context);
-              try {
-                final success = await Provider.of<GroupProvider>(context, listen: false)
-                    .joinGroup(_joinCodeController.text.trim());
+              final code = _joinCodeController.text.trim();
+              if (code.length != 6) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text("Код должен содержать 6 символов")),
+                );
+                return;
+              }
 
-                if (success && mounted) {
-                  Navigator.pop(context);
-                  scaffold.showSnackBar(
-                    const SnackBar(content: Text('Вы успешно вступили в группу!')),
-                  );
-                } else {
-                  scaffold.showSnackBar(
-                    const SnackBar(content: Text('Неверный код группы')),
-                  );
-                }
-              } catch (e) {
-                scaffold.showSnackBar(
-                  SnackBar(content: Text('Ошибка: ${e.toString()}')),
+              final success = await Provider.of<GroupProvider>(context, listen: false)
+                  .joinGroup(code);
+
+              if (success && mounted) {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Вы успешно присоединились!")),
+                );
+              } else {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text("Ошибка присоединения")),
                 );
               }
-              _joinCodeController.clear();
             },
-            child: const Text("Вступить"),
+            child: const Text("Присоединиться"),
           ),
         ],
       ),

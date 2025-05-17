@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:zadachok/models/lobby/lobby_model.dart';
 import '../models/shop/product/product_model.dart';
+import '../models/shop/shop_model.dart';
 import '../models/task/task_model.dart';
 import '../models/user/user_model.dart';
 import '../models/wallet/wallet_model.dart';
@@ -10,53 +12,115 @@ import 'api_endpoints.dart';
 
 class ApiClient implements ApiInterface {
   final http.Client _client;
+  String? _authToken;
 
-  ApiClient({http.Client? client, String? baseUrl})
-      : _client = client ?? http.Client();
+  ApiClient({http.Client? client}) : _client = client ?? http.Client();
+
+  String? getAuthToken() => _authToken;
+
+
+  void setAuthToken(String token) {
+    _authToken = token;
+  }
+
+
+  Map<String, String> _getHeaders({bool includeAuth = true}) {
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    if (includeAuth && _authToken != null) {
+      headers['Authorization'] = 'Bearer $_authToken';
+    }
+
+    return headers;
+  }
 
   @override
   Future<UserModel> register(UserModel request) async {
-
-    if (request.login.isEmpty || request.password.isEmpty) {
-      throw Exception('Все поля обязательны для заполнения');
-    }
-
-    if (request.password.length < 6) {
-      throw Exception('Пароль должен содержать минимум 6 символов');
-    }
-
-    final url = Uri.parse(ApiEndpoints.registerUrl);
-
+    final registerUrl = Uri.parse(ApiEndpoints.registerUrl);
     try {
-      final response = await _client.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
+      if (request.login.isEmpty || request.password.isEmpty) {
+        throw Exception('Все поля обязательны для заполнения');
+      }
+      if (request.password.length < 6) {
+        throw Exception('Пароль должен содержать минимум 6 символов');
+      }
+
+      final registerResponse = await _client.post(
+        registerUrl,
+        headers: _getHeaders(includeAuth: false),
         body: json.encode(request.registerRequest()),
       ).timeout(const Duration(seconds: 10));
 
+      if (registerResponse.statusCode != 201) {
+        throw Exception('Ошибка регистрации: ${registerResponse.statusCode}');
+      }
 
-      return _handleUserResponse(response);
+      final registerData = json.decode(registerResponse.body);
+      final token = registerData['token'] as String;
+      _authToken = token;
+
+
+      final userDataUrl = Uri.parse('${ApiEndpoints.baseUrl}/api/auth/login/${request.login}');
+      final userResponse = await _client.get(
+        userDataUrl,
+        headers: _getHeaders(),
+      ).timeout(const Duration(seconds: 10));
+
+
+      return _handleUserResponse(userResponse);
     } on http.ClientException catch (e) {
       throw Exception('Ошибка подключения: ${e.message}');
     } on Exception catch (e) {
       throw Exception('Ошибка: $e');
     }
   }
+
+
 
   @override
   Future<UserModel> login(UserModel request) async {
-    final url = Uri.parse(ApiEndpoints.loginUrl);
-   //TODO
+    final loginUrl = Uri.parse(ApiEndpoints.loginUrl);
     try {
-      final response = await _client.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
+      final loginResponse = await _client.post(
+        loginUrl,
+        headers: _getHeaders(includeAuth: false),
         body: json.encode(request.loginRequest()),
       ).timeout(const Duration(seconds: 10));
 
-      return _handleUserResponse(response);
+      if (loginResponse.statusCode != 200) {
+        throw Exception('Ошибка авторизации: ${loginResponse.statusCode}');
+      }
+
+      final loginData = json.decode(loginResponse.body);
+
+
+      final token = loginData['token'] as String?;
+      if (token == null) {
+        throw Exception('Токен не получен от сервера');
+      }
+      _authToken = token;
+
+
+      final userDataUrl = Uri.parse('${ApiEndpoints.loginUrl}/${request.login}');
+
+      final userResponse = await _client.get(
+        userDataUrl,
+        headers: {'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_authToken'},
+      ).timeout(const Duration(seconds: 10));
+
+      if (userResponse.statusCode != 200) {
+        throw Exception('Ошибка получения данных пользователя: ${userResponse.statusCode}');
+      }
+
+      return _handleUserResponse(userResponse);
     } on http.ClientException catch (e) {
       throw Exception('Ошибка подключения: ${e.message}');
+    } on FormatException catch (e) {
+      throw Exception('Ошибка формата данных: ${e.message}');
     } on Exception catch (e) {
       throw Exception('Ошибка: $e');
     }
@@ -64,14 +128,32 @@ class ApiClient implements ApiInterface {
 
 
   @override
-  //TODO
-  Future<void> recoverPassword({required String email,required String login}) async {
+  Future<LobbyModel> lobbyAddUser(String code, int userId) async {
+    final url = Uri.parse('${ApiEndpoints.lobbyAddUserUrl}/$code');
+
+    try {
+      final response = await _client.post(
+        url,
+        headers: _getHeaders(),
+        body: json.encode({'userId': userId}),
+      ).timeout(const Duration(seconds: 10));
+
+      return _handleLobbyResponse(response);
+    } on http.ClientException catch (e) {
+      throw Exception('Ошибка подключения: ${e.message}');
+    } on Exception catch (e) {
+      throw Exception('Ошибка добавления пользователя: $e');
+    }
+  }
+
+  @override
+  Future<void> recoverPassword({required String email, required String login}) async {
     final url = Uri.parse(ApiEndpoints.recoverPasswordUrl);
 
     try {
       final response = await _client.post(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: _getHeaders(),
         body: json.encode({
           'email': email,
           'login': login,
@@ -85,7 +167,6 @@ class ApiClient implements ApiInterface {
       throw Exception('Ошибка: $e');
     }
   }
-
 
   @override
   Future<TaskModel> createTask(TaskModel request, int lId) async {
@@ -102,7 +183,7 @@ class ApiClient implements ApiInterface {
     try {
       final response = await _client.post(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: _getHeaders(),
         body: json.encode(request.createRequest(lId)),
       ).timeout(const Duration(seconds: 10));
 
@@ -130,7 +211,7 @@ class ApiClient implements ApiInterface {
     try {
       final response = await _client.patch(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: _getHeaders(),
         body: json.encode(task.updateRequest()),
       ).timeout(const Duration(seconds: 10));
 
@@ -143,13 +224,22 @@ class ApiClient implements ApiInterface {
   }
 
   @override
-  Future<LobbyModel> createLobby(LobbyModel request) async {
+  Future<LobbyModel> createLobby(int creatorID) async {
     final url = Uri.parse(ApiEndpoints.lobbyCreateUrl);
     try {
+      final headers = _getHeaders();
+      debugPrint('Headers for createLobby: $headers');
+
+      LobbyModel lobbyModel = LobbyModel(
+        taskId: [],
+        shopId: 0,
+        customerId: [],
+      );
+
       final response = await _client.post(
         url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(request.createRequest()),
+        headers: headers,
+        body: json.encode(lobbyModel.createRequest(creatorID)),
       ).timeout(const Duration(seconds: 10));
 
       return _handleLobbyResponse(response);
@@ -161,96 +251,94 @@ class ApiClient implements ApiInterface {
   }
 
   @override
-  Future<ProductModel> createShopItem(ProductModel request) async {
+  Future<LobbyModel> getLobby(String code) async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/lobbies/$code');
+    try {
+      final response = await _client.get(
+        url,
+        headers: _getHeaders(),
+      ).timeout(const Duration(seconds: 10));
+
+      return _handleLobbyResponse(response);
+    } on http.ClientException catch (e) {
+      throw Exception('Ошибка подключения: ${e.message}');
+    } on Exception catch (e) {
+      throw Exception('Ошибка: $e');
+    }
+  }
+
+  @override
+  Future<ProductModel> createShopProduct(ShopModel shop, ProductModel product) async {
     final url = Uri.parse(ApiEndpoints.shopProductCreateUrl);
 
     try {
       final response = await _client.post(
         url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(request.createRequest()),
+        headers: _getHeaders(),
+        body: json.encode(shop.productCreateRequest(product)),
       ).timeout(const Duration(seconds: 10));
 
       return _handleProductResponse(response);
     } catch (e) {
-      throw Exception('Error creating shop item: ${e.toString()}');
+      throw Exception('Error creating shop product: ${e.toString()}');
     }
   }
 
   @override
-  //TODO
   Future<List<ProductModel>> getShopItems() async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/shop/items');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/products');
 
     try {
-      final response = await _client.get(url).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonList = json.decode(response.body);
-        return jsonList.map((json) => ProductModel.fromResponse(json)).toList();
-      } else {
-        throw Exception('Failed to load shop items: ${response.statusCode}');
-      }
+      final response = await _client.get(
+        url,
+        headers: _getHeaders(),
+      );
+      final List<dynamic> jsonList = json.decode(response.body);
+      return jsonList.map((json) => ProductModel.fromResponse(json)).toList();
     } catch (e) {
-      throw Exception('Error getting shop items: ${e.toString()}');
+      throw Exception('Failed to load products: ${e.toString()}');
     }
   }
 
   @override
-  Future<ProductModel> updateShopItem(ProductModel request) async {
-    final url = Uri.parse(ApiEndpoints.shopProductUpdateUrl);
+  Future<ProductModel> createShopItem(ProductModel product) async {
+    if (product.name.isEmpty) {
+      throw Exception('Название товара не может быть пустым');
+    }
+
+    if (product.price <= 0) {
+      throw Exception('Цена должна быть положительной');
+    }
+
+    final url = Uri.parse(ApiEndpoints.shopProductCreateUrl);
 
     try {
-      final response = await _client.patch(
+      final response = await _client.post(
         url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(request.toJson()),
+        headers: _getHeaders(),
+        body: json.encode(product.createRequest()),
       ).timeout(const Duration(seconds: 10));
 
-      if (response.statusCode == 200) {
-        return ProductModel.fromResponse(json.decode(response.body));
-      } else {
-        throw Exception('Failed to update item: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error updating shop item: ${e.toString()}');
+      return _handleProductResponse(response);
+    } on http.ClientException catch (e) {
+      throw Exception('Ошибка подключения: ${e.message}');
+    } on Exception catch (e) {
+      throw Exception('Ошибка: $e');
     }
   }
 
   @override
-  //TODO
-  Future<void> deleteShopItem(String itemId) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/shop/items/$itemId');
-
-    try {
-      final response = await _client.delete(url).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode != 200 && response.statusCode != 204) {
-        throw Exception('Failed to delete item: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error deleting shop item: ${e.toString()}');
-    }
-  }
-
-
-
-  @override
-  //TODO
   Future<UserModel> updateUserProfile(UserModel user) async {
-    // Валидация (как в mock)
     if (user.name.isEmpty || user.email.isEmpty) {
       throw Exception('Имя и email обязательны');
     }
 
-    final url = Uri.parse('OGO ZABYLI ENDPOINT');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/user/profile');
 
     try {
       final response = await _client.put(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: _getHeaders(),
         body: json.encode(user.toJson()),
       ).timeout(const Duration(seconds: 10));
 
@@ -263,15 +351,8 @@ class ApiClient implements ApiInterface {
   }
 
   @override
-  //TODO
-  Future<WalletModel> updateWallet(WalletModel request) {
-    // TODO: implement updateWallet
-    throw UnimplementedError();
-  }
-
-  @override
   Future<void> deleteTask(TaskModel task) async {
-    if (task.id <=0) {
+    if (task.id <= 0) {
       throw Exception('ID задачи не может быть меньше 1');
     }
 
@@ -280,7 +361,7 @@ class ApiClient implements ApiInterface {
     try {
       final response = await _client.delete(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: _getHeaders(),
         body: json.encode(task.deleteRequest()),
       ).timeout(const Duration(seconds: 10));
 
@@ -305,7 +386,7 @@ class ApiClient implements ApiInterface {
     try {
       final response = await _client.patch(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: _getHeaders(),
         body: json.encode(task.updateRequest()),
       ).timeout(const Duration(seconds: 10));
 
@@ -316,6 +397,101 @@ class ApiClient implements ApiInterface {
       throw Exception('Ошибка: $e');
     }
   }
+
+  @override
+  Future<List<TaskModel>> getUserTasks(LobbyModel lobby, UserModel user) async {
+    try {
+      if (lobby.taskId.isEmpty) {
+        return [];
+      }
+
+      final List<TaskModel> userTasks = [];
+
+      for (final taskId in lobby.taskId) {
+        final taskUrl = Uri.parse('${ApiEndpoints.taskGetUrl}/$taskId');
+        final taskResponse = await _client.get(
+          taskUrl,
+          headers: _getHeaders(),
+        ).timeout(const Duration(seconds: 10));
+
+        if (taskResponse.statusCode == 200) {
+          final taskJson = json.decode(taskResponse.body);
+          final task = TaskModel.fromResponse(taskJson);
+
+          if ((task.customerId == null || task.customerId == user.id) &&
+              lobby.customerId.contains(user.id)) {
+            userTasks.add(task);
+          }
+        } else {
+          throw Exception('Ошибка при получении задачи $taskId: ${taskResponse.statusCode}');
+        }
+      }
+
+      return userTasks;
+    } on http.ClientException catch (e) {
+      throw Exception('Ошибка подключения: ${e.message}');
+    } on Exception catch (e) {
+      throw Exception('Ошибка при получении задач: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<void> deleteShopItem(String itemId) async {
+    if (itemId.isEmpty) {
+      throw Exception('ID товара не может быть пустым');
+    }
+
+    final url = Uri.parse(ApiEndpoints.shopProductDeleteUrl);
+
+    try {
+      final response = await _client.delete(
+        url,
+        headers: _getHeaders(),
+        body: json.encode({'productid': itemId}),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception('Ошибка при удалении товара: ${response.statusCode}');
+      }
+    } on http.ClientException catch (e) {
+      throw Exception('Ошибка подключения: ${e.message}');
+    } on Exception catch (e) {
+      throw Exception('Ошибка: $e');
+    }
+  }
+
+  @override
+  Future<ProductModel> updateShopItem(ProductModel product) async {
+    if (product.id <= 0) {
+      throw Exception('ID товара не может быть пустым');
+    }
+
+    if (product.name.isEmpty) {
+      throw Exception('Название товара не может быть пустым');
+    }
+
+    final url = Uri.parse(ApiEndpoints.shopProductUpdateUrl);
+
+    try {
+      final response = await _client.patch(
+        url,
+        headers: _getHeaders(),
+        body: json.encode(product.updateRequest()),
+      ).timeout(const Duration(seconds: 10));
+
+      return _handleProductResponse(response);
+    } on http.ClientException catch (e) {
+      throw Exception('Ошибка подключения: ${e.message}');
+    } on Exception catch (e) {
+      throw Exception('Ошибка: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _client.close();
+  }
+
 
   void _handlePasswordRecoveryResponse(http.Response response) {
     switch (response.statusCode) {
@@ -334,6 +510,9 @@ class ApiClient implements ApiInterface {
   }
 
   UserModel _handleUserResponse(http.Response response) {
+    final responseData = json.decode(response.body);
+    debugPrint('User response data: $responseData');
+
     switch (response.statusCode) {
       case 200:
       case 201:
@@ -398,44 +577,8 @@ class ApiClient implements ApiInterface {
   }
 
   @override
-  void dispose() {
-    _client.close();
+  Future<WalletModel> updateWallet(WalletModel request) {
+    // TODO: implement updateWallet
+    throw UnimplementedError();
   }
-
-  @override
-  Future<List<TaskModel>> getUserTasks(LobbyModel lobby, UserModel user) async {
-    try {
-      if (lobby.taskId.isEmpty) {
-        return [];
-      }
-
-      final List<TaskModel> userTasks = [];
-
-      for (final taskId in lobby.taskId) {
-        final taskUrl = Uri.parse('${ApiEndpoints.taskGetUrl}/$taskId');
-        final taskResponse = await _client.get(taskUrl)
-            .timeout(const Duration(seconds: 10));
-
-        if (taskResponse.statusCode == 200) {
-          final taskJson = json.decode(taskResponse.body);
-          final task = TaskModel.fromResponse(taskJson);
-
-          if ((task.customerId == null ||
-              task.customerId == user.id) &&
-              lobby.customerId.contains(user.id)) {
-            userTasks.add(task);
-          }
-        } else {
-          throw Exception('Ошибка при получении задачи $taskId: ${taskResponse.statusCode}');
-        }
-      }
-
-      return userTasks;
-    } on http.ClientException catch (e) {
-      throw Exception('Ошибка подключения: ${e.message}');
-    } on Exception catch (e) {
-      throw Exception('Ошибка при получении задач: ${e.toString()}');
-    }
-  }
-
 }

@@ -19,19 +19,19 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   await EndpointsConfigParse.load();
 
-
   final apiClient = ApiClient();
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => GroupProvider()),
-        ChangeNotifierProxyProvider<GroupProvider, AuthProvider>(
-          create: (context) => AuthProvider(
-            groupProvider: Provider.of<GroupProvider>(context, listen: false),
+
+        ChangeNotifierProvider(create: (_) => AuthProvider(groupProvider: GroupProvider(authProvider: null))),
+        ChangeNotifierProxyProvider<AuthProvider, GroupProvider>(
+          create: (context) => GroupProvider(
+            authProvider: Provider.of<AuthProvider>(context, listen: false),
           ),
-          update: (context, groupProvider, authProvider) =>
-          authProvider ?? AuthProvider(groupProvider: groupProvider),
+          update: (context, authProvider, groupProvider) =>
+          groupProvider ?? GroupProvider(authProvider: authProvider),
         ),
         ChangeNotifierProvider(
           create: (_) => TaskProvider(apiClient: apiClient),

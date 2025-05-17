@@ -26,28 +26,35 @@ class UserModel implements BaseRequest<UserModel>, BaseResponse {
   // Для запроса
   factory UserModel.fromRequest(Map<String, dynamic> json) {
     return UserModel(
-      name: json['name'],
-      email: json['email'],
-      birthdayDate: DateTime.parse(json['birthdayDate']),
-      login: json['login'],
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      birthdayDate: DateTime.parse(json['birthdayDate'] ?? DateTime.now().toString()),
+      login: json['login'] ?? '',
     );
   }
 
   // Для ответа
   factory UserModel.fromResponse(Map<String, dynamic> json) {
+    final dynamic idValue = json['customer_ID'] ?? json['id'] ?? json['user_id'] ?? 0;
+    final int id = int.tryParse(idValue.toString()) ?? 0;
+
+    if (id == 0) {
+      throw FormatException('Invalid user ID in response. Fields: ${json.keys}');
+    }
+
     return UserModel(
-      id: json['id'] ?? 0,
-      name: json['name'],
-      email: json['email'],
-      birthdayDate: DateTime.parse(json['birthdayDate']),
-      login: json['login'],
+      id: json['customer_ID'] ?? 0,
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      birthdayDate: DateTime.parse(json['birthdayDate'] ?? DateTime.now().toString()),
+      login: json['login'] ?? '',
       isAdmin: json['isAdmin'] ?? false,
     );
   }
 
   @override
   Map<String, dynamic> toJson() => {
-    if (id != 0) 'id': id,
+    'customer_ID': id,
     'name': name,
     'email': email,
     'birthdayDate': birthdayDate.toIso8601String(),
