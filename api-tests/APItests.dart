@@ -51,12 +51,41 @@ void main() {
       print(' Проверка подключения завершена\n');
     });
 
-    test('2. Регистрация нового пользователя', () async {
+    test('2.1 Регистрация нового пользователя', () async {
       print('Попытка регистрации пользователя...');
       final requestData = {
         'login': testUsername,
         'password': testPassword,
         'email': testEmail,
+
+      };
+
+      print('Отправляемые данные: ${jsonEncode(requestData)}');
+
+      final response = await http.post(
+        Uri.parse(registerUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestData),
+      );
+
+      print('Статус код: ${response.statusCode}');
+      print('Ответ сервера: ${response.body}');
+
+      expect(response.statusCode, 200,
+          reason: 'Ожидался статус 200 (Успешная регистрация)');
+
+      if (response.statusCode == 200) {
+        print('Пользователь успешно зарегистрирован\n');
+      } else {
+        print('Ошибка при регистрации пользователя\n');
+      }
+    });
+    test('2.2 Регистрация нового пользователя', () async {
+      print('Попытка регистрации пользователя...');
+      final requestData = {
+        'login': 'kuzya',
+        'password': testPassword,
+        'email': 'kuzya@example,com',
 
       };
 
