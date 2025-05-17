@@ -15,6 +15,7 @@ import ru.zadachok.repository.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
@@ -39,10 +40,13 @@ public class LobbyService {
         creator.setAdmin(true);
         customerRepository.save(creator);
 
+        String lobbyCode = generateUniqueCode();
+
         Lobby newLobby = Lobby.builder()
                 .shopId(savedShop.getShopId())
                 .customerId(new Integer[]{request.getCreatorId()})
                 .taskId(new Integer[0])  // если изначально нет задач
+                .code(lobbyCode)
                 .build();
 
         return lobbyRepository.save(newLobby);
@@ -54,8 +58,12 @@ public class LobbyService {
     }
 
     public Lobby addCustomerToLobby(AddInLobbyRequest request) {
-        Lobby lobby = lobbyRepository.findById(request.getLobbyId())
-                .orElseThrow(() -> new RuntimeException("Лобби не найдено"));
+        if (!customerRepository.existsById(request.getCustomerId())) {
+            throw new RuntimeException("Пользователь не найден");
+        }
+
+        Lobby lobby = lobbyRepository.findByCode(request.getCode())
+                .orElseThrow(() -> new RuntimeException("Лобби с таким кодом не найдено"));
 
         Integer[] currentCustomers = lobby.getCustomerId();
 
@@ -145,6 +153,27 @@ public class LobbyService {
         }
 
         shopRepository.delete(shop);
+    }
+
+    private String generateUniqueCode() {
+        String characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        Random random = new Random();
+        String code;
+        int attempts = 0;
+        final int MAX_ATTEMPTS = 10;
+
+        do {
+            if (attempts++ >= MAX_ATTEMPTS) {
+                throw new IllegalStateException("Не удалось сгенерировать уникальный код после " + MAX_ATTEMPTS + " попыток");
+            }
+
+            code = random.ints(6, 0, characters.length())
+                    .mapToObj(characters::charAt)
+                    .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+                    .toString();
+        } while (lobbyRepository.existsByCode(code));
+
+        return code;
     }
 
 }

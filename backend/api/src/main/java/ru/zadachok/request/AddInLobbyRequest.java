@@ -16,10 +16,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Schema(description = "Запрос на добавление участника в лобби")
 public class AddInLobbyRequest {
-    @JsonProperty("lobbyid")
+    @JsonProperty("code")
     @NotNull
-    @Schema(description = "ID лобби", example = "5", requiredMode = Schema.RequiredMode.REQUIRED)
-    private Integer lobbyId;
+    @Schema(description = "Код лобби", example = "ABC123", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String code;
 
     @JsonProperty("customerid")
     @NotNull

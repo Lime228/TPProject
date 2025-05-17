@@ -12,7 +12,7 @@ public class SwaggerConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("ZadachOk API")
-                        .version("1.4")
+                        .version("2.0")
                         .description("Family Task Tracker"));
     }
 }

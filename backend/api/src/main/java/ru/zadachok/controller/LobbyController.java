@@ -53,7 +53,7 @@ public class LobbyController {
 
     @Operation(
             summary = "Добавить участника в лобби",
-            description = "Добавляет указанного пользователя в существующее лобби"
+            description = "Добавляет указанного пользователя в существующее лобби по коду"
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -77,6 +77,9 @@ public class LobbyController {
     })
     @PatchMapping("/add") // PATCH, потому что МЕНЯЕМ СОСТАВ (не всё лобби, а частично)
     public ResponseEntity<Lobby> addCustomerToLobby(@RequestBody AddInLobbyRequest request) {
+        if (request.getCode() == null || request.getCode().length() != 6) {
+            throw new IllegalArgumentException("Код должен состоять из 6 символов");
+        }
         Lobby updatedLobby = lobbyService.addCustomerToLobby(request);
         return ResponseEntity.ok(updatedLobby);
     }

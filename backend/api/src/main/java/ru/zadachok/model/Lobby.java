@@ -34,4 +34,8 @@ public class Lobby {
     @Column(name = "\"customer_id\"", columnDefinition = "integer[]")
     @Schema(description = "Массив ID участников лобби", example = "[10, 20, 30]")
     private Integer[] customerId;
+
+    @Column(name = "\"code\"", unique = true, length = 6)
+    @Schema(description = "Уникальный код для входа в лобби", example = "A1B2C3")
+    private String code;
 }
