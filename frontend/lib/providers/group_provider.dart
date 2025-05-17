@@ -1,11 +1,17 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zadachok/models/lobby/lobby_model.dart';
 import '../api/api_client.dart';
+import 'auth_provider.dart';
 
 class GroupProvider with ChangeNotifier {
+  AuthProvider? authProvider;
+
+  GroupProvider({required this.authProvider});
+
   String? _groupCode;
   String? _groupName;
   List<GroupMember> _members = [];
@@ -22,6 +28,23 @@ class GroupProvider with ChangeNotifier {
   bool get isInGroup => _groupCode != null;
   bool get isOwner => _currentUser?.role == GroupRole.owner;
 
+  int getCurrentUserId() {
+    if (authProvider == null || authProvider!.user == null) {
+      debugPrint('AuthProvider or user is null');
+      throw Exception('Пользователь не авторизован');
+    }
+
+    final userId = authProvider!.user!.id;
+    debugPrint('Current user ID: $userId');
+
+    if (userId == 0) {
+      throw Exception('Неверный ID пользователя (0)');
+    }
+
+    return userId;
+  }
+
+
   void setCurrentUser(String userName, {bool isAdmin = false}) {
     _currentUser = GroupMember(
       name: userName,
@@ -37,23 +60,29 @@ class GroupProvider with ChangeNotifier {
   }
 
 
-  Future<void> createGroup(String name) async {
-    if (name.isEmpty || name.length < 3) throw Exception('Название слишком короткое');
-
-    _groupName = name;
-    _groupCode = _generateRandomCode();
-    _members = [_currentUser!];
-
+  Future<void> createGroup() async {
     try {
+      if (authProvider == null || authProvider!.token == null) {
+        throw Exception('Пользователь не авторизован');
+      }
+
       final apiClient = ApiClient();
-      final lobbyRequest = LobbyModel(
-        taskId: [],
-        shopId: 0,
-        customerId: [2], //ID
-      );
+      apiClient.setAuthToken(authProvider!.token!);
 
-      _lobby = await apiClient.createLobby(lobbyRequest);
+      final currentUserId = getCurrentUserId();
+      if (currentUserId == 0) {
+        throw Exception('Неверный ID пользователя');
+      }
 
+      _lobby = await apiClient.createLobby(currentUserId);
+
+      if (_lobby?.code == null) {
+        throw Exception('Сервер не вернул код лобби');
+      }
+
+      _groupCode = _lobby!.code!;
+      _groupName = "Группа $_groupCode";
+      _members = [_currentUser!];
 
       await saveGroupData();
       notifyListeners();
@@ -65,27 +94,31 @@ class GroupProvider with ChangeNotifier {
 
 
   Future<bool> joinGroup(String code) async {
-    if (code == _groupCode && _currentUser != null) {
+    final apiClient = ApiClient();
+    if (code.isEmpty) return false;
+
+    try {
+      final currentUserId = getCurrentUserId();
+      final updatedLobby = await apiClient.lobbyAddUser(code, currentUserId);
+
+      _lobby = updatedLobby;
+      _groupCode = updatedLobby.code!;
+      _groupName = "Группа ${updatedLobby.code}";
+
       if (!_members.any((m) => m.name == _currentUser!.name)) {
         _members.add(_currentUser!);
-
-
-        if (_lobby != null) {
-          _lobby!.customerId.add(getCurrentUserId());
-        }
-
-        await saveGroupData();
-        notifyListeners();
       }
+
+      await saveGroupData();
+      notifyListeners();
       return true;
+    } catch (e) {
+      debugPrint('Ошибка присоединения к группе: $e');
+      return false;
     }
-    return false;
   }
 
 
-  int getCurrentUserId() {
-    return _currentUser?.name.hashCode ?? 0;
-  }
 
   Future <void> leaveGroup() async {
     if (_currentUser != null) {
@@ -164,13 +197,16 @@ class GroupProvider with ChangeNotifier {
 
     if (code == null) return;
 
-
-
-    _groupCode = code;
-    _groupName = prefs.getString('group_name');
-
-    final membersJson = prefs.getStringList('members') ?? [];
     try {
+
+      final apiClient = ApiClient();
+      _lobby = await apiClient.getLobby(code);
+
+      _groupCode = code;
+      _groupName = prefs.getString('group_name');
+
+
+      final membersJson = prefs.getStringList('members') ?? [];
       _members = membersJson.map((json) {
         final data = jsonDecode(json);
         return GroupMember(
@@ -178,12 +214,12 @@ class GroupProvider with ChangeNotifier {
           role: data['role'].contains('owner') ? GroupRole.owner : GroupRole.member,
         );
       }).toList();
-    } catch (e) {
-      debugPrint('Ошибка загрузки участников группы: $e');
-      _members = [];
-    }
 
-    notifyListeners();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Ошибка загрузки группы: $e');
+      await clearGroupData();
+    }
   }
 
   Future<void> clearGroupData() async {

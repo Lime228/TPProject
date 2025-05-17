@@ -3,46 +3,42 @@ import 'package:flutter/cupertino.dart';
 import '../base_request.dart';
 import '../base_response.dart';
 
-class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse{
+class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse {
   @override
   int id;
   int shopId;
   List<int> taskId;
   List<int> customerId;
+  String? code;
 
   LobbyModel({
-    this.id = 0, // 0 означает новый объект (для создания)
+    this.id = 0,
     required this.taskId,
     required this.shopId,
     required this.customerId,
+    this.code,
   });
 
-
   @override
-  Map<String, dynamic> createRequest() => {
-    'creatorID': customerId[0],
+  Map<String, dynamic> createRequest(int creatorID) => {
+
+    'creatorID': creatorID,
   };
 
   Map<String, dynamic> removeRequest() => {
     'lobbyid': id,
-    'customerid':customerId
+    'customerid': customerId,
   };
 
   Map<String, dynamic> addRequest() => {
-    'lobbyid': id,
-    'customerid':customerId
+    'code': code,
+    'customerid': customerId,
   };
 
-  Map<String, dynamic> getRequest() => { // переделать это явно не так
-    'lobbyid': id,
-    'customerid':customerId
-  };
 
   Map<String, dynamic> deleteRequest() => {
     'lobbyid': id,
   };
-
-
 
   @override
   Map<String, dynamic> toJson() => {
@@ -50,32 +46,24 @@ class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse{
     'shopId': shopId,
     'taskId': taskId,
     'customerId': customerId,
-  };
+    if (code != null) 'code': code,
+  }; //udalit
 
   @override
   factory LobbyModel.fromResponse(Map<String, dynamic> json) {
-    try {
-      final id = json['id'] ?? json['lobbyId'] ?? json['data']['id'] ?? 0;
-      if (id == 0) throw Exception('ID лобби не найден в ответе');
-
-      return LobbyModel(
-        id: id,
-        shopId: json['shopId'] ?? 0,
-        taskId: List<int>.from(json['taskId'] ?? []),
-        customerId: List<int>.from(json['customerId'] ?? []),
-      );
-    } catch (e) {
-      debugPrint('Ошибка парсинга LobbyModel: $e\nResponse: $json');
-      rethrow;
-    }
+    return LobbyModel(
+      id: json['lobbyId'] ?? 0,
+      shopId: json['shopId'],
+      taskId: List<int>.from(json['taskId'] ?? []),
+      customerId: List<int>.from(json['customerId'] ?? []),
+      code: json['code'],
+    );
   }
-
 
   static List<LobbyModel> listFromJson(List<dynamic> jsonList) {
     return jsonList.map((json) => LobbyModel.fromResponse(json)).toList();
   }
 
-  @override
   @override
   LobbyModel fromJson(Map<String, dynamic> json) {
     return LobbyModel.fromResponse(json);
