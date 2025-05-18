@@ -1,115 +1,68 @@
 import 'dart:convert';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zadachok/models/lobby/lobby_model.dart';
+import 'package:zadachok/models/user/user_model.dart';
 import '../api/api_client.dart';
 import 'auth_provider.dart';
 
 class GroupProvider with ChangeNotifier {
   AuthProvider? authProvider;
+  LobbyModel? _lobby;
+  List<UserModel> _members = [];
+  UserModel? _currentUser;
+
+  // Геттеры
+  String? get groupCode => _lobby?.code;
+  String? get groupName => _lobby != null ? "Группа ${_lobby!.code}" : null;
+  List<UserModel> get members => _members;
+  UserModel? get currentUser => _currentUser;
+  int get lobbyId => _lobby?.id ?? 0;
+  bool get isAuthenticated => _currentUser != null;
+  bool get isInGroup => _lobby != null;
+  bool get isOwner => _currentUser?.role.isAdmin ?? false;
 
   GroupProvider({required this.authProvider});
 
-  String? _groupCode;
-  String? _groupName;
-  List<GroupMember> _members = [];
-  GroupMember? _currentUser;
-  LobbyModel? _lobby;
-
-  String? get groupCode => _groupCode;
-  String? get groupName => _groupName;
-  List<GroupMember> get members => _members;
-  GroupMember? get currentUser => _currentUser;
-  int get lobbyId => _lobby?.id ?? 0;
-
-  bool get isAuthenticated => _currentUser != null;
-  bool get isInGroup => _groupCode != null;
-  bool get isOwner => _currentUser?.role == GroupRole.owner;
-
-  int getCurrentUserId() {
-    if (authProvider == null || authProvider!.user == null) {
-      debugPrint('AuthProvider or user is null');
-      throw Exception('Пользователь не авторизован');
-    }
-
-    final userId = authProvider!.user!.id;
-    debugPrint('Current user ID: $userId');
-
-    if (userId == 0) {
-      throw Exception('Неверный ID пользователя (0)');
-    }
-
-    return userId;
-  }
-
-
-  void setCurrentUser(String userName, {bool isAdmin = false}) {
-    _currentUser = GroupMember(
-      name: userName,
-      role: isAdmin ? GroupRole.owner : GroupRole.member,
-    );
-
-    if (_groupCode != null && !_members.any((m) => m.name == userName)) {
-      _members.add(_currentUser!);
-      saveGroupData();
-    }
-
+  // Установка текущего пользователя
+  void setCurrentUser(UserModel user) {
+    _currentUser = user;
     notifyListeners();
   }
 
-
+  // Создание группы
   Future<void> createGroup() async {
     try {
-      if (authProvider == null || authProvider!.token == null) {
-        throw Exception('Пользователь не авторизован');
-      }
-
-      final apiClient = ApiClient();
-      apiClient.setAuthToken(authProvider!.token!);
-
-      final currentUserId = getCurrentUserId();
-      if (currentUserId == 0) {
-        throw Exception('Неверный ID пользователя');
-      }
+      final currentUserId = _validateUser();
+      final apiClient = _getAuthenticatedClient();
 
       _lobby = await apiClient.createLobby(currentUserId);
-
-      if (_lobby?.code == null) {
-        throw Exception('Сервер не вернул код лобби');
-      }
-
-      _groupCode = _lobby!.code!;
-      _groupName = "Группа $_groupCode";
-      _members = [_currentUser!];
-
-      await saveGroupData();
+      if (_lobby?.code == null) throw Exception('Не удалось создать лобби');
+      UserModel user =await apiClient.getUserById( new UserModel(name: 'name', email: 'email', login: 'login', id:_lobby!.customerId[0]));
+      _members = [user];
+      await _saveGroupData();
       notifyListeners();
     } catch (e) {
-      debugPrint('Ошибка при создании лобби: $e');
+      debugPrint('Ошибка создания группы: $e');
       rethrow;
     }
   }
 
-
+  // Присоединение к группе
   Future<bool> joinGroup(String code) async {
-    final apiClient = ApiClient();
-    if (code.isEmpty) return false;
-
     try {
-      final currentUserId = getCurrentUserId();
-      final updatedLobby = await apiClient.lobbyAddUser(code, currentUserId);
+      final currentUserId = _validateUser();
+      final apiClient = _getAuthenticatedClient();//ТУТ ТАКИЕ ЖЕ ТРАБЛЫ КАК И В CREATEGROUP;
 
-      _lobby = updatedLobby;
-      _groupCode = updatedLobby.code!;
-      _groupName = "Группа ${updatedLobby.code}";
+      await apiClient.lobbyAddUser(code, currentUserId);
+      await _loadLobbyById(currentUserId);
 
-      if (!_members.any((m) => m.name == _currentUser!.name)) {
+      if (!_members.any((m) => m.id == _currentUser!.id)) {
         _members.add(_currentUser!);
       }
 
-      await saveGroupData();
+      await _saveGroupData();
       notifyListeners();
       return true;
     } catch (e) {
@@ -118,141 +71,113 @@ class GroupProvider with ChangeNotifier {
     }
   }
 
-
-
-  Future <void> leaveGroup() async {
-    if (_currentUser != null) {
-      _members.removeWhere((m) => m.name == _currentUser!.name);
-      if (_members.isEmpty) {
-        _groupCode = null;
-        _groupName = null;
-        clearGroupData();
-      } else {
-        saveGroupData();
-      }
-      notifyListeners();
-    }
+  // Загрузка данных лобби
+  Future<void> _loadLobbyById(int userId) async {
+    final apiClient = _getAuthenticatedClient();
+    _lobby = await apiClient.getLobby(userId);
+    if (_lobby == null) throw Exception('Лобби не найдено');
   }
 
-  void updateGroupName(String newName) {
-    _groupName = newName;
-    notifyListeners();
-  }
-
-  Future<void> disbandGroup() async {
-    _members.clear();
-    _groupCode = null;
-    _groupName = null;
-    await clearGroupData();
-    notifyListeners();
-  }
-
-  Future<void> resetGroup() async {
-    _groupCode = null;
-    _groupName = null;
-    _members = [];
-    await clearGroupData();
-    notifyListeners();
-  }
-
-  Future<void> clearUserFromGroup() async {
-    if (_currentUser != null) {
-      _members.removeWhere((m) => m.name == _currentUser!.name);
-      await saveGroupData();
-      notifyListeners();
-    }
-  }
-
-
-
-
-  void removeMember(String name) {
-    if (!isOwner) return;
-
-    _members.removeWhere((member) => member.name == name);
-    notifyListeners();
-  }
-
-  List<String> get memberNames => _members.map((e) => e.name).toList();
-  int get memberCount => _members.length;
-
-
-  String _generateRandomCode() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return List.generate(6, (index) => chars[Random().nextInt(chars.length)]).join();
-  }
-
-  Future<void> saveGroupData() async {
-    if (_groupCode == null) return;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('members',
-        _members.map((m) => jsonEncode(m.toJson())).toList());
-
-  }
-
-  Future<void> loadGroupData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final code = prefs.getString('group_code');
-
-    if (code == null) return;
+  // Выход из группы
+  Future<void> leaveGroup() async {
+    if (_currentUser == null || _lobby == null) return;
 
     try {
+      final apiClient = _getAuthenticatedClient();
+      await apiClient.lobbyRemoveUser(_lobby!.id, _currentUser!.id);
 
-      final apiClient = ApiClient();
-      _lobby = await apiClient.getLobby(code);
+      _members.removeWhere((m) => m.id == _currentUser!.id);
+      if (_members.isEmpty) {
+        await _clearGroupData();
+      } else {
+        await _saveGroupData();
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Ошибка выхода из группы: $e');
+    }
+  }
 
-      _groupCode = code;
-      _groupName = prefs.getString('group_name');
+  // Сохранение данных
+  Future<void> _saveGroupData() async {
+    if (_lobby == null) return;
+    final prefs = await SharedPreferences.getInstance();
 
+    await prefs.setString('lobby', jsonEncode(_lobby!.toJson()));
+    await prefs.setStringList('members',
+        _members.map((m) => jsonEncode(m.toJson())).toList());
+  }
 
-      final membersJson = prefs.getStringList('members') ?? [];
-      _members = membersJson.map((json) {
-        final data = jsonDecode(json);
-        return GroupMember(
-          name: data['name'],
-          role: data['role'].contains('owner') ? GroupRole.owner : GroupRole.member,
-        );
-      }).toList();
+  // Загрузка данных
+  Future<void> loadGroupData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lobbyJson = prefs.getString('lobby');
+    final membersJson = prefs.getStringList('members') ?? [];
 
+    if (lobbyJson == null) return;
+
+    try {
+      _lobby = LobbyModel.fromJson(jsonDecode(lobbyJson));
+      _members = membersJson.map((json) => UserModel.fromJson(jsonDecode(json))).toList();
       notifyListeners();
     } catch (e) {
       debugPrint('Ошибка загрузки группы: $e');
-      await clearGroupData();
+      await _clearGroupData();
     }
   }
 
-  Future<void> clearGroupData() async {
+  Future<void> resetGroup() async {
+    _clearGroupData();
+  }
+
+  ApiClient getAuthenticatedClient() {
+    if (authProvider?.token == null) throw Exception('Токен отсутствует');
+    final client = ApiClient();
+    client.setAuthToken(authProvider!.token!);
+    return client;
+  }
+
+  void setMembers(List<UserModel> members) {
+    _members = members;
+    notifyListeners();
+  }
+
+  // Очистка данных
+  Future<void> _clearGroupData() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('group_code');
-    await prefs.remove('group_name');
+    await prefs.remove('lobby');
     await prefs.remove('members');
+    _lobby = null;
+    _members = [];
   }
 
-}
+  Future<void> disbandGroup() async {
+    if (_lobby == null) return;
 
-
-
-class GroupMember {
-  final String name;
-  final GroupRole role;
-
-  GroupMember({required this.name, required this.role});
-
-  Map<String, dynamic> toJson() => {
-    'name': name,
-    'role': role.toString(),
-  };
-
-  factory GroupMember.fromJson(Map<String, dynamic> json) {
-    return GroupMember(
-      name: json['name'],
-      role: json['role'].contains('owner') ? GroupRole.owner : GroupRole.member,
-    );
+    try {
+      final client = _getAuthenticatedClient();
+      await client.deleteLobby(_lobby!.id);
+      await _clearGroupData();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Ошибка распускания группы: $e');
+      rethrow;
+    }
   }
-}
 
-enum GroupRole {
-  owner,
-  member,
+
+  // Валидация пользователя
+  int _validateUser() {
+    if (authProvider?.user == null) throw Exception('Пользователь не авторизован');
+    if (authProvider!.user!.id == 0) throw Exception('Неверный ID пользователя');
+    return authProvider!.user!.id;
+  }
+
+  // Получение авторизованного клиента
+  ApiClient _getAuthenticatedClient() {
+    if (authProvider?.token == null) throw Exception('Токен отсутствует');
+    final client = ApiClient();
+    client.setAuthToken(authProvider!.token!);
+    return client;
+  }
 }
