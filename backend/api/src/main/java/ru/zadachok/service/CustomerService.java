@@ -1,6 +1,7 @@
 // service/CustomerService.java
 package ru.zadachok.service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -9,17 +10,25 @@ import org.springframework.stereotype.Service;
 import ru.zadachok.dto.CustomerDto;
 import ru.zadachok.exception.CustomerAlreadyExistsException;
 import ru.zadachok.model.Customer;
+import ru.zadachok.model.Lobby;
 import ru.zadachok.model.Product;
+import ru.zadachok.model.Wallet;
 import ru.zadachok.repository.CustomerRepository;
-import ru.zadachok.request.DeleteCustomerRequest;
-import ru.zadachok.request.RegisterRequest;
-import ru.zadachok.request.UpdateCustomerRequest;
+import ru.zadachok.repository.LobbyRepository;
+import ru.zadachok.repository.ProductRepository;
+import ru.zadachok.repository.WalletRepository;
+import ru.zadachok.request.*;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class CustomerService {
     private final CustomerRepository customerRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LobbyRepository lobbyRepository;
+    private final LobbyService lobbyService;
+    private final WalletRepository walletRepository;
 
     public CustomerDto register(RegisterRequest request) {
         if (request.getLogin().matches(".*[а-яА-ЯёЁ].*")) {
@@ -92,8 +101,39 @@ public class CustomerService {
                 .build();
     }
 
+
+    @Transactional
     public void deleteCustomer(DeleteCustomerRequest request) {
-        //TODO: правильное удаление, даже из лоббешников
+        int customerId = request.getCustomer_ID();
+
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Пользователь с ID " + customerId + " не найден"));
+
+        // 1. Удаление пользователя из всех лобби
+        List<Lobby> allLobbies = lobbyRepository.findAll();
+        for (Lobby lobby : allLobbies) {
+            Integer[] customerIds = lobby.getCustomerId();
+            if (customerIds != null && List.of(customerIds).contains(customerId)) {
+                lobbyService.removeCustomerFromLobby(RemoveFromLobbyRequest.builder()
+                        .lobbyId(lobby.getLobbyId())
+                        .customerId(customerId)
+                        .build());
+            }
+        }
+
+        // 2. Удаление всех лобби, где пользователь — админ
+        List<Lobby> adminLobbies = lobbyRepository.findAllByAdminId(customerId);
+        for (Lobby adminLobby : adminLobbies) {
+            lobbyService.deleteLobby(DeleteLobbyRequest.builder()
+                    .lobbyId(adminLobby.getLobbyId())
+                    .build());
+        }
+
+        // 3. Удаление оставшихся кошельков (на всякий случай)
+        walletRepository.deleteAllByCustomerId(customerId);
+
+        // 4. Удаление пользователя
+        customerRepository.deleteById(customerId);
     }
 
     public CustomerDto getCustomerById(int id) {
