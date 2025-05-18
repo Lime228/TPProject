@@ -15,6 +15,7 @@ import ru.zadachok.request.UpdateTaskRequest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -104,7 +105,8 @@ public class TaskService {
                     ? request.getCustomerId()
                     : task.getCustomerId(); // на случай если customerId не обновлялся
 
-            Wallet wallet = walletRepository.findByCustomerId(customerId);
+            Wallet wallet = walletRepository.findByCustomerId(customerId)
+                    .orElseThrow(() -> new RuntimeException("Кошелек не найден"));
 
             wallet.setBalance(wallet.getBalance() + task.getReward());
             walletRepository.save(wallet);
