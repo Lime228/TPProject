@@ -105,9 +105,6 @@ public class TaskService {
                     : task.getCustomerId(); // на случай если customerId не обновлялся
 
             Wallet wallet = walletRepository.findByCustomerId(customerId);
-            if (wallet == null) {
-                throw new RuntimeException("Кошелёк для пользователя с ID " + customerId + " не найден");
-            }
 
             wallet.setBalance(wallet.getBalance() + task.getReward());
             walletRepository.save(wallet);
