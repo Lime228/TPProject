@@ -13,5 +13,6 @@ public interface WalletRepository extends JpaRepository<Wallet, Integer> {
 
     void deleteAllByCustomerId(Integer customerId);
 
-    Optional<Wallet> findByCustomerId(Integer customerId);
+    Wallet findByCustomerId(Integer customerId);
+
 }

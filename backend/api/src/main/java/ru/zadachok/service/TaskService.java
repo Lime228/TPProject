@@ -5,8 +5,10 @@ import org.springframework.stereotype.Service;
 import ru.zadachok.model.Lobby;
 import ru.zadachok.model.Shop;
 import ru.zadachok.model.Task;
+import ru.zadachok.model.Wallet;
 import ru.zadachok.repository.LobbyRepository;
 import ru.zadachok.repository.TaskRepository;
+import ru.zadachok.repository.WalletRepository;
 import ru.zadachok.request.CreateTaskRequest;
 import ru.zadachok.request.UpdateTaskRequest;
 
@@ -20,6 +22,7 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final LobbyRepository lobbyRepository;
+    private final WalletRepository walletRepository;
 
     public Task createTask(CreateTaskRequest request) {
         Lobby lobby = lobbyRepository.findById(request.getLobbyId())
@@ -83,16 +86,36 @@ public class TaskService {
         Task task = taskRepository.findById(request.getTaskId())
                 .orElseThrow(() -> new RuntimeException("Задача не найдена"));
 
+        Integer oldState = task.getIsActive();
+
         if (request.getName() != null) task.setName(request.getName());
         if (request.getDescription() != null) task.setDescription(request.getDescription());
         if (request.getStartDate() != null) task.setStartDate(request.getStartDate());
         if (request.getEndDate() != null) task.setEndDate(request.getEndDate());
         if (request.getReward() != null) task.setReward(request.getReward());
-        if (request.getState() != null) task.setIsActive(request.getReward());
+        if (request.getState() != null) task.setIsActive(request.getState());
         if (request.getCustomerId() != null) task.setCustomerId(request.getCustomerId());
+
+        // Проверка: если статус меняется с 1 → 2
+        if (oldState != null && oldState == 1 &&
+                request.getState() != null && request.getState() == 2) {
+
+            Integer customerId = (request.getCustomerId() != null)
+                    ? request.getCustomerId()
+                    : task.getCustomerId(); // на случай если customerId не обновлялся
+
+            Wallet wallet = walletRepository.findByCustomerId(customerId);
+            if (wallet == null) {
+                throw new RuntimeException("Кошелёк для пользователя с ID " + customerId + " не найден");
+            }
+
+            wallet.setBalance(wallet.getBalance() + task.getReward());
+            walletRepository.save(wallet);
+        }
 
         return taskRepository.save(task);
     }
+
 
 
     public Task getTaskById(Integer taskId) {
