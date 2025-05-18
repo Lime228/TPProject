@@ -84,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.setUserAndToken(
+      await authProvider.setAuthData(
         user: user,
         token: token,
       );
