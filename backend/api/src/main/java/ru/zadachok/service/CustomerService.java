@@ -109,32 +109,38 @@ public class CustomerService {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new RuntimeException("Пользователь с ID " + customerId + " не найден"));
 
-        // 1. Удаление пользователя из всех лобби
+        // Найдем лобби, где этот пользователь состоит (он может быть только в одном)
         List<Lobby> allLobbies = lobbyRepository.findAll();
+
+        Lobby customerLobby = null;
         for (Lobby lobby : allLobbies) {
             Integer[] customerIds = lobby.getCustomerId();
             if (customerIds != null && List.of(customerIds).contains(customerId)) {
+                customerLobby = lobby;
+                break;
+            }
+        }
+
+        if (customerLobby != null) {
+            if (customer.isAdmin()) {
+                lobbyService.deleteLobby(DeleteLobbyRequest.builder()
+                        .lobbyId(customerLobby.getLobbyId())
+                        .build());
+            } else {
                 lobbyService.removeCustomerFromLobby(RemoveFromLobbyRequest.builder()
-                        .lobbyId(lobby.getLobbyId())
+                        .lobbyId(customerLobby.getLobbyId())
                         .customerId(customerId)
                         .build());
             }
         }
 
-        // 2. Удаление всех лобби, где пользователь — админ
-        List<Lobby> adminLobbies = lobbyRepository.findAllByAdminId(customerId);
-        for (Lobby adminLobby : adminLobbies) {
-            lobbyService.deleteLobby(DeleteLobbyRequest.builder()
-                    .lobbyId(adminLobby.getLobbyId())
-                    .build());
-        }
-
-        // 3. Удаление оставшихся кошельков (на всякий случай)
+        // Удаляем кошельки пользователя
         walletRepository.deleteAllByCustomerId(customerId);
 
-        // 4. Удаление пользователя
+        // Удаляем самого пользователя
         customerRepository.deleteById(customerId);
     }
+
 
     public CustomerDto getCustomerById(int id) {
         Customer customer =customerRepository.findById(id)
