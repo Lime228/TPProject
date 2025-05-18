@@ -22,7 +22,7 @@ abstract class ApiInterface {
   Future<List<ProductModel>> getShopProducts(int shopID);
   Future<ProductModel> createShopItem(ShopModel shop, ProductModel product);
   Future<ProductModel> updateShopItem(ProductModel request);
-  Future<void> deleteShopItem(String itemId);
+  Future<void> deleteShopItem(int itemId);
   Future<WalletModel> updateWallet(WalletModel request);
 
   void dispose();

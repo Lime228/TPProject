@@ -41,8 +41,7 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => ShopProvider(
-            apiClient: apiClient,
-            prefs: prefs,
+            prefs: prefs, api: apiClient,
           ),
         ),
       ],

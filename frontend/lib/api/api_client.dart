@@ -27,7 +27,6 @@ class ApiClient implements ApiInterface {
   Map<String, String> _getHeaders({bool includeAuth = true}) {
     final headers = {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
     };
 
     if (includeAuth && _authToken != null) {
@@ -43,17 +42,17 @@ class ApiClient implements ApiInterface {
   Future<UserModel> register(UserModel request) async {
     final registerUrl = Uri.parse(ApiEndpoints.registerUrl);
     try {
-      if (request.login.isEmpty || request.password.isEmpty) {
+      if (request.login.isEmpty || request.password!.isEmpty) {
         throw Exception('Все поля обязательны для заполнения');
       }
-      if (request.password.length < 6) {
+      if (request.password!.length < 6) {
         throw Exception('Пароль должен содержать минимум 6 символов');
       }
 
       final registerResponse = await _client.post(
         registerUrl,
         headers: _getHeaders(includeAuth: false),
-        body: json.encode(request.registerRequest()),
+        body: json.encode(request.toRegisterRequest()),
       ).timeout(const Duration(seconds: 10));
 
       if (registerResponse.statusCode != 201) {
@@ -87,7 +86,7 @@ class ApiClient implements ApiInterface {
       final loginResponse = await _client.post(
         loginUrl,
         headers: _getHeaders(includeAuth: false),
-        body: json.encode(request.loginRequest()),
+        body: json.encode(request.toLoginRequest()),
       ).timeout(const Duration(seconds: 10));
 
       if (loginResponse.statusCode != 200) {
@@ -138,7 +137,7 @@ class ApiClient implements ApiInterface {
       final response = await _client.put(
         url,
         headers: _getHeaders(),
-        body: json.encode(user.updateDetailsRequest()),
+        body: json.encode(user.toUpdateRequest()),
       ).timeout(const Duration(seconds: 10));
 
       return _handleUserResponse(response);
@@ -272,9 +271,9 @@ class ApiClient implements ApiInterface {
   }
 
   @override // в теории работает
-  Future<LobbyModel> lobbyRemoveUser(String code, int userId) async {
+  Future<LobbyModel> lobbyRemoveUser(int lobbyId, int userId) async {
     final url = Uri.parse(ApiEndpoints.lobbyRemoveUserUrl);
-    LobbyModel lobby = new LobbyModel(taskId: [0], shopId: 0, customerId: [0], code: code);
+    LobbyModel lobby = new LobbyModel(taskId: [0], shopId: 0, customerId: [0], id: lobbyId);
     try {
       final response = await _client.patch(
         url,
@@ -336,7 +335,7 @@ class ApiClient implements ApiInterface {
       final response = await _client.post(
         url,
         headers: _getHeaders(),
-        body: json.encode(shop.productCreateRequest(product)),
+        body: json.encode(shop.createProductRequest(product)),
       ).timeout(const Duration(seconds: 10));
 
       return _handleProductResponse(response);
@@ -361,7 +360,7 @@ class ApiClient implements ApiInterface {
       ShopModel shop = new ShopModel.fromResponse(json.decode(response.body));
 
       List<ProductModel> products = [];
-      for (int productId in shop.productId) {
+      for (int productId in shop.productIds) {
         final productUrl = Uri.parse('${ApiEndpoints.shopProductGetUrl}/${productId}');
         final productResponse = await _client.get(
           productUrl,
@@ -375,36 +374,11 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override // откуда то появился дубль метода, используйте createShopItem
-  Future<ProductModel> createShopProduct(ProductModel product) async {
-    if (product.name.isEmpty) {
-      throw Exception('Название товара не может быть пустым');
-    }
 
-    if (product.price <= 0) {
-      throw Exception('Цена должна быть положительной');
-    }
-
-    final url = Uri.parse(ApiEndpoints.shopProductCreateUrl);
-    final ShopModel shop = new ShopModel(productId: [0]);
-    try {
-      final response = await _client.post(
-        url,
-        headers: _getHeaders(),
-        body: json.encode(shop.productCreateRequest(product)),
-      ).timeout(const Duration(seconds: 10));
-
-      return _handleProductResponse(response);
-    } on http.ClientException catch (e) {
-      throw Exception('Ошибка подключения: ${e.message}');
-    } on Exception catch (e) {
-      throw Exception('Ошибка: $e');
-    }
-  }
 
   @override // в теории работает
-  Future<void> deleteShopItem(String itemId) async {
-    if (itemId.isEmpty) {
+  Future<void> deleteShopItem(int itemId) async {
+    if (itemId <= 0) {
       throw Exception('ID товара не может быть пустым');
     }
 
@@ -438,12 +412,12 @@ class ApiClient implements ApiInterface {
     }
 
     final url = Uri.parse(ApiEndpoints.shopProductUpdateUrl);
-    final ShopModel shop = new ShopModel(productId: [0]);
+    final ShopModel shop = new ShopModel(productIds: [0]);
     try {
       final response = await _client.patch(
         url,
         headers: _getHeaders(),
-        body: json.encode(shop.productUpdateRequest(product)),
+        body: json.encode(shop.updateProductRequest(product)),
       ).timeout(const Duration(seconds: 10));
 
       return _handleProductResponse(response);
@@ -575,7 +549,7 @@ class ApiClient implements ApiInterface {
     }
 
     final url = Uri.parse(ApiEndpoints.taskUpdateUrl);
-    if (user.isAdmin) {
+    if (user.role.isAdmin) {
       task.state = 2;
     } else {
       task.state = 1;
@@ -674,7 +648,7 @@ class ApiClient implements ApiInterface {
     switch (response.statusCode) {
       case 200:
       case 201:
-        return ProductModel.fromResponse(json.decode(response.body));
+        return ProductModel.fromJson(json.decode(response.body));
       case 400:
         throw Exception('Неверный запрос: ${response.body}');
       case 401:
