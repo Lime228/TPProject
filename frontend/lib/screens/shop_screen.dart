@@ -104,7 +104,7 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   void _searchProducts(String query) {
-    Provider.of<ShopProvider>(context, listen: false).searchProducts(query);
+    Provider.of<ShopProvider>(context, listen: false).search(query);
   }
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
@@ -114,7 +114,7 @@ class _ShopScreenState extends State<ShopScreen> {
     setState(() {
       _sortOption = option ?? 'all';
     });
-    Provider.of<ShopProvider>(context, listen: false).sortProducts(option: option);
+    Provider.of<ShopProvider>(context, listen: false).sort(option: option);
   }
 
   void _resetFilters() {
@@ -251,7 +251,7 @@ class _ShopScreenState extends State<ShopScreen> {
     final groupProvider = Provider.of<GroupProvider>(context);
     final shopProvider = Provider.of<ShopProvider>(context);
 
-    if (!authProvider.isAuthenticated) {
+    if (!authProvider.isAuthorized) {
       return _buildUnauthorizedView();
     }
 
@@ -317,7 +317,7 @@ class _ShopScreenState extends State<ShopScreen> {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _loadData,
-                child: shopProvider.filteredProducts.isEmpty
+                child: shopProvider.products.isEmpty
                     ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -341,9 +341,9 @@ class _ShopScreenState extends State<ShopScreen> {
                     crossAxisSpacing: 8,
                     mainAxisSpacing: 8,
                   ),
-                  itemCount: shopProvider.filteredProducts.length,
+                  itemCount: shopProvider.products.length,
                   itemBuilder: (context, index) {
-                    final product = shopProvider.filteredProducts[index];
+                    final product = shopProvider.products[index];
                     return GestureDetector(
                       onTap: () => _showProductDetails(product),
                       child: Padding(
@@ -366,7 +366,7 @@ class _ShopScreenState extends State<ShopScreen> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final group = Provider.of<GroupProvider>(context, listen: false);
 
-    if (!auth.isAuthenticated || !group.isInGroup) return null;
+    if (!auth.isAuthorized || !group.isInGroup) return null;
     return groupProvider.isOwner
         ? FloatingActionButton(
       backgroundColor: ShopScreenConstants.primaryColor,
@@ -402,9 +402,9 @@ class _ShopScreenState extends State<ShopScreen> {
               child: SizedBox(
                 width: 200,
                 height: 170,
-                child: product.photo.isNotEmpty
+                child: product.photoBase64.isNotEmpty
                     ? Image.file(
-                  File(product.photo),
+                  File(product.photoBase64),
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => _buildPlaceholderImage(),
                 )
@@ -570,11 +570,11 @@ class _ShopScreenState extends State<ShopScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (product.photo.isNotEmpty)
+              if (product.photoBase64.isNotEmpty)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.network(
-                    product.photo,
+                    product.photoBase64,
                     height: 150,
                     width: double.infinity,
                     fit: BoxFit.cover,
@@ -832,9 +832,9 @@ class _ShopScreenState extends State<ShopScreen> {
         id: DateTime.now().millisecondsSinceEpoch,
         name: _nameController.text,
         description: _descController.text,
-        photo: _tempProductImage?.path ?? '',
-        state: true,
-        price: int.tryParse(_priceController.text) ?? 0,
+        photoBase64: _tempProductImage?.path ?? '',
+        isAvailable: true,
+        price : int.parse(_priceController as String),
         customerId: authProvider.user?.id ?? 0,
         link: _linkController.text,
       );
@@ -1178,7 +1178,7 @@ class _ShopScreenState extends State<ShopScreen> {
     final updatedProduct = product.copyWith(
       name: _nameController.text,
       description: _descController.text,
-      photo: _tempProductImage?.path ?? product.photo,
+      photoBase64: _tempProductImage?.path ?? product.photoBase64,
       price: int.parse(_priceController.text),
       link: _linkController.text,
     );

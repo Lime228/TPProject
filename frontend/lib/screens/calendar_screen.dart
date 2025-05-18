@@ -132,7 +132,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             _buildMonthHeader(),
             _buildCalendarGrid(),
             const SizedBox(height: 12),
-            auth.isAuthenticated && group.isInGroup
+            auth.isAuthorized && group.isInGroup
                 ? _buildTaskList()
                 : _buildUnauthorizedTaskMessage(),
           ],
@@ -562,7 +562,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final group = Provider.of<GroupProvider>(context);
 
     String message;
-    if (!auth.isAuthenticated) {
+    if (!auth.isAuthorized) {
       message = 'Для просмотра задач необходимо авторизоваться';
     } else if (!group.isInGroup) {
       message = 'Только находясь в группе можно просматривать задачи';
@@ -578,7 +578,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           children: [
             const SizedBox(height: 50),
             Icon(
-              auth.isAuthenticated ? Icons.group : Icons.lock,
+              auth.isAuthorized ? Icons.group : Icons.lock,
               size: 64,
               color: const Color(0xFF937DF3),
             ),

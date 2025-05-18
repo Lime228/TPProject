@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:zadachok/models/task/task_model.dart';
+import '../api/api_client.dart';
+import '../models/user/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/task_provider.dart';
@@ -95,7 +97,7 @@ class _TasksScreenState extends State<TasksScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
 
-    if (!authProvider.isAuthenticated) {
+    if (!authProvider.isAuthorized) {
       return _buildUnauthorizedView();
     }
 
@@ -847,7 +849,7 @@ class _TasksScreenState extends State<TasksScreen> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final group = Provider.of<GroupProvider>(context, listen: false);
 
-    if (!auth.isAuthenticated || !group.isInGroup) return null;
+    if (!auth.isAuthorized || !group.isInGroup) return null;
 
     if (!group.isOwner) {
       return FloatingActionButton(
@@ -1097,15 +1099,6 @@ class _TasksScreenState extends State<TasksScreen> {
           children: [
             ListTile(
               tileColor: Colors.white,
-              leading: const Icon(Icons.edit),
-              title: const Text('Изменить название группы'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showChangeGroupNameDialog(context);
-              },
-            ),
-            ListTile(
-              tileColor: Colors.white,
               leading: const Icon(Icons.people),
               title: const Text('Управление участниками'),
               onTap: () {
@@ -1128,43 +1121,7 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
-  void _showChangeGroupNameDialog(BuildContext context) {
-    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
-    final controller = TextEditingController(text: groupProvider.groupName);
 
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text('Изменить название группы'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Новое название',
-            hintText: 'Введите новое название группы',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (controller.text.trim().length >= 3) {
-                groupProvider.updateGroupName(controller.text.trim());
-                Navigator.pop(ctx);
-                _showError('Название группы изменено');
-              } else {
-                _showError('Минимум 3 символа');
-              }
-            },
-            child: const Text('Сохранить'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showGroupMembersDialog(BuildContext context) {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
@@ -1183,10 +1140,10 @@ class _TasksScreenState extends State<TasksScreen> {
               final member = groupProvider.members[index];
               return ListTile(
                 title: Text(member.name),
-                trailing: groupProvider.isOwner && member.role != GroupRole.owner
+                trailing: groupProvider.isOwner && member.role != member.role.isAdmin
                     ? IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _removeMember(ctx, groupProvider, member),
+                    onPressed: () => _removeMember(ctx, groupProvider, member)
                 )
                     : null,
               );
@@ -1203,18 +1160,36 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
-  void _removeMember(
-      BuildContext ctx, GroupProvider groupProvider, GroupMember member) {
-    groupProvider.removeMember(member.name);
-    Navigator.pop(ctx);
-    _showError('${member.name} удален из группы');
+  Future<void> _removeMember(
+      BuildContext ctx, GroupProvider groupProvider, UserModel member) async {
+    try {
+      // Используем API клиент через GroupProvider
+      final apiClient = ApiClient();
+      apiClient.setAuthToken(Provider.of<AuthProvider>(context, listen: false).token!);
 
-    if (member.name == groupProvider.currentUser?.name) {
-      groupProvider.leaveGroup();
+      await apiClient.lobbyRemoveUser(groupProvider.lobbyId, member.id);
+
+      // Обновляем локальное состояние через публичные методы
+      final updatedMembers = groupProvider.members.where((m) => m.id != member.id).toList();
+      // Нужно добавить метод setMembers в GroupProvider или обновить другим способом
+      // Например, через загрузку обновленных данных:
+      await groupProvider.loadGroupData();
+
+      Navigator.pop(ctx);
+      _showError('${member.name} удален из группы');
+
+      // Если удаляем себя - выходим из группы
+      if (member.id == groupProvider.currentUser?.id) {
+        await groupProvider.leaveGroup();
+      }
+    } catch (e) {
+      _showError('Ошибка удаления участника: ${e.toString()}');
     }
   }
 
   void _confirmGroupDisband(BuildContext context) {
+    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -1228,10 +1203,16 @@ class _TasksScreenState extends State<TasksScreen> {
             child: const Text('Отмена'),
           ),
           TextButton(
-            onPressed: () {
-              Provider.of<GroupProvider>(context, listen: false).disbandGroup();
-              Navigator.pop(ctx);
-              _showError('Группа распущена');
+            onPressed: () async {
+              try {
+                // Используем метод disbandGroup, который уже содержит всю логику
+                await groupProvider.disbandGroup();
+
+                Navigator.pop(ctx);
+                _showError('Группа распущена');
+              } catch (e) {
+                _showError('Ошибка распускания группы: ${e.toString()}');
+              }
             },
             child: const Text('Распустить', style: TextStyle(color: Colors.red)),
           ),
@@ -1387,6 +1368,8 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 }
+
+
 class _DiagonalClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {

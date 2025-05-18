@@ -1,145 +1,108 @@
-import 'dart:convert';
-
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:zadachok/api/api_interface.dart';
-import 'package:zadachok/models/shop/product/product_model.dart';
+import 'package:zadachok/models/shop/shop_model.dart';
+import '../api/api_interface.dart';
+import '../models/shop/product/product_model.dart';
 
 class ShopProvider with ChangeNotifier {
-  final ApiInterface apiClient;
+  final ApiInterface api;
   final SharedPreferences prefs;
 
   List<ProductModel> _products = [];
-  bool _isLoading = false;
-  bool _isLoadingProductCreation = false;
-  bool _isLoadingProductDeletion = false;
-  String? _error;
-
-  List<ProductModel> get products => _products;
-  bool get isLoading => _isLoading;
-  bool get isLoadingProductCreation => _isLoadingProductCreation;
-  bool get isLoadingProductDeletion => _isLoadingProductDeletion;
-  String? get error => _error;
-
   List<ProductModel> _filteredProducts = [];
   String _searchQuery = '';
-  String _sortOption = 'all';
+  String _sortBy = 'name';
+  bool _isLoading = false;
+  String? _error;
+  int? _currentShopId;
 
-  List<ProductModel> get filteredProducts => _filteredProducts;
+  // Геттеры
+  List<ProductModel> get products => _filteredProducts;
+  List<ProductModel> get allProducts => _products;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+  int? get currentShopId => _currentShopId;
 
-
-  ShopProvider({required this.apiClient, required this.prefs}) {
-    _init();
+  ShopProvider({required this.api, required this.prefs}) {
+    _loadShopId();
   }
 
-  Future<void> _init() async {
+  Future<void> _loadShopId() async {
+    _currentShopId = prefs.getInt('current_shop_id');
+  }
+
+  Future<void> setCurrentShop(int shopId) async {
+    _currentShopId = shopId;
+    await prefs.setInt('current_shop_id', shopId);
     await loadProducts();
   }
 
   Future<void> loadProducts() async {
-    _setLoading(true);
-    _error = null;
+    if (_currentShopId == null) {
+      _error = 'Магазин не выбран';
+      return;
+    }
 
+    _setLoading(true);
     try {
-      _products = await apiClient.getShopProducts();
+      _products = await api.getShopProducts(_currentShopId!);
       _applyFilters();
-      notifyListeners();
     } catch (e) {
-      _error = 'Ошибка загрузки товаров: ${e.toString()}';
+      _error = 'Ошибка загрузки товаров: $e';
       debugPrint(_error!);
-      rethrow;
     } finally {
       _setLoading(false);
-    }
-  }
-
-  Future<bool> addProduct(ProductModel product) async {
-    try {
-      final newProduct = await apiClient.createShopItem(product);
-      _products.add(newProduct);
-      notifyListeners();
-      return true;
-    } catch (e) {
-      return false;
     }
   }
 
   Future<bool> createProduct(ProductModel product) async {
-    _setLoadingProductCreation(true);
-    _error = null;
+    return await addProduct(product);
+  }
+
+  Future<bool> addProduct(ProductModel product) async {
+    if (_currentShopId == null) {
+      _error = 'Магазин не выбран';
+      return false;
+    }
 
     try {
-      debugPrint('Создание товара: ${product.name}');
-      final newProduct = await apiClient.createShopItem(product);
-      debugPrint('Получен товар с id: ${newProduct.id}');
-
+      final shop = ShopModel(id: _currentShopId!, productIds: []);
+      final newProduct = await api.createShopItem(shop, product);
       _products.add(newProduct);
-      notifyListeners();
+      _applyFilters();
       return true;
     } catch (e) {
-      debugPrint('Ошибка при создании товара: $e');
-      _error = e.toString();
+      _error = 'Ошибка добавления товара: $e';
+      debugPrint(_error!);
       return false;
-    } finally {
-      _setLoadingProductCreation(false);
     }
   }
 
-
   Future<bool> updateProduct(ProductModel product) async {
-    _setLoading(true);
-    _error = null;
-
     try {
-      debugPrint('Обновление товара с id: ${product.id}');
-      final updatedProduct = await apiClient.updateShopItem(product);
-      debugPrint('Товар обновлен: ${updatedProduct.id}');
-
+      final updated = await api.updateShopItem(product);
       final index = _products.indexWhere((p) => p.id == product.id);
-      if (index != -1) {
-        _products[index] = updatedProduct;
-      }
-
-      await _updateCache();
-      notifyListeners();
+      if (index != -1) _products[index] = updated;
+      _applyFilters();
       return true;
     } catch (e) {
-      _error = 'Ошибка обновления товара: ${e.toString()}';
-      debugPrint('Ошибка обновления товара: $e');
+      _error = 'Ошибка обновления товара: $e';
+      debugPrint(_error!);
       return false;
-    } finally {
-      _setLoading(false);
     }
   }
 
   Future<bool> removeProduct(int productId) async {
-    _setLoadingProductDeletion(true);
-    _error = null;
-
     try {
-      debugPrint('Удаление товара с id: $productId');
-      await apiClient.deleteShopItem(productId.toString());
+      await api.deleteShopItem(productId);
       _products.removeWhere((p) => p.id == productId);
-
-      await _updateCache();
-      notifyListeners();
+      _applyFilters();
       return true;
     } catch (e) {
-      _error = 'Ошибка удаления товара: ${e.toString()}';
-      debugPrint('Ошибка удаления товара: $e');
+      _error = 'Ошибка удаления товара: $e';
+      debugPrint(_error!);
       return false;
-    } finally {
-      _setLoadingProductDeletion(false);
-    }
-  }
-
-  Future<void> _updateCache() async {
-    final groupId = prefs.getString('current_group_id');
-    if (groupId != null) {
-      await prefs.setString(
-          'cached_products_$groupId',
-          jsonEncode(ProductModel.listToJson(_products))
-      );
     }
   }
 
@@ -149,71 +112,52 @@ class ShopProvider with ChangeNotifier {
 
   void clearProducts() {
     _products = [];
-    notifyListeners();
-  }
-
-  void searchProducts(String query) {
-    _searchQuery = query.toLowerCase();
-    _applyFilters();
-    notifyListeners();
-  }
-
-  void sortProducts({String? option}) {
-    _sortOption = option ?? 'all';
-    _applyFilters();
+    _filteredProducts = [];
     notifyListeners();
   }
 
   void resetFilters() {
     _searchQuery = '';
-    _sortOption = 'all';
+    _sortBy = 'name';
     _applyFilters();
-    notifyListeners();
   }
 
+  void search(String query) {
+    _searchQuery = query.toLowerCase();
+    _applyFilters();
+  }
 
+  void sort({String? option}) {
+    if (option != null) {
+      _sortBy = option;
+      _applyFilters();
+    }
+  }
 
   void _applyFilters() {
-
-    List<ProductModel> result = _products.where((product) {
-      final nameMatches = product.name.toLowerCase().contains(_searchQuery);
-      final descMatches = product.description.toLowerCase().contains(_searchQuery);
-      return nameMatches || descMatches;
+    // Фильтрация
+    _filteredProducts = _products.where((p) {
+      return p.name.toLowerCase().contains(_searchQuery) ||
+          p.description.toLowerCase().contains(_searchQuery);
     }).toList();
 
-
-    switch (_sortOption) {
+    // Сортировка
+    switch (_sortBy) {
       case 'price_asc':
-        result.sort((a, b) => a.price.compareTo(b.price));
+        _filteredProducts.sort((a, b) => a.price.compareTo(b.price));
         break;
       case 'price_desc':
-        result.sort((a, b) => b.price.compareTo(a.price));
+        _filteredProducts.sort((a, b) => b.price.compareTo(a.price));
         break;
-      case 'name':
-        result.sort((a, b) => a.name.compareTo(b.name));
-        break;
-      default:
-        break;
+      default: // name
+        _filteredProducts.sort((a, b) => a.name.compareTo(b.name));
     }
 
-    _filteredProducts = result;
+    notifyListeners();
   }
 
   void _setLoading(bool loading) {
-    if (_isLoading != loading) {
-      _isLoading = loading;
-      Future.microtask(() => notifyListeners());
-    }
-  }
-
-
-  void _setLoadingProductCreation(bool loading) {
-    _isLoadingProductCreation = loading;
-    notifyListeners();
-  }
-
-  void _setLoadingProductDeletion(bool loading) {
-    _isLoadingProductDeletion = loading;
+    _isLoading = loading;
     notifyListeners();
   }
 }
