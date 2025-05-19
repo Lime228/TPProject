@@ -13,10 +13,7 @@ import '../providers/group_provider.dart';
 class LoginScreen extends StatefulWidget {
   final ApiInterface apiClient;
 
-  const LoginScreen({
-    Key? key,
-    required this.apiClient,
-  }) : super(key: key);
+  const LoginScreen({Key? key, required this.apiClient}) : super(key: key);
 
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -33,7 +30,10 @@ class _LoginScreenState extends State<LoginScreen> {
   static const _borderRadius = 15.0;
   static const _shadowOffset = Offset(0, 4);
   static const _shadowBlur = 6.0;
-  static const _contentPadding = EdgeInsets.symmetric(horizontal: 20, vertical: 15);
+  static const _contentPadding = EdgeInsets.symmetric(
+    horizontal: 20,
+    vertical: 15,
+  );
   static const _buttonWidth = 150.0;
   static const _buttonHeight = 44.0;
   static const _inputWidth = 305.0;
@@ -54,192 +54,205 @@ class _LoginScreenState extends State<LoginScreen> {
     color: Colors.white,
   );
 
-  void _togglePasswordVisibility() => setState(() => _obscureText = !_obscureText);
+  void _togglePasswordVisibility() =>
+      setState(() => _obscureText = !_obscureText);
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final user = await widget.apiClient.login(
-        UserModel(
-          login: _usernameController.text,
-          password: _passwordController.text,
-          name: '',
-          email: '',
-          birthdayDate: DateTime(1980, 1, 1),
-        ),
-      );
+          UserModel(
+            login: _usernameController.text,
+            password: _passwordController.text,
+            name: '',
+            email: '',
+            birthdayDate: DateTime(1980, 1, 1),
+          )
+          );
 
-      debugPrint('User ID after login: ${user.id}');
-      final token = widget.apiClient.getAuthToken();
-      debugPrint('Получен токен: $token');
+          final token = widget.apiClient.getAuthToken();
+      debugPrint("Токен получен: ${token}");
 
-      if (token == null) {
-        throw Exception('Токен не получен');
-      }
+      if (token == null) throw Exception('Токен не получен');
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.setAuthData(
-        user: user,
-        token: token,
-      );
+      final groupProvider = Provider.of<GroupProvider>(context, listen: false);
 
-      debugPrint('User ID in authProvider: ${authProvider.user?.id}');
+      // Устанавливаем данные авторизации
+      await authProvider.setAuthData(user: user, token: token);
 
+      // Обновляем данные группы
+      groupProvider.setCurrentUser(user);
+      await groupProvider.loadGroupData();
+      if (groupProvider.isInGroup) {
+        await groupProvider.refreshGroupData();
+      }
 
-      widget.apiClient.setAuthToken(token);
+      if (!mounted) return;
 
-      Navigator.pushReplacement(
-        context,
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+            (route) => false,
       );
-    } catch (e) {
-      final errorMessage = e.toString()
-          .replaceAll('Exception: ', '')
-          .replaceAll('type \'Null\' is not a subtype of type \'String\'',
-          'Ошибка сервера: некорректные данные');
 
-      setState(() => _errorMessage = errorMessage);
+    } catch (e) {
+      debugPrint("Ошибка входа: ${e.toString()}");
+      if (mounted) {
+        setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
+      }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Padding(
+        backgroundColor: Colors.white,
+        body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 151),
-                Image.asset('lib/assets/logo.png', width: 150),
-                const SizedBox(height: 30),
-                const Text(
-                  "Вход",
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: _colorEnter,
-                  ),
+    child: Form(
+    key: _formKey,
+    child: SingleChildScrollView(
+    child: Column(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+    const SizedBox(height: 151),
+    Image.asset('lib/assets/logo.png', width: 150),
+    const SizedBox(height: 30),
+    const Text(
+    "Вход",
+    style: TextStyle(
+    fontSize: 28,
+    fontWeight: FontWeight.bold,
+    color: _colorEnter,
+    ),
+    ),
+    const SizedBox(height: 20),
+    _buildInputField(
+    hintText: 'Логин',
+    controller: _usernameController,
+    validator: (value) {
+    if (value == null || value.isEmpty) {
+    return 'Введите логин';
+    }
+    return null;
+    },
+    ),
+    const SizedBox(height: 10),
+    _buildInputField(
+    hintText: 'Пароль',
+    controller: _passwordController,
+    isPassword: true,
+    validator: (value) {
+    if (value == null || value.isEmpty) {
+    return 'Введите пароль';
+    }
+    return null;
+    },
+    suffixIcon: IconButton(
+    icon: Icon(
+    _obscureText ? Icons.visibility_off : Icons.visibility,
+    color: Colors.grey,
+    ),
+    onPressed: _togglePasswordVisibility,
+    ),
+    ),
+    const SizedBox(height: 10),
+    Align(
+    alignment: Alignment.centerRight,
+    child: GestureDetector(
+    onTap:
+    () => Navigator.push(
+    context,
+    MaterialPageRoute(
+    builder:
+    (_) => PasswordRecoveryScreen(
+    apiClient: widget.apiClient,
+    ),
+    ),
+    ),
+    child: const Text(
+    'Не помню пароль',
+    style: TextStyle(color: Colors.grey),
+    ),
+    ),
+    ),
+    if (_errorMessage != null)
+    Padding(
+    padding: const EdgeInsets.only(top: 10),
+    child: Text(
+    _errorMessage!,
+    style: const TextStyle(color: Colors.red),
+    ),
+    ),
+    const SizedBox(height: 20),
+    Container(
+    width: _buttonWidth,
+    height: _buttonHeight,
+    decoration: BoxDecoration(
+    borderRadius: BorderRadius.circular(25),
+    boxShadow: const [
+    BoxShadow(
+    color: Colors.black26,
+    blurRadius: 6,
+    offset: Offset(0, 4),
+    ),
+    ],
+    ),
+    child: ElevatedButton(
+    onPressed: _isLoading ? null : _login,
+    style: ElevatedButton.styleFrom(
+    backgroundColor: _colorEnterButton,
+    shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(25),
+    ),
+    shadowColor: Colors.transparent,
+    ),
+    child:
+    _isLoading
+
+        ? const CircularProgressIndicator(
+      color: Colors.white,
+    )
+        : const Text("Войти", style: _enterStyle),
+    ),
+    ),
+      const SizedBox(height: 20),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text("Ещё нет аккаунта? "),
+          GestureDetector(
+            onTap:
+                () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => RegisterScreen(
+                  apiClient: widget.apiClient,
                 ),
-                const SizedBox(height: 20),
-                _buildInputField(
-                  hintText: 'Логин',
-                  controller: _usernameController,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Введите логин';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 10),
-                _buildInputField(
-                  hintText: 'Пароль',
-                  controller: _passwordController,
-                  isPassword: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Введите пароль';
-                    }
-                    return null;
-                  },
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureText ? Icons.visibility_off : Icons.visibility,
-                      color: Colors.grey,
-                    ),
-                    onPressed: _togglePasswordVisibility,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PasswordRecoveryScreen(apiClient: widget.apiClient),
-                      ),
-                    ),
-                    child: const Text(
-                      'Не помню пароль',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                ),
-                if (_errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: Text(
-                      _errorMessage!,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ),
-                const SizedBox(height: 20),
-                Container(
-                  width: _buttonWidth,
-                  height: _buttonHeight,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 6,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _login,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _colorEnterButton,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      shadowColor: Colors.transparent,
-                    ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text("Войти", style: _enterStyle),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text("Ещё нет аккаунта? "),
-                    GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => RegisterScreen(apiClient: widget.apiClient),
-                        ),
-                      ),
-                      child: const Text(
-                        "Зарегистрироваться",
-                        style: TextStyle(color: _colorEnterButton),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 30),
-              ],
+              ),
+            ),
+            child: const Text(
+              "Зарегистрироваться",
+              style: TextStyle(color: _colorEnterButton),
             ),
           ),
-        ),
+        ],
       ),
+      const SizedBox(height: 30),
+    ],
+    ),
+    ),
+    ),
+        ),
     );
   }
 

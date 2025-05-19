@@ -21,11 +21,22 @@ void main() async {
 
   final apiClient = ApiClient();
 
+  // Загружаем начальные данные
+  final authProvider = AuthProvider(groupProvider: GroupProvider(authProvider: null));
+  await authProvider.checkAuth();
+
+  if (authProvider.isAuthorized) {
+    final groupProvider = GroupProvider(authProvider: authProvider);
+    await groupProvider.loadGroupData();
+    if (groupProvider.isInGroup) {
+      await groupProvider.refreshGroupData();
+    }
+  }
+
   runApp(
     MultiProvider(
       providers: [
-
-        ChangeNotifierProvider(create: (_) => AuthProvider(groupProvider: GroupProvider(authProvider: null))),
+        ChangeNotifierProvider(create: (_) => authProvider),
         ChangeNotifierProxyProvider<AuthProvider, GroupProvider>(
           create: (context) => GroupProvider(
             authProvider: Provider.of<AuthProvider>(context, listen: false),

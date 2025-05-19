@@ -73,13 +73,32 @@ class _TasksScreenState extends State<TasksScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Реагируем на изменения провайдеров
     final groupProvider = Provider.of<GroupProvider>(context);
-    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context);
 
-    if (groupProvider.isInGroup) {
-      taskProvider.loadTasks(groupProvider.lobbyId);
+
+    if (authProvider.isAuthorized && groupProvider.isInGroup) {
+      _loadTasks();
     }
   }
+
+  Future<void> _initData() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+
+    if (authProvider.isAuthorized) {
+
+      if (!groupProvider.isInGroup) {
+        await groupProvider.loadGroupData();
+      }
+
+      if (groupProvider.isInGroup) {
+        await _loadTasks();
+      }
+    }
+  }
+
 
   @override
   void dispose() {
@@ -96,10 +115,13 @@ class _TasksScreenState extends State<TasksScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final groupProvider = Provider.of<GroupProvider>(context);
 
     if (!authProvider.isAuthorized) {
       return _buildUnauthorizedView();
     }
+
+
 
     return Scaffold(
       backgroundColor: Colors.white,

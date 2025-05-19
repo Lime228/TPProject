@@ -307,6 +307,23 @@ class ApiClient implements ApiInterface {
   }
 
   @override // в теории работает
+  Future<LobbyModel> getLobbyByUserId(int userID) async {
+    final url = Uri.parse('${ApiEndpoints.lobbyGetUrl}/customer/${userID}');
+    try {
+      final response = await _client.get(
+        url,
+        headers: _getHeaders(),
+      ).timeout(const Duration(seconds: 10));
+
+      return _handleLobbyResponse(response);
+    } on http.ClientException catch (e) {
+      throw Exception('Ошибка подключения: ${e.message}');
+    } on Exception catch (e) {
+      throw Exception('Ошибка: $e');
+    }
+  }
+
+  @override // в теории работает
   Future<LobbyModel> deleteLobby(int lobbyId) async {
     final url = Uri.parse(ApiEndpoints.lobbyDeleteUrl);
     LobbyModel lobby = new LobbyModel(id: lobbyId, taskId: [0], shopId: 0, customerId: [0]);
