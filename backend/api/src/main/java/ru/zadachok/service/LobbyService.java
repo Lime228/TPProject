@@ -12,10 +12,7 @@ import ru.zadachok.request.DeleteLobbyRequest;
 import ru.zadachok.request.RemoveFromLobbyRequest;
 import ru.zadachok.repository.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -55,6 +52,15 @@ public class LobbyService {
     public Lobby getLobbyById(int id) {
         return lobbyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Лобби с ID " + id + " не найдено"));
+    }
+
+    public Lobby getLobbyByCustomerId(int customerId) {
+        List<Lobby> lobbies = lobbyRepository.findAll();
+        return lobbies.stream()
+                .filter(lobby -> lobby.getCustomerId() != null &&
+                        Arrays.asList(lobby.getCustomerId()).contains(customerId))
+                .min(Comparator.comparing(Lobby::getLobbyId))
+                .orElseThrow(() -> new RuntimeException("Лобби для пользователя с ID " + customerId + " не найдено"));
     }
 
     public Lobby addCustomerToLobby(AddInLobbyRequest request) {

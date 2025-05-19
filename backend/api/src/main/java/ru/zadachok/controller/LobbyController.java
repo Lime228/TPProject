@@ -131,11 +131,21 @@ public class LobbyController {
     }
 
     @Operation(
-            summary = "Получение лобби по ID"
+            summary = "Получение лобби по ID лобби"
     )
     @GetMapping("/{id}")
     public ResponseEntity<Lobby> getLobby(@PathVariable int id) {
         Lobby gettedLobby = lobbyService.getLobbyById(id);
         return ResponseEntity.ok(gettedLobby);
+    }
+
+    @Operation(
+            summary = "Получение лобби по ID пользователя",
+            description = "Возвращает лобби с наименьшим ID, в котором состоит пользователь"
+    )
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<Lobby> getLobbyByCustomerId(@PathVariable int customerId) {
+        Lobby lobby = lobbyService.getLobbyByCustomerId(customerId);
+        return ResponseEntity.ok(lobby);
     }
 }
