@@ -16,7 +16,7 @@ class ShopModel {
     'photo': product.photoBase64,
     'state': product.isAvailable,
     'price': product.price,
-    'shopId': id,
+    'shopid': id,
     if (product.link != null) 'link': product.link,
   };
 
@@ -24,25 +24,23 @@ class ShopModel {
   Map<String, dynamic> buyProductRequest(int customerId, int productId) => {
     'customerId': customerId,
     'productId': productId,
-    'shopId': id,
   };
 
   // Запрос на обновление продукта
   Map<String, dynamic> updateProductRequest(ProductModel product) => {
-    'productId': product.id,
+    'productid': product.id,
     'name': product.name,
     'description': product.description,
     'photo': product.photoBase64,
     'state': product.isAvailable,
     'price': product.price,
-    'shopId': id,
     if (product.link != null) 'link': product.link,
   };
 
   // Запрос на удаление продукта
   Map<String, dynamic> deleteProductRequest(int productId) => {
-    'shopId': id,
-    'productId': productId,
+    'shopid': id,
+    'productid': productId,
   };
 
   // Сериализация в JSON

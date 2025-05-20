@@ -11,6 +11,7 @@ import 'package:zadachok/routes/main_navigation.dart';
 
 import '../api/api_client.dart';
 import '../models/user/user_model.dart';
+import '../providers/shop_provider.dart';
 import '../providers/task_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -504,6 +505,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildAccountBlock(AuthProvider authProvider, bool isAuthorized) {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    final shopProvider = Provider.of<ShopProvider>(context, listen: false);
     return _buildBlock(
       key: _blockKeys['аккаунт']!,
       title: 'Аккаунт',
@@ -524,7 +526,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: TextButton(
               onPressed: () async {
                 try {
-                  await authProvider.refreshAll(groupProvider, taskProvider);
+                  await authProvider.refreshAll(groupProvider, taskProvider, shopProvider);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Данные успешно обновлены')),
                   );
