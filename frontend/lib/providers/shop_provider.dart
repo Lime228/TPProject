@@ -2,12 +2,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zadachok/models/shop/shop_model.dart';
+import '../api/api_client.dart';
 import '../api/api_interface.dart';
 import '../models/shop/product/product_model.dart';
+import 'auth_provider.dart';
+import 'group_provider.dart';
 
 class ShopProvider with ChangeNotifier {
-  final ApiInterface api;
+  final client = ApiClient();
   final SharedPreferences prefs;
+  AuthProvider? authProvider;
 
   List<ProductModel> _products = [];
   List<ProductModel> _filteredProducts = [];
@@ -17,6 +21,8 @@ class ShopProvider with ChangeNotifier {
   String? _error;
   int? _currentShopId;
 
+  ShopProvider({required this.authProvider, required this.prefs});
+
   // Геттеры
   List<ProductModel> get products => _filteredProducts;
   List<ProductModel> get allProducts => _products;
@@ -24,8 +30,41 @@ class ShopProvider with ChangeNotifier {
   String? get error => _error;
   int? get currentShopId => _currentShopId;
 
-  ShopProvider({required this.api, required this.prefs}) {
-    _loadShopId();
+  void setAuthProvider(AuthProvider provider) {
+    authProvider = provider;
+    notifyListeners();
+  }
+
+
+  Future<void> refreshProducts() async {
+    if (_currentShopId == null || authProvider?.user == null) return;
+
+    if (_isLoading) return; // Добавляем проверку на уже идущую загрузку
+
+    _setLoading(true);
+    _error = null;
+
+    try {
+      final apiClient = _getAuthenticatedClient();
+      final products = await apiClient.getShopProducts(_currentShopId!);
+      if (_isLoading) { // Проверяем, не был ли отменен запрос
+        _products = products;
+        _applyFilters();
+      }
+    } catch (e) {
+      _error = 'Ошибка обновления товаров: ${e.toString()}';
+      debugPrint(_error!);
+    } finally {
+      if (_isLoading) { // Проверяем, не был ли отменен запрос
+        _setLoading(false);
+      }
+    }
+  }
+
+  ApiClient _getAuthenticatedClient() {
+    if (authProvider?.token == null) throw Exception('Токен отсутствует');
+    client.setAuthToken(authProvider!.token!);
+    return client;
   }
 
   Future<void> _loadShopId() async {
@@ -46,7 +85,8 @@ class ShopProvider with ChangeNotifier {
 
     _setLoading(true);
     try {
-      _products = await api.getShopProducts(_currentShopId!);
+      final apiClient = _getAuthenticatedClient();
+      _products = await apiClient.getShopProducts(_currentShopId!);
       _applyFilters();
     } catch (e) {
       _error = 'Ошибка загрузки товаров: $e';
@@ -56,11 +96,8 @@ class ShopProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> createProduct(ProductModel product) async {
-    return await addProduct(product);
-  }
 
-  Future<bool> addProduct(ProductModel product) async {
+  Future<bool> createProduct(ProductModel product) async {
     if (_currentShopId == null) {
       _error = 'Магазин не выбран';
       return false;
@@ -68,7 +105,8 @@ class ShopProvider with ChangeNotifier {
 
     try {
       final shop = ShopModel(id: _currentShopId!, productIds: []);
-      final newProduct = await api.createShopItem(shop, product);
+      final apiClient = _getAuthenticatedClient();
+      final newProduct = await apiClient.createShopItem(shop, product);
       _products.add(newProduct);
       _applyFilters();
       return true;
@@ -81,7 +119,8 @@ class ShopProvider with ChangeNotifier {
 
   Future<bool> updateProduct(ProductModel product) async {
     try {
-      final updated = await api.updateShopItem(product);
+      final apiClient = _getAuthenticatedClient();
+      final updated = await apiClient.updateShopItem(product);
       final index = _products.indexWhere((p) => p.id == product.id);
       if (index != -1) _products[index] = updated;
       _applyFilters();
@@ -95,7 +134,8 @@ class ShopProvider with ChangeNotifier {
 
   Future<bool> removeProduct(int productId) async {
     try {
-      await api.deleteShopItem(productId);
+      final apiClient = _getAuthenticatedClient();
+      await apiClient.deleteShopItem(productId);
       _products.removeWhere((p) => p.id == productId);
       _applyFilters();
       return true;
@@ -104,10 +144,6 @@ class ShopProvider with ChangeNotifier {
       debugPrint(_error!);
       return false;
     }
-  }
-
-  Future<void> refreshProducts() async {
-    await loadProducts();
   }
 
   void clearProducts() {
@@ -159,5 +195,10 @@ class ShopProvider with ChangeNotifier {
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
+  }
+  @override
+  void dispose() {
+    _setLoading(false); // Отменяем текущую загрузку при уничтожении
+    super.dispose();
   }
 }

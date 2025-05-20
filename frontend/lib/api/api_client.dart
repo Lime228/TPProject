@@ -347,6 +347,15 @@ class ApiClient implements ApiInterface {
   @override // в теории работает
   Future<ProductModel> createShopItem(ShopModel shop, ProductModel product) async {
     final url = Uri.parse(ApiEndpoints.shopProductCreateUrl);
+    debugPrint(product.id.toString());
+    debugPrint(shop.id.toString());
+    debugPrint(product.name);
+    debugPrint(product.description);
+    debugPrint(product.photoBase64);
+    debugPrint(product.isAvailable.toString());
+    debugPrint(product.price.toString());
+    debugPrint(product.link);
+    debugPrint(product.customerId.toString());
 
     try {
       final response = await _client.post(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zadachok/models/lobby/lobby_model.dart';
+import 'package:zadachok/providers/shop_provider.dart';
 import 'package:zadachok/providers/task_provider.dart';
 import '../api/api_client.dart';
 import '../models/user/user_model.dart';
@@ -122,7 +123,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> refreshAll(GroupProvider groupProvider, TaskProvider taskProvider) async {
+  Future<void> refreshAll(GroupProvider groupProvider, TaskProvider taskProvider, ShopProvider shopProvider) async {
     try {
       apiClient.setAuthToken(_token!);
       debugPrint(_token);
@@ -139,7 +140,12 @@ class AuthProvider with ChangeNotifier {
         taskProvider.setAuthProvider(this);
         taskProvider.setUser(_user!);
         taskProvider.setLobbyId(lobby.id);
+
+        shopProvider.setCurrentShop(lobby.shopId);
+        shopProvider.setAuthProvider(this);
+
         await taskProvider.refreshTasks();
+        await shopProvider.refreshProducts();
       } else {
         await groupProvider.resetGroup();
       }

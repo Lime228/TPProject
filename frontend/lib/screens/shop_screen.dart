@@ -50,7 +50,6 @@ class _ShopScreenState extends State<ShopScreen> {
   File? _tempProductImage;
   final _addProductFormKey = GlobalKey<FormState>();
   final _editProductFormKey = GlobalKey<FormState>();
-  GroupProvider? _groupProvider;
   ShopProvider? _shopProvider;
   bool _isMounted = false;
 
@@ -78,9 +77,11 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   void _initializeProviders() {
-    _groupProvider = Provider.of<GroupProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     _shopProvider = Provider.of<ShopProvider>(context, listen: false);
-    _groupProvider?.addListener(_handleGroupChange);
+
+    _shopProvider?.setAuthProvider(authProvider);
+
     _loadData();
   }
 
@@ -92,7 +93,6 @@ class _ShopScreenState extends State<ShopScreen> {
 
   @override
   void dispose() {
-    _groupProvider?.removeListener(_handleGroupChange);
     _joinCodeController.dispose();
     _nameController.dispose();
     _descController.dispose();
@@ -128,13 +128,15 @@ class _ShopScreenState extends State<ShopScreen> {
     if (!mounted) return;
 
     try {
-      if (_groupProvider?.isInGroup ?? false) {
-        await _shopProvider?.loadProducts();
+      final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+      final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+      if (groupProvider.isInGroup && authProvider.isAuthorized) {
+        await shopProvider.refreshProducts();
         if (mounted) {
           setState(() {});
         }
-      } else {
-        _shopProvider?.clearProducts();
       }
     } catch (e) {
       if (mounted) {
@@ -829,15 +831,22 @@ class _ShopScreenState extends State<ShopScreen> {
 
     try {
       final newProduct = ProductModel(
-        id: DateTime.now().millisecondsSinceEpoch,
         name: _nameController.text,
         description: _descController.text,
         photoBase64: _tempProductImage?.path ?? '',
         isAvailable: true,
-        price : int.parse(_priceController as String),
-        customerId: authProvider.user?.id ?? 0,
+        price : int.parse(_priceController.text),
         link: _linkController.text,
       );
+      debugPrint(newProduct.id.toString());
+      debugPrint(shopProvider.currentShopId.toString());
+      debugPrint(newProduct.name);
+      debugPrint(newProduct.description);
+      debugPrint(newProduct.photoBase64);
+      debugPrint(newProduct.isAvailable.toString());
+      debugPrint(newProduct.price.toString());
+      debugPrint(newProduct.link);
+      debugPrint(newProduct.customerId.toString());
 
       final success = await shopProvider.createProduct(newProduct);
 
