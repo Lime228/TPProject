@@ -64,19 +64,20 @@ class _TasksScreenState extends State<TasksScreen> {
   Future<void> _loadTasks() async {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    if (groupProvider.isInGroup) {
-      await taskProvider.loadTasks(groupProvider.lobbyId);
+    if (groupProvider.isInGroup && authProvider.isAuthorized) {
+      taskProvider.setUser(authProvider.user!);
+      taskProvider.setLobbyId(groupProvider.lobbyId);
+      await taskProvider.refreshTasks();
     }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Реагируем на изменения провайдеров
     final groupProvider = Provider.of<GroupProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
-
 
     if (authProvider.isAuthorized && groupProvider.isInGroup) {
       _loadTasks();
@@ -950,7 +951,7 @@ class _TasksScreenState extends State<TasksScreen> {
       endPoint: _deadline!.toIso8601String(),
       startPoint: DateTime.now().toIso8601String(),
       reward: int.tryParse(_rewardController.text) ?? 0,
-      customerId: 2, //ID
+      customerId: Provider.of<AuthProvider>(context, listen: false).user!.id,
       state: 0,
     );
 

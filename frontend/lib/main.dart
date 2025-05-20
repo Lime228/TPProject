@@ -45,7 +45,7 @@ void main() async {
           groupProvider ?? GroupProvider(authProvider: authProvider),
         ),
         ChangeNotifierProvider(
-          create: (_) => TaskProvider(apiClient: apiClient),
+          create: (_) => TaskProvider(authProvider: authProvider),
         ),
         ChangeNotifierProvider(
           create: (_) => SettingsProvider()..loadSettings(),
