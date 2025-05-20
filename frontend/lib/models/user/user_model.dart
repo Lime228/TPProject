@@ -19,6 +19,28 @@ class UserModel {
     this.role = UserRole.user,
   });
 
+  UserModel copyWith({
+    int? id,
+    String? name,
+    String? email,
+    DateTime? birthdayDate,
+    String? login,
+    String? photoBase64,
+    String? password,
+    UserRole? role,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      birthdayDate: birthdayDate ?? this.birthdayDate,
+      login: login ?? this.login,
+      photoBase64: photoBase64 ?? this.photoBase64,
+      password: password ?? this.password,
+      role: role ?? this.role,
+    );
+  }
+
   factory UserModel.fromResponse(Map<String, dynamic> json) {
     return UserModel(
       id: json['customer_ID'] ?? 0,
