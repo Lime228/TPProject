@@ -44,14 +44,14 @@ class UserModel {
   factory UserModel.fromResponse(Map<String, dynamic> json) {
     return UserModel(
       id: json['customer_ID'] ?? 0,
-      name: json['name'] ?? '',
+      login: json['login'] ?? '',
       email: json['customer_email'] ?? '',
+      role: UserRole.fromString(json['admin']?.toString() ?? ''),
       birthdayDate: json['birthdayDate'] != null
           ? DateTime.tryParse(json['birthdayDate'])
           : null,
-      login: json['login'] ?? '',
-      photoBase64: json['photo'] ?? '',
-      role: UserRole.fromBool(json['isAdmin'] ?? false),
+      photoBase64: json['customer_photo'] ?? '',
+      name: json['customer_name'] ?? '',
     );
   }
 
@@ -75,7 +75,7 @@ class UserModel {
     'email': email,
     if (birthdayDate != null) 'birthdayDate': birthdayDate!.toIso8601String(),
     if (photoBase64.isNotEmpty) 'photo': photoBase64,
-    'isAdmin': role == UserRole.admin,
+    'admin': role == UserRole.admin ? "ADMIN" : "USER",
   };
 
   Map<String, dynamic> toJson() => {
@@ -84,7 +84,7 @@ class UserModel {
     'email': email,
     if (birthdayDate != null) 'birthdayDate': birthdayDate!.toIso8601String(),
     'login': login,
-    'isAdmin': role == UserRole.admin,
+    'admin': role == UserRole.admin ? "ADMIN" : "USER",
     'photo': photoBase64,
   };
 
@@ -98,7 +98,7 @@ class UserModel {
           : null,
       login: json['login'] ?? '',
       photoBase64: json['photo'] ?? '',
-      role: UserRole.fromBool(json['isAdmin'] ?? false),
+      role: UserRole.fromString(json['admin']?.toString() ?? ''),
     );
   }
 
@@ -113,6 +113,13 @@ class UserModel {
 enum UserRole {
   user,
   admin;
+
+  factory UserRole.fromString(String role) {
+    if (role.toUpperCase() == "ADMIN") {
+      return UserRole.admin;
+    }
+    return UserRole.user;
+  }
 
   factory UserRole.fromBool(bool isAdmin) => isAdmin ? UserRole.admin : UserRole.user;
 

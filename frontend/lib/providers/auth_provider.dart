@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zadachok/models/lobby/lobby_model.dart';
+import 'package:zadachok/providers/task_provider.dart';
 import '../api/api_client.dart';
 import '../models/user/user_model.dart';
 import 'group_provider.dart';
@@ -121,7 +122,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> refreshAll(GroupProvider groupProvider) async {
+  Future<void> refreshAll(GroupProvider groupProvider, TaskProvider taskProvider) async {
     try {
       apiClient.setAuthToken(_token!);
       debugPrint(_token);
@@ -134,6 +135,11 @@ class AuthProvider with ChangeNotifier {
       final lobby = await apiClient.getLobbyByUserId(_user!.id);
       if (lobby != null) {
         await groupProvider.setCurrentLobby(lobby);
+
+        taskProvider.setAuthProvider(this);
+        taskProvider.setUser(_user!);
+        taskProvider.setLobbyId(lobby.id);
+        await taskProvider.refreshTasks();
       } else {
         await groupProvider.resetGroup();
       }

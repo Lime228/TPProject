@@ -118,4 +118,33 @@ class TaskModel{
   // static List<TaskModel> listFromJson(List<dynamic> jsonList) {
   //   return jsonList.map((json) => TaskModel.fromResponse(json)).toList();
   // }
+
+  factory TaskModel.fromJson(Map<String, dynamic> json) {
+    return TaskModel(
+      id: json['id'],
+      name: json['name'],
+      reward: json['reward']?.toInt() ?? 0,
+      description: json['description'],
+      startPoint: json['startDate'],
+      endPoint: json['endDate'],
+      customerId: json['customerId'],
+      state: json['isActive'],
+
+      isCompleted: json['isCompleted'] ?? false,
+      isOverdue: json['isOverdue'] ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'reward': reward,
+    'description': description,
+    'startdate': startPoint,
+    'enddate': endPoint,
+    'lobbyid': state,
+    'customerid': customerId,
+    'isCompleted': isCompleted,
+    'isOverdue': isOverdue,
+  };
 }
