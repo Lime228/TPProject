@@ -523,11 +523,7 @@ class ApiClient implements ApiInterface {
         if (taskResponse.statusCode == 200) {
           final taskJson = json.decode(taskResponse.body);
           final task = TaskModel.fromResponse(taskJson);
-
-          if ((task.customerId == null || task.customerId == user.id) &&
-              lobby.customerId.contains(user.id)) {
             userTasks.add(task);
-          }
         } else {
           throw Exception('Ошибка при получении задачи $taskId: ${taskResponse.statusCode}');
         }
@@ -569,23 +565,22 @@ class ApiClient implements ApiInterface {
   }
 
   @override // в теории работает
+  @override
   Future<TaskModel> completeTask(TaskModel task, UserModel user) async {
     if (task.id <= 0) {
       throw Exception('ID задачи не может быть меньше 1');
     }
 
-    final url = Uri.parse(ApiEndpoints.taskUpdateUrl);
-    if (user.role.isAdmin) {
-      task.state = 2;
-    } else {
-      task.state = 1;
-    }
+    final newState = user.role.isAdmin ? 2 : 1;
 
+    final updatedTask = task.copyWith(state: newState);
+
+    final url = Uri.parse(ApiEndpoints.taskUpdateUrl);
     try {
       final response = await _client.patch(
         url,
         headers: _getHeaders(),
-        body: json.encode(task.updateRequest()),
+        body: json.encode(updatedTask.updateRequest()),
       ).timeout(const Duration(seconds: 10));
 
       return _handleTaskResponse(response);
