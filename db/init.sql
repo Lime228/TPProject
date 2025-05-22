@@ -51,8 +51,8 @@ CREATE TABLE IF NOT EXISTS tp.task (
     task_name varchar(255),
     reward integer NOT NULL DEFAULT 0,
     description text,
-    start_point date,
-    end_point date,
+    start_point timestamp,
+    end_point timestamp,
     customer_id integer REFERENCES tp.customer(customer_id), -- убран NOT NULL
     task_state integer DEFAULT 0 
 );

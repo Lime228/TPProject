@@ -106,6 +106,11 @@ public class ShopService {
 
     public Product getProductById(Integer productId) {
         return productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Магазин с ID " + productId + " не найден"));
+                .orElseThrow(() -> new RuntimeException("Продукт с ID " + productId + " не найден"));
+    }
+
+    public Wallet getWalletByUserId(Integer userId) {
+        return walletRepository.findByCustomerId(userId)
+                .orElseThrow(() -> new RuntimeException("Кошелёк с ID " + userId + " не найден"));
     }
 }

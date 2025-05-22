@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import ru.zadachok.model.Lobby;
 import ru.zadachok.model.Product;
 import ru.zadachok.model.Shop;
+import ru.zadachok.model.Wallet;
+import ru.zadachok.repository.WalletRepository;
 import ru.zadachok.request.DeleteProductRequest;
 import ru.zadachok.request.ProductBuyRequest;
 import ru.zadachok.request.ProductCreateRequest;
@@ -223,4 +225,10 @@ public class ShopController {
         return ResponseEntity.ok(gettedProduct);
     }
 
+
+    @GetMapping("/wallet/{userId}")
+    public ResponseEntity<Wallet> getWallet(@PathVariable int userId) {
+        Wallet gettedWallet = shopService.getWalletByUserId(userId);
+        return ResponseEntity.ok(gettedWallet);
+    }
 }
