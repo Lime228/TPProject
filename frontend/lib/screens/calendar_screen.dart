@@ -14,8 +14,8 @@ class CalendarStyles {
   static const double calendarHeight = 240.0;
   static const double dayLabelFontSize = 25.0;
   static const double dayNumberFontSize = 25.0;
-  static const double monthNameFontSize = 24.0;
-  static const double yearFontSize = 35.0;
+  static const double monthNameFontSize = 36.0;
+  static const double yearFontSize = 40.0;
   static const double taskTitleFontSize = 18.0;
   static const double taskDescriptionFontSize = 14.0;
   static const double titleMonthCalendarSize = 23.0;
@@ -167,7 +167,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             icon: Icon(
               _showYearPicker ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
               color: Colors.white,
-              size: 30,
+              size: 40,
             ),
             onPressed: () => setState(() => _showYearPicker = !_showYearPicker),
           ),
@@ -215,6 +215,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return Container(
       height: CalendarStyles.calendarHeight,
       margin: const EdgeInsets.symmetric(horizontal: 16),
+      // margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       padding: CalendarStyles.calendarPadding,
       decoration: BoxDecoration(
         color: Colors.white,
@@ -245,7 +246,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   List<Widget> _buildDayLabels() {
-    const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    const days = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
     return days.map((day) => Center(
       child: Text(
         day,
