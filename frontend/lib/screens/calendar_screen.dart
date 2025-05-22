@@ -11,7 +11,7 @@ import '../providers/task_provider.dart';
 class CalendarStyles {
   static const double headerHeight = 100.0;
   static const double monthHeaderHeight = 62.0;
-  static const double calendarHeight = 242.0;
+  static const double calendarHeight = 240.0;
   static const double dayLabelFontSize = 25.0;
   static const double dayNumberFontSize = 25.0;
   static const double monthNameFontSize = 24.0;
@@ -36,7 +36,7 @@ class CalendarStyles {
     bottomRight: Radius.circular(40),
   );
 
-  static const EdgeInsets headerPadding = EdgeInsets.fromLTRB(24, 15, 24, 10);
+  static const EdgeInsets headerPadding = EdgeInsets.fromLTRB(25, 15, 24, 10);
   static const EdgeInsets calendarPadding = EdgeInsets.all(16);
   static const EdgeInsets taskCardPadding = EdgeInsets.all(12);
   static const EdgeInsets monthPickerPadding = EdgeInsets.all(16);
@@ -228,7 +228,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: _buildDayLabels(),
           ),
-          const SizedBox(height: 8),
 
 
           Expanded(
@@ -287,7 +286,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     return GestureDetector(
       onTap: () => setState(() => _selectedDate = date),
+      child: Transform.translate(
+      offset: Offset(0, -35), // ← Сдвиг по X и Y
       child: Container(
+        padding: EdgeInsets.only(left: 0, bottom: 7),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
@@ -296,7 +298,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             color: isToday
                 ? (isSelected ? Colors.white : CalendarStyles.todayBorderColor)
                 : Colors.transparent,
-            width: 2,
+            width: 0,
           ),
         ),
         child: Stack(
@@ -312,7 +314,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
             if (hasTasks)
               Positioned(
-                top: 2,
+                top: 0.1,
                 right: 2,
                 child: Container(
                   width: 8,
@@ -323,7 +325,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   ),
                 ),
               ),
-          ],
+          ],),
         ),
       ),
     );

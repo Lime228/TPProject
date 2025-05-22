@@ -70,7 +70,7 @@ class AuthProvider with ChangeNotifier {
     try {
       await setAuthData(user: user, token: token);
 
-      // После успешного входа обновляем данные группы
+
       await groupProvider.loadGroupData();
       if (groupProvider.isInGroup) {
         await groupProvider.refreshGroupData();
@@ -98,7 +98,7 @@ class AuthProvider with ChangeNotifier {
       final updatedUser = await apiClient.getUserById(UserModel(id: _user!.id, name: '', email: '', login: ''));
       _user = updatedUser;
 
-      // Сохраняем обновлённые данные
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user', jsonEncode(_user!.toJson()));
       notifyListeners();
@@ -126,13 +126,11 @@ class AuthProvider with ChangeNotifier {
   Future<void> refreshAll(GroupProvider groupProvider, TaskProvider taskProvider, ShopProvider shopProvider) async {
     try {
       apiClient.setAuthToken(_token!);
-      debugPrint(_token);
       await refreshUserData();
 
       groupProvider.setAuthProvider(this);
       groupProvider.setCurrentUser(_user!);
 
-      // Получаем актуальное лобби
       final lobby = await apiClient.getLobbyByUserId(_user!.id);
       if (lobby != null) {
         await groupProvider.setCurrentLobby(lobby);
@@ -148,9 +146,11 @@ class AuthProvider with ChangeNotifier {
         await shopProvider.refreshProducts();
       } else {
         await groupProvider.resetGroup();
+        taskProvider.resetFilters();
       }
     } catch (e) {
       debugPrint('Ошибка при полном обновлении данных: $e');
+      rethrow;
     }
   }
 }

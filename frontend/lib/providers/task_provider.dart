@@ -62,14 +62,19 @@ class TaskProvider with ChangeNotifier {
     _error = null;
 
     try {
-      final lobby = LobbyModel(
-        id: _currentLobbyId!,
-        taskId: [],
-        shopId: 0,
-        customerId: [_user!.id],
-      );
+
+
       final apiClient = _getAuthenticatedClient();
-      _tasks = await apiClient.getUserTasks(lobby, _user!);
+      final lobby = apiClient.getLobby(_currentLobbyId!);
+      final allTasks = await apiClient.getUserTasks(await lobby, _user!);
+
+
+      _tasks = _user!.role.isAdmin
+          ? allTasks
+          : allTasks.where((task) => task.customerId == _user!.id).toList();
+
+
+
       notifyListeners();
     } catch (e) {
       _error = 'Ошибка обновления задач: ${e.toString()}';
