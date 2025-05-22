@@ -325,13 +325,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   }
                 }
               },
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 border: InputBorder.none,
                 hintText: 'ДД.ММ.ГГГГ',
+                hintStyle: TextStyle(
+                  color: Color(0x81_E4_E4_E4), // Чёрный, 50% прозрачности
+                ),
+                filled: true,
+                fillColor: Colors.white, // Светло-серый фон
               ),
               keyboardType: TextInputType.datetime,
-            ),
+            )
           ),
 
           // Кнопка сохранения изменений (опционально)
@@ -370,10 +375,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     await _updateAllFields();
                   }
                 },
-                child: const Text(
-                  'Сохранить изменения',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
+                  child: const Padding(
+                    padding: EdgeInsets.only(left: 35, top: 0), // ← Настройте значения
+                    child: Text(
+                      'Сохранить изменения',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  )
               ),
             ),
           ],
