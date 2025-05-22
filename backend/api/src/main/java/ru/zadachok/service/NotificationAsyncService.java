@@ -32,14 +32,6 @@ public class NotificationAsyncService {
     private final Map<String, NotificationStatusResponse> statusStore = new ConcurrentHashMap<>();
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
-    @Bean
-    public RestTemplate restTemplate() {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout((int) Duration.ofMinutes(30).toMillis());
-        factory.setReadTimeout((int) Duration.ofMinutes(30).toMillis());
-        return new RestTemplate(factory);
-    }
-
     @Value("${ai.service.url}")
     private String aiServiceUrl;
 
