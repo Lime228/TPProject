@@ -59,8 +59,8 @@ public class TaskService {
                 .endDate(convertToTimestamp(request.getEndDate()))
                 .isActive(0) // по умолчанию неактивная
                 .customerId(request.getCustomerId())
-                .aiNotification(generateAiNotification(request)) // предварительная генерация уведомления
-                .notificationSent(false)
+//                .aiNotification(generateAiNotification(request)) // предварительная генерация уведомления
+//                .notificationSent(false)
                 .build();
 
         Task savedTask = taskRepository.save(task);
@@ -184,10 +184,6 @@ public class TaskService {
 
         handleTaskCompletion(oldState, request.getState(), task);
 
-        if (request.getDescription() != null || request.getEndDate() != null) {
-            task.setAiNotification(generateAiNotification(task));
-            task.setNotificationSent(false);
-        }
 
         return taskRepository.save(task);
     }
@@ -204,29 +200,29 @@ public class TaskService {
         }
     }
 
-    @Scheduled(fixedRate = 60000)
-    public void checkDeadlineNotifications() {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime threeHoursLater = now.plusHours(3);
-
-        List<Task> tasks = taskRepository.findByEndDateBetweenAndIsActive(
-                Timestamp.valueOf(now),
-                Timestamp.valueOf(threeHoursLater),
-                1
-        );
-
-        tasks.stream()
-                .filter(task -> !task.isNotificationSent() && task.getAiNotification() != null)
-                .forEach(this::processNotification);
-    }
-
-    private void processNotification(Task task) {
-        System.out.println("Отправка уведомления для задачи: " + task.getName());
-        System.out.println("Текст: " + task.getAiNotification());
-
-        task.setNotificationSent(true);
-        taskRepository.save(task);
-    }
+//    @Scheduled(fixedRate = 60000)
+//    public void checkDeadlineNotifications() {
+//        LocalDateTime now = LocalDateTime.now();
+//        LocalDateTime threeHoursLater = now.plusHours(3);
+//
+//        List<Task> tasks = taskRepository.findByEndDateBetweenAndIsActive(
+//                Timestamp.valueOf(now),
+//                Timestamp.valueOf(threeHoursLater),
+//                1
+//        );
+//
+//        tasks.stream()
+//                .filter(task -> !task.isNotificationSent() && task.getAiNotification() != null)
+//                .forEach(this::processNotification);
+//    }
+//
+//    private void processNotification(Task task) {
+//        System.out.println("Отправка уведомления для задачи: " + task.getName());
+//        System.out.println("Текст: " + task.getAiNotification());
+//
+//        task.setNotificationSent(true);
+//        taskRepository.save(task);
+//    }
 
     public Task getTaskById(Integer taskId) {
         return taskRepository.findById(taskId)
