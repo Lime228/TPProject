@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,14 +17,16 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import ru.zadachok.config.JwtTokenProvider;
+import ru.zadachok.model.Customer;
 import ru.zadachok.model.Product;
-import ru.zadachok.request.AuthRequest;
+import ru.zadachok.repository.CustomerRepository;
+import ru.zadachok.repository.ProductRepository;
+import ru.zadachok.request.*;
 import ru.zadachok.dto.CustomerDto;
 import ru.zadachok.exception.CustomerAlreadyExistsException;
-import ru.zadachok.request.DeleteCustomerRequest;
-import ru.zadachok.request.UpdateCustomerRequest;
 import ru.zadachok.service.CustomerService;
-import ru.zadachok.request.RegisterRequest;
+import ru.zadachok.service.EmailSenderService;
+
 import java.util.Map;
 
 @RestController
@@ -34,6 +37,8 @@ public class AuthController {
     private final CustomerService customerService;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
+    private final CustomerRepository customerRepository;
+    private final EmailSenderService emailSenderService;
 
     @Operation(summary = "Регистрация нового пользователя")
     @ApiResponses(value = {
@@ -148,7 +153,36 @@ public class AuthController {
         return ResponseEntity.ok("Лобби и связанные сущности удалены");
     }
 
+    @Operation(summary = "Восстановление пароля по логину и email")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Код восстановления отправлен на почту",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(example = "{\"message\": \"Код для восстановления отправлен на почту: user123@example.com\"}"))}),
+            @ApiResponse(responseCode = "400", description = "Email не совпадает с логином",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "Пользователь не найден",
+                    content = @Content)
+    })
+    @PostMapping("/restore")
+    public ResponseEntity<String> restorePassword(@Valid @RequestBody RestorePasswordRequest request) {
+        // 1. Найти пользователя по login
+        Customer customer = customerRepository.findByLogin(request.getLogin())
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
+        // 2. Проверить, что email совпадает
+        if (!customer.getCustomer_email().equalsIgnoreCase(request.getEmail())) {
+            return ResponseEntity.badRequest().body("Email не совпадает с логином");
+        }
+
+        // 3. Заглушка генерации кода
+        String generatedCode = "123456"; // TODO: Заменить на реальную генерацию кода
+
+        // 4. Отправить письмо с этим кодом
+        emailSenderService.sendTestCode(customer.getCustomer_email());
+
+        // 5. Ответить успехом
+        return ResponseEntity.ok("Код для восстановления отправлен на почту: " + customer.getCustomer_email());
+    }
 }
 
 //    @Operation(summary = "Запрос на восстановление пароля")
