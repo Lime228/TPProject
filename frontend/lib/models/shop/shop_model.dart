@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:zadachok/models/shop/product/product_model.dart';
 
 class ShopModel {
@@ -13,7 +15,7 @@ class ShopModel {
   Map<String, dynamic> createProductRequest(ProductModel product) => {
     'name': product.name,
     'description': product.description,
-    'photo': product.photoBase64,
+    'photo': base64Encode(product.photoBytes),
     'state': product.isAvailable,
     'price': product.price,
     'shopid': id,
@@ -31,7 +33,7 @@ class ShopModel {
     'productid': product.id,
     'name': product.name,
     'description': product.description,
-    'photo': product.photoBase64,
+    'photo': base64Encode(product.photoBytes),
     'state': product.isAvailable,
     'price': product.price,
     if (product.link != null) 'link': product.link,
@@ -46,7 +48,7 @@ class ShopModel {
   // Сериализация в JSON
   Map<String, dynamic> toJson() => {
     if (id != 0) 'shopId': id,
-    'productIds': productIds,
+    'productId': productIds,
   };
 
 
@@ -54,14 +56,14 @@ class ShopModel {
   factory ShopModel.fromJson(Map<String, dynamic> json) {
     return ShopModel(
       id: json['shopId'] ?? 0,
-      productIds: List<int>.from(json['productIds'] ?? []),
+      productIds: List<int>.from(json['productId'] ?? []),
     );
   }
 
   factory ShopModel.fromResponse(Map<String, dynamic> json) {
     return ShopModel(
       id: json['shopId'] ?? 0,
-      productIds: List<int>.from(json['productIds'] ?? []),
+      productIds: List<int>.from(json['productId'] ?? []),
     );
   }
 

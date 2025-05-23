@@ -39,7 +39,7 @@ class ShopProvider with ChangeNotifier {
   Future<void> refreshProducts() async {
     if (_currentShopId == null || authProvider?.user == null) return;
 
-    if (_isLoading) return; // Добавляем проверку на уже идущую загрузку
+    if (_isLoading) return;
 
     _setLoading(true);
     _error = null;
@@ -47,18 +47,17 @@ class ShopProvider with ChangeNotifier {
     try {
       final apiClient = _getAuthenticatedClient();
       final products = await apiClient.getShopProducts(_currentShopId!);
-      if (_isLoading) { // Проверяем, не был ли отменен запрос
-        _products = products;
-        _applyFilters();
-      }
+      debugPrint('Начало обновления товаров для магазина $_currentShopId');
+      _products = products;
+      _applyFilters();
+      notifyListeners();
     } catch (e) {
       _error = 'Ошибка обновления товаров: ${e.toString()}';
       debugPrint(_error!);
     } finally {
-      if (_isLoading) { // Проверяем, не был ли отменен запрос
-        _setLoading(false);
-      }
+      _setLoading(false);
     }
+    debugPrint('Загружено ${_products.length} товаров');
   }
 
   ApiClient _getAuthenticatedClient() {
@@ -72,9 +71,13 @@ class ShopProvider with ChangeNotifier {
   }
 
   Future<void> setCurrentShop(int shopId) async {
+    if (shopId <= 0) {
+      debugPrint('Ошибка: некорректный shopId: $shopId');
+      return;
+    }
     _currentShopId = shopId;
     await prefs.setInt('current_shop_id', shopId);
-    await loadProducts();
+    await refreshProducts(); // Запускаем загрузку товаров
   }
 
   Future<void> loadProducts() async {
@@ -109,6 +112,7 @@ class ShopProvider with ChangeNotifier {
       final newProduct = await apiClient.createShopItem(shop, product);
       _products.add(newProduct);
       _applyFilters();
+      notifyListeners(); // Добавьте это
       return true;
     } catch (e) {
       _error = 'Ошибка добавления товара: $e';

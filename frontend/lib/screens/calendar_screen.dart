@@ -287,8 +287,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     return GestureDetector(
       onTap: () => setState(() => _selectedDate = date),
-      child: Transform.translate(
-      offset: Offset(0, -35), // ← Сдвиг по X и Y
+      // child: Transform.translate(
+      // offset: Offset(0, -35), // ← Сдвиг по X и Y //вот тут короче надо пофиксить
       child: Container(
         padding: EdgeInsets.only(left: 0, bottom: 7),
         alignment: Alignment.center,
@@ -328,7 +328,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
           ],),
         ),
-      ),
+      // ),
     );
   }
 
