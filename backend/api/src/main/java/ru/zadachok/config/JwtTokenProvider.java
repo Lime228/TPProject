@@ -22,16 +22,6 @@ public class JwtTokenProvider {
     @Value("${jwt.expiration}")
     private int jwtExpirationInMs;
 
-    //    public String generateToken(Authentication auth) {
-//        UserDetails user = (UserDetails) auth.getPrincipal();
-//        return Jwts.builder()
-//                .setSubject(user.getUsername())
-//                .setIssuedAt(new Date())
-//                .setExpiration(new Date(System.currentTimeMillis() + 86400000)) // 24 часа
-//                .signWith(SignatureAlgorithm.HS512, jwtSecret)
-//                .compact();
-//    }
-
     public String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {

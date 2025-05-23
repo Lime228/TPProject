@@ -1,11 +1,8 @@
-// service/CustomerService.java
 package ru.zadachok.service;
 
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -13,11 +10,8 @@ import ru.zadachok.dto.CustomerDto;
 import ru.zadachok.exception.CustomerAlreadyExistsException;
 import ru.zadachok.model.Customer;
 import ru.zadachok.model.Lobby;
-import ru.zadachok.model.Product;
-import ru.zadachok.model.Wallet;
 import ru.zadachok.repository.CustomerRepository;
 import ru.zadachok.repository.LobbyRepository;
-import ru.zadachok.repository.ProductRepository;
 import ru.zadachok.repository.WalletRepository;
 import ru.zadachok.request.*;
 
@@ -70,11 +64,6 @@ public class CustomerService {
                 .customer_photo(savedCustomer.getCustomer_photo())  // byte[]
                 .build();
 
-    }
-
-    public UserDetails loadCustomerByCustomername(String login) throws UsernameNotFoundException {
-        return customerRepository.findByLogin(login)
-                .orElseThrow(() -> new UsernameNotFoundException("Customer not found"));
     }
 
 
@@ -147,7 +136,7 @@ public class CustomerService {
 
 
     public CustomerDto getCustomerById(int id) {
-        Customer customer =customerRepository.findById(id)
+        Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Пользователь с ID " + id + " не найден"));
 
         return CustomerDto.builder()
@@ -162,7 +151,7 @@ public class CustomerService {
     }
 
     public CustomerDto getCustomerByLogin(String login) {
-        Customer customer =customerRepository.findByLogin(login)
+        Customer customer = customerRepository.findByLogin(login)
                 .orElseThrow(() -> new RuntimeException("Пользователь с логином " + login + " не найден"));
 
         return CustomerDto.builder()

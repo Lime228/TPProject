@@ -1,4 +1,3 @@
-// controller/LobbyController.java
 package ru.zadachok.controller;
 
 import io.swagger.v3.oas.annotations.Operation;

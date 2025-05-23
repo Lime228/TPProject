@@ -2,12 +2,8 @@ package ru.zadachok.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.*;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import ru.zadachok.dto.AI.GenerationResponse;
 import ru.zadachok.dto.AI.NotificationRequest;
@@ -15,7 +11,6 @@ import ru.zadachok.dto.AI.NotificationStatusResponse;
 import ru.zadachok.model.Task;
 import ru.zadachok.repository.TaskRepository;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
@@ -36,14 +31,14 @@ public class NotificationAsyncService {
     private String aiServiceUrl;
 
     public String startGeneration(int taskId) {
-        String notificationId = "notif-" + UUID.randomUUID().toString();
+        String notificationId = "notif-" + UUID.randomUUID();
 
         statusStore.put(notificationId,
                 new NotificationStatusResponse(
                         "PENDING",
                         notificationId,
                         Instant.now().plus(30, ChronoUnit.MINUTES).toString(),
-                        null
+                        "null"
                 )
         );
 
@@ -111,8 +106,8 @@ public class NotificationAsyncService {
             );
             //Что-то такое мы должны получить в ответ
             //{
-                //"generated_text": "Уведомление которое сгенерится",
-              //      "status": "success"
+            //"generated_text": "Уведомление которое сгенерится",
+            //      "status": "success"
             //}
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
@@ -135,7 +130,7 @@ public class NotificationAsyncService {
                         "NOT_FOUND",
                         notificationId,
                         null,
-                        null
+                        "null"
                 )
         );
     }

@@ -2,6 +2,7 @@ package ru.zadachok.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
+
 import java.sql.Date;
 
 @Data
@@ -10,14 +11,14 @@ import java.sql.Date;
 @AllArgsConstructor
 @Schema(description = "DTO для представления информации о пользователе",
         example = """
-        {
-            "customer_ID": 123,
-            "login": "user123",
-            "customer_email": "user@example.com",
-            "admin": "USER",
-            "birthday_date": "1990-01-15",
-            "customer_name": "Иван Иванов"
-        }""")
+                {
+                    "customer_ID": 123,
+                    "login": "user123",
+                    "customer_email": "user@example.com",
+                    "admin": "USER",
+                    "birthday_date": "1990-01-15",
+                    "customer_name": "Иван Иванов"
+                }""")
 public class CustomerDto {
     @Schema(description = "Уникальный идентификатор пользователя",
             example = "123",

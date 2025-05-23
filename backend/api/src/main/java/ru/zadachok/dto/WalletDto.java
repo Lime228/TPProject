@@ -9,12 +9,12 @@ import lombok.*;
 @AllArgsConstructor
 @Schema(description = "DTO для представления кошелька пользователя",
         example = """
-        {
-            "id": 1,
-            "customerId": 123,
-            "lobbyId": 456,
-            "balance": 1000
-        }""")
+                {
+                    "id": 1,
+                    "customerId": 123,
+                    "lobbyId": 456,
+                    "balance": 1000
+                }""")
 public class WalletDto {
     @Schema(description = "Уникальный ID кошелька",
             example = "1",

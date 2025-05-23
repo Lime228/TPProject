@@ -1,5 +1,6 @@
 package ru.zadachok.service;
 
+import lombok.Getter;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -26,13 +27,13 @@ public class PasswordResetCodeService {
 
         // Проверяем срок действия (1 час)
         long currentTime = System.currentTimeMillis();
-        long codeAge = currentTime - storedCode.getCreationTime();
+        long codeAge = currentTime - storedCode.creationTime();
         if (codeAge > TimeUnit.HOURS.toMillis(1)) {
             resetCodes.remove(login); // Удаляем просроченный код
             return false;
         }
 
-        return storedCode.getCode().equals(code);
+        return storedCode.code().equals(code);
     }
 
     // Удаление кода после использования
@@ -46,21 +47,8 @@ public class PasswordResetCodeService {
     }
 
     // Внутренний класс для хранения кода и времени создания
-    private static class ResetCode {
-        private final String code;
-        private final long creationTime;
+    @Getter
+    private record ResetCode(String code, long creationTime) {
 
-        public ResetCode(String code, long creationTime) {
-            this.code = code;
-            this.creationTime = creationTime;
-        }
-
-        public String getCode() {
-            return code;
-        }
-
-        public long getCreationTime() {
-            return creationTime;
-        }
     }
 }

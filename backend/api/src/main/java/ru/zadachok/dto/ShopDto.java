@@ -9,10 +9,10 @@ import lombok.*;
 @AllArgsConstructor
 @Schema(description = "DTO для представления магазина с товарами",
         example = """
-        {
-            "shopId": 1,
-            "productId": [101, 102, 103]
-        }""")
+                {
+                    "shopId": 1,
+                    "productId": [101, 102, 103]
+                }""")
 public class ShopDto {
     @Schema(description = "Уникальный ID магазина",
             example = "1",

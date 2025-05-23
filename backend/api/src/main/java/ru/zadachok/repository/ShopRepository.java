@@ -1,4 +1,3 @@
-// repository/ShopRepository.java
 package ru.zadachok.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;

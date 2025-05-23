@@ -17,16 +17,10 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import ru.zadachok.config.JwtTokenProvider;
-import ru.zadachok.model.Customer;
-import ru.zadachok.model.Product;
-import ru.zadachok.repository.CustomerRepository;
-import ru.zadachok.repository.ProductRepository;
 import ru.zadachok.request.*;
 import ru.zadachok.dto.CustomerDto;
 import ru.zadachok.exception.CustomerAlreadyExistsException;
 import ru.zadachok.service.CustomerService;
-import ru.zadachok.service.EmailSenderService;
-import ru.zadachok.service.PasswordResetCodeService;
 
 import java.util.Map;
 
@@ -38,8 +32,6 @@ public class AuthController {
     private final CustomerService customerService;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
-    private final CustomerRepository customerRepository;
-    private final EmailSenderService emailSenderService;
 
 
     @Operation(summary = "Регистрация нового пользователя")
@@ -167,7 +159,7 @@ public class AuthController {
     })
     @PostMapping("/restore")
     public ResponseEntity<String> restorePassword(@Valid @RequestBody RestorePasswordRequest request) {
-        if (customerService.restorePassword(request)){
+        if (customerService.restorePassword(request)) {
             return ResponseEntity.ok("Код для восстановления отправлен на указанную почт.");
         }
         return ResponseEntity.status(400).body("Почта пользователя не совпадает с введенной");
@@ -185,7 +177,7 @@ public class AuthController {
     })
     @PostMapping("/reset-password")
     public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
-        if(customerService.resetPassword(request)) {
+        if (customerService.resetPassword(request)) {
             return ResponseEntity.ok("Пароль успешно изменён");
         }
         return ResponseEntity.status(400).body("Неверный или просроченный код");

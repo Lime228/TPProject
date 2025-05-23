@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.zadachok.model.Shop;
 import ru.zadachok.model.Task;
 import ru.zadachok.request.CreateTaskRequest;
 import ru.zadachok.request.DeleteTaskRequest;

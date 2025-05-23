@@ -1,8 +1,6 @@
 package ru.zadachok.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import ru.zadachok.model.Lobby;
@@ -13,27 +11,19 @@ import ru.zadachok.repository.TaskRepository;
 import ru.zadachok.repository.WalletRepository;
 import ru.zadachok.request.CreateTaskRequest;
 import ru.zadachok.request.UpdateTaskRequest;
-import ru.zadachok.dto.AI.NotificationRequest;
-import ru.zadachok.dto.AI.GenerationResponse;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class TaskService {
 
-    @Value("${ai.service.url}")
-    private String aiServiceUrl;
-
-    private final RestTemplate restTemplate = new RestTemplate();    private final TaskRepository taskRepository;
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final TaskRepository taskRepository;
     private final LobbyRepository lobbyRepository;
     private final WalletRepository walletRepository;
 
@@ -59,8 +49,6 @@ public class TaskService {
                 .endDate(convertToTimestamp(request.getEndDate()))
                 .isActive(0) // по умолчанию неактивная
                 .customerId(request.getCustomerId())
-//                .aiNotification(generateAiNotification(request)) // предварительная генерация уведомления
-//                .notificationSent(false)
                 .build();
 
         Task savedTask = taskRepository.save(task);
@@ -74,67 +62,6 @@ public class TaskService {
         return date != null ? Timestamp.valueOf(date.atStartOfDay()) : null;
     }
 
-    private String generateAiNotification(Task task) {
-        try {
-            if (task.getEndDate() == null) {
-                return "Дедлайн не установлен";
-            }
-
-            String url = aiServiceUrl + "/generate-notification";
-
-            long hoursRemaining = ChronoUnit.HOURS.between(
-                    LocalDateTime.now(),
-                    task.getEndDate().toLocalDateTime()
-            );
-
-            NotificationRequest aiRequest = new NotificationRequest(
-                    task.getDescription(),
-                    task.getName(),
-                    (int) hoursRemaining
-            );
-
-            GenerationResponse response = restTemplate.postForObject(
-                    url,
-                    aiRequest,
-                    GenerationResponse.class
-            );
-
-            return response != null ? response.getGeneratedText() : "Не удалось сгенерировать уведомление";
-        } catch (Exception e) {
-            return "Уведомление будет сгенерировано позже. Ошибка: " + e.getMessage();
-        }
-    }
-
-    private String generateAiNotification(CreateTaskRequest request) {
-        try {
-            if (request.getEndDate() == null) {
-                return "Дедлайн не установлен";
-            }
-
-            String url = aiServiceUrl + "/generate-notification";
-
-            long hoursRemaining = ChronoUnit.HOURS.between(
-                    LocalDate.now().atStartOfDay(),
-                    request.getEndDate().atStartOfDay()
-            );
-
-            NotificationRequest aiRequest = new NotificationRequest(
-                    request.getDescription(),
-                    request.getName(),
-                    (int) hoursRemaining
-            );
-
-            GenerationResponse response = restTemplate.postForObject(
-                    url,
-                    aiRequest,
-                    GenerationResponse.class
-            );
-
-            return response != null ? response.getGeneratedText() : "Не удалось сгенерировать уведомление";
-        } catch (Exception e) {
-            return "Уведомление будет сгенерировано позже";
-        }
-    }
 
     private void updateLobbyTasks(Lobby lobby, Integer taskId) {
         Integer[] currentTaskIds = lobby.getTaskId();
@@ -199,30 +126,6 @@ public class TaskService {
             }
         }
     }
-
-//    @Scheduled(fixedRate = 60000)
-//    public void checkDeadlineNotifications() {
-//        LocalDateTime now = LocalDateTime.now();
-//        LocalDateTime threeHoursLater = now.plusHours(3);
-//
-//        List<Task> tasks = taskRepository.findByEndDateBetweenAndIsActive(
-//                Timestamp.valueOf(now),
-//                Timestamp.valueOf(threeHoursLater),
-//                1
-//        );
-//
-//        tasks.stream()
-//                .filter(task -> !task.isNotificationSent() && task.getAiNotification() != null)
-//                .forEach(this::processNotification);
-//    }
-//
-//    private void processNotification(Task task) {
-//        System.out.println("Отправка уведомления для задачи: " + task.getName());
-//        System.out.println("Текст: " + task.getAiNotification());
-//
-//        task.setNotificationSent(true);
-//        taskRepository.save(task);
-//    }
 
     public Task getTaskById(Integer taskId) {
         return taskRepository.findById(taskId)

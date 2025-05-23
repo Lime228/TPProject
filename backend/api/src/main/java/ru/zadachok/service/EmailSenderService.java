@@ -11,10 +11,6 @@ public class EmailSenderService {
 
     private final JavaMailSender mailSender;
 
-    public void sendTestCode(String toEmail) {
-        sendCode(toEmail, "123456"); // TODO: временно тестовый код
-    }
-
     // В будущем сюда будем передавать сгенерированный код
     public void sendCode(String toEmail, String code) {
         SimpleMailMessage message = new SimpleMailMessage();

@@ -9,12 +9,12 @@ import lombok.*;
 @AllArgsConstructor
 @Schema(description = "DTO для представления лобби",
         example = """
-        {
-            "lobbyId": 1,
-            "shopId": 42,
-            "taskId": [101, 102, 103],
-            "customerId": [7, 13, 22]
-        }""")
+                {
+                    "lobbyId": 1,
+                    "shopId": 42,
+                    "taskId": [101, 102, 103],
+                    "customerId": [7, 13, 22]
+                }""")
 public class LobbyDto {
     @Schema(description = "Уникальный ID лобби",
             example = "1",

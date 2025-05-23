@@ -9,15 +9,15 @@ import lombok.*;
 @AllArgsConstructor
 @Schema(description = "DTO для представления товара в магазине",
         example = """
-        {
-            "id": 1,
-            "name": "Смартфон",
-            "description": "Флагманский смартфон с OLED-экраном",
-            "state": false,
-            "price": 99999,
-            "photo": "dGVzdF9pbWFnZV9kYXRh",
-            "customerId": 123
-        }""")
+                {
+                    "id": 1,
+                    "name": "Смартфон",
+                    "description": "Флагманский смартфон с OLED-экраном",
+                    "state": false,
+                    "price": 99999,
+                    "photo": "dGVzdF9pbWFnZV9kYXRh",
+                    "customerId": 123
+                }""")
 public class ProductDto {
     @Schema(description = "Уникальный ID товара",
             example = "1",

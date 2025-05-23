@@ -2,6 +2,7 @@ package ru.zadachok.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
+
 import java.time.LocalDate;
 
 @Data
@@ -10,16 +11,16 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Schema(description = "DTO для представления задачи",
         example = """
-        {
-            "id": 1,
-            "name": "Помыть посуду",
-            "reward": 5000,
-            "description": "Вымыть вообще все в раковине (даже сковородку)",
-            "startDate": "2023-06-01",
-            "endDate": "2023-06-15",
-            "isActive": true,
-            "customerId": 42
-        }""")
+                {
+                    "id": 1,
+                    "name": "Помыть посуду",
+                    "reward": 5000,
+                    "description": "Вымыть вообще все в раковине (даже сковородку)",
+                    "startDate": "2023-06-01",
+                    "endDate": "2023-06-15",
+                    "isActive": true,
+                    "customerId": 42
+                }""")
 public class TaskDto {
     @Schema(description = "Уникальный ID задачи",
             example = "1",

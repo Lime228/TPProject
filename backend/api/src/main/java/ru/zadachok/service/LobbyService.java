@@ -1,4 +1,3 @@
-// service/LobbyService.java
 package ru.zadachok.service;
 
 import jakarta.transaction.Transactional;

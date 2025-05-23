@@ -1,4 +1,3 @@
-// request/DeleteLobbyRequest.java
 package ru.zadachok.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;

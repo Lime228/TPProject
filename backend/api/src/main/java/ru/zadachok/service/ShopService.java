@@ -2,11 +2,9 @@ package ru.zadachok.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.zadachok.model.Customer;
 import ru.zadachok.model.Product;
 import ru.zadachok.model.Shop;
 import ru.zadachok.model.Wallet;
-import ru.zadachok.repository.CustomerRepository;
 import ru.zadachok.repository.ProductRepository;
 import ru.zadachok.repository.ShopRepository;
 import ru.zadachok.repository.WalletRepository;
@@ -25,7 +23,6 @@ public class ShopService {
 
     private final ProductRepository productRepository;
     private final ShopRepository shopRepository;
-    private final CustomerRepository customerRepository;
     private final WalletRepository walletRepository;
 
     public Product createProductForShop(ProductCreateRequest request) {
@@ -69,6 +66,7 @@ public class ShopService {
         // Удалим сам продукт из таблицы Product
         productRepository.deleteById(request.getProductId());
     }
+
     public Product updateProduct(UpdateProductRequest request) {
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new RuntimeException("Продукт не найден"));

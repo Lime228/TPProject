@@ -3,6 +3,7 @@ package ru.zadachok.model;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 import java.sql.Timestamp;
 
@@ -50,51 +51,4 @@ public class Task {
     @Column(name = "\"customer_id\"", nullable = false)
     @Schema(description = "ID владельца задачи", example = "5", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer customerId;
-
-//    @Column(name = "\"ai_notification\"", length = 500)
-//    @Schema(description = "Сгенерированное ИИ уведомление о дедлайне",
-//            example = "Эй, время поджимает! Дедлайн по задаче 'Рефакторинг кода' через 3 часа!",
-//            maxLength = 500)
-//    private String aiNotification;
-//
-//    @Column(name = "\"notification_sent\"", nullable = false)
-//    @Schema(description = "Флаг отправки уведомления",
-//            example = "false",
-//            defaultValue = "false")
-//    private boolean notificationSent = false;
-//
-//    @Column(name = "\"last_notification_check\"")
-//    @Schema(description = "Время последней проверки уведомления",
-//            example = "2023-06-14T15:00:00",
-//            format = "date-time")
-//    private Timestamp lastNotificationCheck;
-//
-//    @Column(name = "\"notification_retry_count\"", nullable = false)
-//    @Schema(description = "Количество попыток отправки уведомления",
-//            example = "0",
-//            defaultValue = "0")
-//    private Integer notificationRetryCount = 0;
-//
-//    // Метод для проверки, нужно ли отправлять уведомление
-//    public boolean shouldSendNotification() {
-//        if (this.notificationSent || this.isActive != 1 || this.endDate == null) {
-//            return false;
-//        }
-//
-//        LocalDateTime now = LocalDateTime.now();
-//        LocalDateTime deadline = this.endDate.toLocalDateTime();
-//        LocalDateTime notificationTime = deadline.minusHours(3);
-//
-//        return now.isAfter(notificationTime) && now.isBefore(deadline);
-//    }
-//
-//    public void markNotificationAsSent() {
-//        this.notificationSent = true;
-//        this.lastNotificationCheck = Timestamp.valueOf(LocalDateTime.now());
-//    }
-//
-//    public void incrementRetryCount() {
-//        this.notificationRetryCount++;
-//        this.lastNotificationCheck = Timestamp.valueOf(LocalDateTime.now());
-//    }
 }
