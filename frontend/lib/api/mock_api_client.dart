@@ -265,4 +265,16 @@ class MockApiClient implements ApiInterface {
     // TODO: implement getShopProducts
     throw UnimplementedError();
   }
+
+  @override
+  Future<bool> resetPassword(UserModel request, String code, String password) {
+    // TODO: implement resetPassword
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<bool> restorePassword(UserModel request) {
+    // TODO: implement restorePassword
+    throw UnimplementedError();
+  }
 }

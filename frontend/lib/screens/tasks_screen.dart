@@ -87,6 +87,79 @@ class _TasksScreenState extends State<TasksScreen> {
     }
   }
 
+  Future<void> _selectDeadline(BuildContext context) async {
+    if (!_formKey.currentState!.validate()) {
+      _showError("Проверьте заполнение полей");
+      return;
+    }
+
+    // Получаем текущую дату и время
+    DateTime initialDateTime = _deadline ?? DateTime.now().add(const Duration(days: 1));
+    TimeOfDay initialTime = TimeOfDay.fromDateTime(initialDateTime);
+
+    // Сначала выбираем дату
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDateTime,
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: _datePickerTheme,
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate == null) return; // Пользователь отменил выбор даты
+
+    // Затем выбираем время
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+      builder: (context, child) {
+        return Theme(
+          data: _datePickerTheme.copyWith(
+            // Стилизация TimePicker аналогично DatePicker
+            timePickerTheme: TimePickerThemeData(
+              backgroundColor: Colors.white,
+              hourMinuteTextColor: TaskScreenConstants.primaryColor,
+              hourMinuteColor: TaskScreenConstants.primaryColor.withOpacity(0.1),
+              dayPeriodTextColor: TaskScreenConstants.primaryColor,
+              dayPeriodColor: TaskScreenConstants.primaryColor.withOpacity(0.1),
+              dialHandColor: TaskScreenConstants.primaryColor,
+              dialBackgroundColor: TaskScreenConstants.primaryColor.withOpacity(0.1),
+              hourMinuteTextStyle: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              // Фиксируем ориентацию для TimePicker
+              alwaysUse24HourFormat: true,
+            ),
+            child: child!,
+          ),
+        );
+      },
+    );
+
+    if (pickedTime != null && mounted) {
+      // Комбинируем выбранную дату и время
+      setState(() {
+        _deadline = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+      });
+    }
+  }
+
   Future<void> _initData() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
@@ -653,7 +726,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                   children: [
                                     if (endPoint != null)
                                       Text(
-                                        'До ${DateFormat('dd.MM').format(endPoint)}',
+                                        'До ${DateFormat('dd.MM.yyyy HH:mm').format(endPoint)}',
                                         style: TextStyle(
                                           fontSize: 13,
                                           color: isOverdue
@@ -664,7 +737,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                       ),
                                     if (startPoint != null)
                                       Text(
-                                        'С ${DateFormat('dd.MM').format(startPoint)}',
+                                        'С ${DateFormat('dd.MM.yyyy HH:mm').format(startPoint)}',
                                         style: TextStyle(
                                           fontSize: 11,
                                           color: Colors.white.withOpacity(0.8),
@@ -884,7 +957,7 @@ class _TasksScreenState extends State<TasksScreen> {
                       child: Text(
                         _deadline == null
                             ? 'Выберите дедлайн'
-                            : 'Дедлайн: ${DateFormat('dd.MM.yyyy').format(_deadline!)}',
+                            : 'Дедлайн: ${DateFormat('dd.MM.yyyy HH:mm').format(_deadline!)}',
                         style: TextStyle(
                           fontSize: 14,
                           color: _deadline == null
@@ -896,7 +969,7 @@ class _TasksScreenState extends State<TasksScreen> {
                     TextButton(
                       onPressed: () => _selectDeadline(context),
                       child: const Text(
-                        'Выбрать дату',
+                        'Выбрать',
                         style: TextStyle(color: TaskScreenConstants.primaryColor),
                       ),
                     ),
@@ -996,30 +1069,6 @@ class _TasksScreenState extends State<TasksScreen> {
       );
 
 
-  Future<void> _selectDeadline(BuildContext context) async {
-    if (!_formKey.currentState!.validate()) {
-      _showError("Проверьте заполнение полей");
-      return;
-    }
-
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _deadline ?? DateTime.now().add(const Duration(days: 1)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2100),
-      builder: (context, child) {
-        return Theme(
-          data: _datePickerTheme,
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null && mounted) {
-      setState(() => _deadline = picked);
-    }
-  }
-
   void _validateAndAddTask() {
     if (_formKey.currentState!.validate()) {
       _addTask();
@@ -1032,15 +1081,29 @@ class _TasksScreenState extends State<TasksScreen> {
       final groupProvider = Provider.of<GroupProvider>(context, listen: false);
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-      // Если участник не выбран (null) - ставим customerId = 0 (для всех)
-      // Если выбран конкретный участник - используем его ID
       final customerId = _selectedMemberId ?? 0;
+
+      // Получаем текущую дату и время с учетом часового пояса
+      final now = DateTime.now();
+      final currentDateTime = DateTime(
+          now.year,
+          now.month,
+          now.day,
+          now.hour,
+          now.minute
+      );
+
+      // Проверяем, что дедлайн установлен
+      if (_deadline == null) {
+        _showError("Пожалуйста, установите дедлайн");
+        return;
+      }
 
       final newTask = TaskModel(
         name: _titleController.text.trim(),
         description: _descController.text.trim(),
-        endPoint: _deadline!.toIso8601String(),
-        startPoint: DateTime.now().toIso8601String(),
+        endPoint: _deadline!.toUtc().toIso8601String(), // Сохраняем дедлайн как UTC
+        startPoint: currentDateTime.toUtc().toIso8601String(), // Текущее время как UTC
         reward: int.tryParse(_rewardController.text) ?? 0,
         customerId: customerId,
         state: 0,
@@ -1062,6 +1125,7 @@ class _TasksScreenState extends State<TasksScreen> {
       }
     }
   }
+
 
   void _resetForm() {
     _titleController.clear();
@@ -1118,8 +1182,11 @@ class _TasksScreenState extends State<TasksScreen> {
 
   DateTime? _safeParseDate(String dateString) {
     try {
-      return dateString.isNotEmpty ? DateTime.parse(dateString) : null;
+      if (dateString.isEmpty) return null;
+      final date = DateTime.parse(dateString);
+      return date.toLocal(); // Конвертируем UTC в локальное время
     } catch (e) {
+      debugPrint('Ошибка парсинга даты: $e');
       return null;
     }
   }

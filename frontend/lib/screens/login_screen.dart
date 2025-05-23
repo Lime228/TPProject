@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:zadachok/api/api_client.dart';
 import 'package:zadachok/api/api_interface.dart';
@@ -64,16 +65,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final user = await widget.apiClient.login(
-          UserModel(
-            login: _usernameController.text,
-            password: _passwordController.text,
-            name: '',
-            email: '',
-            birthdayDate: DateTime(1980, 1, 1),
-          )
-          );
+        UserModel(
+          login: _usernameController.text,
+          password: _passwordController.text,
+          name: '',
+          email: '',
+          birthdayDate: DateTime(1980, 1, 1),
+        ),
+      );
 
-          final token = widget.apiClient.getAuthToken();
+      final token = widget.apiClient.getAuthToken();
       debugPrint("Токен получен: ${token}");
 
       if (token == null) throw Exception('Токен не получен');
@@ -81,10 +82,9 @@ class _LoginScreenState extends State<LoginScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final groupProvider = Provider.of<GroupProvider>(context, listen: false);
 
-      // Устанавливаем данные авторизации
+
       await authProvider.setAuthData(user: user, token: token);
 
-      // Обновляем данные группы
       groupProvider.setCurrentUser(user);
       await groupProvider.loadGroupData();
       if (groupProvider.isInGroup) {
@@ -95,13 +95,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
-            (route) => false,
+        (route) => false,
       );
-
     } catch (e) {
       debugPrint("Ошибка входа: ${e.toString()}");
       if (mounted) {
-        setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
+        setState(
+          () => _errorMessage = e.toString().replaceAll('Exception: ', ''),
+        );
       }
     } finally {
       if (mounted) {
@@ -110,149 +111,147 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.white,
-        body: Padding(
+      backgroundColor: Colors.white,
+      body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30),
-    child: Form(
-    key: _formKey,
-    child: SingleChildScrollView(
-    child: Column(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-    const SizedBox(height: 151),
-    Image.asset('lib/assets/logo.png', width: 150),
-    const SizedBox(height: 30),
-    const Text(
-    "Вход",
-    style: TextStyle(
-    fontSize: 28,
-    fontWeight: FontWeight.bold,
-    color: _colorEnter,
-    ),
-    ),
-    const SizedBox(height: 20),
-    _buildInputField(
-    hintText: 'Логин',
-    controller: _usernameController,
-    validator: (value) {
-    if (value == null || value.isEmpty) {
-    return 'Введите логин';
-    }
-    return null;
-    },
-    ),
-    const SizedBox(height: 10),
-    _buildInputField(
-    hintText: 'Пароль',
-    controller: _passwordController,
-    isPassword: true,
-    validator: (value) {
-    if (value == null || value.isEmpty) {
-    return 'Введите пароль';
-    }
-    return null;
-    },
-    suffixIcon: IconButton(
-    icon: Icon(
-    _obscureText ? Icons.visibility_off : Icons.visibility,
-    color: Colors.grey,
-    ),
-    onPressed: _togglePasswordVisibility,
-    ),
-    ),
-    const SizedBox(height: 10),
-    Align(
-    alignment: Alignment.centerRight,
-    child: GestureDetector(
-    onTap:
-    () => Navigator.push(
-    context,
-    MaterialPageRoute(
-    builder:
-    (_) => PasswordRecoveryScreen(
-    apiClient: widget.apiClient,
-    ),
-    ),
-    ),
-    child: const Text(
-    'Не помню пароль',
-    style: TextStyle(color: Colors.grey),
-    ),
-    ),
-    ),
-    if (_errorMessage != null)
-    Padding(
-    padding: const EdgeInsets.only(top: 10),
-    child: Text(
-    _errorMessage!,
-    style: const TextStyle(color: Colors.red),
-    ),
-    ),
-    const SizedBox(height: 20),
-    Container(
-    width: _buttonWidth,
-    height: _buttonHeight,
-    decoration: BoxDecoration(
-    borderRadius: BorderRadius.circular(25),
-    boxShadow: const [
-    BoxShadow(
-    color: Colors.black26,
-    blurRadius: 6,
-    offset: Offset(0, 4),
-    ),
-    ],
-    ),
-    child: ElevatedButton(
-    onPressed: _isLoading ? null : _login,
-    style: ElevatedButton.styleFrom(
-    backgroundColor: _colorEnterButton,
-    shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(25),
-    ),
-    shadowColor: Colors.transparent,
-    ),
-    child:
-    _isLoading
-
-        ? const CircularProgressIndicator(
-      color: Colors.white,
-    )
-        : const Text("Войти", style: _enterStyle),
-    ),
-    ),
-      const SizedBox(height: 20),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text("Ещё нет аккаунта? "),
-          GestureDetector(
-            onTap:
-                () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder:
-                    (_) => RegisterScreen(
-                  apiClient: widget.apiClient,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 151),
+                SvgPicture.asset('lib/assets/logo.svg', width: 150, ),
+                const SizedBox(height: 30),
+                const Text(
+                  "Вход",
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: _colorEnter,
+                  ),
                 ),
-              ),
-            ),
-            child: const Text(
-              "Зарегистрироваться",
-              style: TextStyle(color: _colorEnterButton),
+                const SizedBox(height: 20),
+                _buildInputField(
+                  hintText: 'Логин',
+                  controller: _usernameController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Введите логин';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 10),
+                _buildInputField(
+                  hintText: 'Пароль',
+                  controller: _passwordController,
+                  isPassword: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Введите пароль';
+                    }
+                    return null;
+                  },
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureText ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.grey,
+                    ),
+                    onPressed: _togglePasswordVisibility,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap:
+                        () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) => PasswordRecoveryScreen(
+                                  apiClient: widget.apiClient,
+                                ),
+                          ),
+                        ),
+                    child: const Text(
+                      'Не помню пароль',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                ),
+                if (_errorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                const SizedBox(height: 20),
+                Container(
+                  width: _buttonWidth,
+                  height: _buttonHeight,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(25),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 6,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _login,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _colorEnterButton,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      shadowColor: Colors.transparent,
+                    ),
+                    child:
+                        _isLoading
+                            ? const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                            : const Text("Войти", style: _enterStyle),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Ещё нет аккаунта? "),
+                    GestureDetector(
+                      onTap:
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => RegisterScreen(
+                                    apiClient: widget.apiClient,
+                                  ),
+                            ),
+                          ),
+                      child: const Text(
+                        "Зарегистрироваться",
+                        style: TextStyle(color: _colorEnterButton),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 30),
+              ],
             ),
           ),
-        ],
-      ),
-      const SizedBox(height: 30),
-    ],
-    ),
-    ),
-    ),
         ),
+      ),
     );
   }
 

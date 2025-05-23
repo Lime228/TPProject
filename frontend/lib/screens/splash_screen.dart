@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:zadachok/routes/main_navigation.dart';
 
@@ -32,7 +33,6 @@ class _SplashScreenState extends State<SplashScreen>
     _startAnimation();
   }
 
-
   @override
   void initState() {
     super.initState();
@@ -60,8 +60,6 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-
-
     _textController = AnimationController(
       duration: TEXT_ANIMATION_DURATION,
       vsync: this,
@@ -73,7 +71,6 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _initializeApp() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await authProvider.checkAuth();
-
 
     final groupProvider = authProvider.groupProvider;
     await groupProvider.loadGroupData();
@@ -110,8 +107,8 @@ class _SplashScreenState extends State<SplashScreen>
                 children: [
                   Transform.scale(
                     scale: _logoScale.value,
-                    child: Image.asset(
-                      'lib/assets/logo.png',
+                    child: SvgPicture.asset(
+                      'lib/assets/logo.svg',
                       width: LOGO_SIZE,
                       height: LOGO_SIZE,
                     ),

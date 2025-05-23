@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zadachok/api/api_interface.dart';
-import 'package:zadachok/api/mock_api_client.dart';
+import 'package:zadachok/models/user/user_model.dart';
 import '../routes/main_navigation.dart';
 import 'login_screen.dart';
 
@@ -9,7 +10,7 @@ class PasswordRecoveryScreen extends StatefulWidget {
 
   const PasswordRecoveryScreen({
     Key? key,
-    this.apiClient = const MockApiClient(),
+    required this.apiClient,
   }) : super(key: key);
 
   @override
@@ -17,7 +18,6 @@ class PasswordRecoveryScreen extends StatefulWidget {
 }
 
 class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
-
   static const double borderRadius = 15.0;
   static const Offset shadowOffset = Offset(0, 4);
   static const double shadowBlur = 6.0;
@@ -29,7 +29,6 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
   static const double inputHeight = 41.0;
   static const Color colorEnter = Color.fromARGB(100, 110, 68, 255);
   static const Color colorEnterButton = Color(0xFF937DF3);
-
 
   static const TextStyle textStyle = TextStyle(
     fontSize: 15,
@@ -58,6 +57,135 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
     super.dispose();
   }
 
+  Future<void> _showResetPasswordDialog() async {
+    final _dialogFormKey = GlobalKey<FormState>();
+    final codeController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          bool _isDialogLoading = false;
+          String? _dialogErrorMessage;
+
+          return AlertDialog(
+            title: const Text('Сброс пароля'),
+            content: SingleChildScrollView(
+              child: Form(
+                key: _dialogFormKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Код отправлен на ${_emailController.text}'),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      controller: codeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Код подтверждения',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) =>
+                      value?.isEmpty ?? true ? 'Введите код' : null,
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: newPasswordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Новый пароль',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) => (value?.length ?? 0) < 6
+                          ? 'Минимум 6 символов'
+                          : null,
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: confirmPasswordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Подтвердите пароль',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) => value != newPasswordController.text
+                          ? 'Пароли не совпадают'
+                          : null,
+                    ),
+                    if (_dialogErrorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10),
+                        child: Text(
+                          _dialogErrorMessage!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: _isDialogLoading
+                    ? null
+                    : () => Navigator.pop(context),
+                child: const Text('Отмена'),
+              ),
+              ElevatedButton(
+                onPressed: _isDialogLoading
+                    ? null
+                    : () async {
+                  if (!_dialogFormKey.currentState!.validate()) return;
+
+                  setState(() {
+                    _isDialogLoading = true;
+                    _dialogErrorMessage = null;
+                  });
+
+                  try {
+                    final user = UserModel(
+                      login: _loginController.text,
+                      email: _emailController.text, name: '',
+                    );
+
+                    final success = await widget.apiClient.resetPassword(
+                      user,
+                      codeController.text,
+                      newPasswordController.text,
+                    );
+
+                    if (!mounted) return;
+
+                    if (success) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Пароль успешно изменен')),
+                      );
+                      Navigator.pop(context);
+                    }
+                  } catch (e) {
+                    setState(() => _dialogErrorMessage =
+                        e.toString().replaceFirst('Exception: ', ''));
+                  } finally {
+                    if (mounted) {
+                      setState(() => _isDialogLoading = false);
+                    }
+                  }
+                },
+                child: _isDialogLoading
+                    ? const CircularProgressIndicator()
+                    : const Text('Сохранить'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> _recoverPassword() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -67,23 +195,21 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
     });
 
     try {
-      await widget.apiClient.recoverPassword(
-        email: _emailController.text,
+      final user = UserModel(
         login: _loginController.text,
+        email: _emailController.text, name: '',
       );
+
+      final success = await widget.apiClient.restorePassword(user);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Новый пароль отправлен на вашу почту')),
-      );
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
-      );
+      if (success) {
+        await _showResetPasswordDialog();
+      }
     } catch (e) {
       if (!mounted) return;
-      setState(() => _errorMessage = e.toString());
+      setState(() => _errorMessage = e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -126,7 +252,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Image.asset('lib/assets/logo.png', width: 150),
+                  SvgPicture.asset('lib/assets/logo.svg', width: 150),
                   const SizedBox(height: 30),
                   const Text(
                     "Восстановление пароля",
@@ -234,7 +360,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
         ),
         child: _isLoading
             ? const CircularProgressIndicator(color: Colors.white)
-            : const Text("Сменить пароль", style: enterStyle),
+            : const Text("Восстановить пароль", style: enterStyle),
       ),
     );
   }

@@ -150,8 +150,6 @@ class ApiClient implements ApiInterface {
       throw Exception('Ошибка формата данных: ${e.message}');
     }
   }
-
-  @override
   Future<bool> resetPassword(UserModel request, String code, String password) async {
     final resetUrl = Uri.parse('${ApiEndpoints.baseUrl}/api/auth/reset-password');
     try {
@@ -205,7 +203,7 @@ class ApiClient implements ApiInterface {
 
   // Future<UserModel> deleteUserProfile(UserModel user) async {  } ЕЩЕ НЕТУ РЕАЛИЗАЦИИ С БЭКА
 
- // в теории работает
+  // в теории работает
   Future<UserModel> getUserById(UserModel request) async {
     final getURL = Uri.parse('${ApiEndpoints.baseUrl}/api/auth/${request.id}'); // напомните перестать хардкодить эндпоинты
     try {
@@ -596,7 +594,7 @@ class ApiClient implements ApiInterface {
         if (taskResponse.statusCode == 200) {
           final taskJson = json.decode(taskResponse.body);
           final task = TaskModel.fromResponse(taskJson);
-            userTasks.add(task);
+          userTasks.add(task);
         } else {
           throw Exception('Ошибка при получении задачи $taskId: ${taskResponse.statusCode}');
         }
