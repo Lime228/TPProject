@@ -199,7 +199,7 @@ public class CustomerService {
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
         // Обновляем пароль
-        customer.setPassword(request.getNewPassword());
+        customer.setPassword(passwordEncoder.encode(request.getNewPassword()));
         customerRepository.save(customer);
 
         // Удаляем использованный код
