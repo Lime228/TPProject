@@ -200,7 +200,7 @@ class TaskProvider with ChangeNotifier {
       // Обновляем endPoint на текущее время
       final updatedTask = task.copyWith(
         state: 1, // выполнено, но не подтверждено
-        endPoint: DateTime.now().toUtc().toIso8601String(),
+        endPoint: DateTime.now().toIso8601String(),
       );
 
       final apiClient = _getAuthenticatedClient();
@@ -236,7 +236,7 @@ class TaskProvider with ChangeNotifier {
           confirmedTask = await apiClient.completeTask(
             task.copyWith(
               state: 2, // подтверждено
-              endPoint: DateTime.now().toUtc().toIso8601String(),
+              endPoint: DateTime.now().toIso8601String(),
               customerId: _user!.id, // назначаем на админа
             ),
             _user!,
