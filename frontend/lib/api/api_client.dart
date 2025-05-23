@@ -424,7 +424,26 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  //buyitem post
+  Future<bool> buyShopItem(ShopModel shop, int productId, int customerId) async { //переделать
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/api/shop/product/buy');
+
+    try {
+      final response = await _client.post(
+        url,
+        headers: _getHeaders(),
+        body: json.encode(shop.buyProductRequest(customerId, productId)),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final responseBody = response.body;
+        return responseBody.contains('Покупка прошла успешно');
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
 
   //а нужен ли гет для магазина?
 
