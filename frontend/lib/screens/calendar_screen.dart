@@ -11,11 +11,11 @@ import '../providers/task_provider.dart';
 class CalendarStyles {
   static const double headerHeight = 100.0;
   static const double monthHeaderHeight = 62.0;
-  static const double calendarHeight = 242.0;
+  static const double calendarHeight = 240.0;
   static const double dayLabelFontSize = 25.0;
   static const double dayNumberFontSize = 25.0;
-  static const double monthNameFontSize = 24.0;
-  static const double yearFontSize = 35.0;
+  static const double monthNameFontSize = 36.0;
+  static const double yearFontSize = 40.0;
   static const double taskTitleFontSize = 18.0;
   static const double taskDescriptionFontSize = 14.0;
   static const double titleMonthCalendarSize = 23.0;
@@ -36,7 +36,7 @@ class CalendarStyles {
     bottomRight: Radius.circular(40),
   );
 
-  static const EdgeInsets headerPadding = EdgeInsets.fromLTRB(24, 15, 24, 10);
+  static const EdgeInsets headerPadding = EdgeInsets.fromLTRB(25, 15, 24, 10);
   static const EdgeInsets calendarPadding = EdgeInsets.all(16);
   static const EdgeInsets taskCardPadding = EdgeInsets.all(12);
   static const EdgeInsets monthPickerPadding = EdgeInsets.all(16);
@@ -132,7 +132,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             _buildMonthHeader(),
             _buildCalendarGrid(),
             const SizedBox(height: 12),
-            auth.isAuthenticated && group.isInGroup
+            auth.isAuthorized && group.isInGroup
                 ? _buildTaskList()
                 : _buildUnauthorizedTaskMessage(),
           ],
@@ -167,7 +167,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             icon: Icon(
               _showYearPicker ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
               color: Colors.white,
-              size: 30,
+              size: 40,
             ),
             onPressed: () => setState(() => _showYearPicker = !_showYearPicker),
           ),
@@ -215,6 +215,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return Container(
       height: CalendarStyles.calendarHeight,
       margin: const EdgeInsets.symmetric(horizontal: 16),
+      // margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       padding: CalendarStyles.calendarPadding,
       decoration: BoxDecoration(
         color: Colors.white,
@@ -228,7 +229,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: _buildDayLabels(),
           ),
-          const SizedBox(height: 8),
 
 
           Expanded(
@@ -246,7 +246,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   List<Widget> _buildDayLabels() {
-    const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    const days = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
     return days.map((day) => Center(
       child: Text(
         day,
@@ -287,7 +287,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     return GestureDetector(
       onTap: () => setState(() => _selectedDate = date),
+      // child: Transform.translate(
+      // offset: Offset(0, -35), // ← Сдвиг по X и Y //вот тут короче надо пофиксить
       child: Container(
+        padding: EdgeInsets.only(left: 0, bottom: 7),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
@@ -296,7 +299,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             color: isToday
                 ? (isSelected ? Colors.white : CalendarStyles.todayBorderColor)
                 : Colors.transparent,
-            width: 2,
+            width: 0,
           ),
         ),
         child: Stack(
@@ -312,7 +315,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
             if (hasTasks)
               Positioned(
-                top: 2,
+                top: 0.1,
                 right: 2,
                 child: Container(
                   width: 8,
@@ -323,9 +326,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   ),
                 ),
               ),
-          ],
+          ],),
         ),
-      ),
+      // ),
     );
   }
 
@@ -562,7 +565,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final group = Provider.of<GroupProvider>(context);
 
     String message;
-    if (!auth.isAuthenticated) {
+    if (!auth.isAuthorized) {
       message = 'Для просмотра задач необходимо авторизоваться';
     } else if (!group.isInGroup) {
       message = 'Только находясь в группе можно просматривать задачи';
@@ -578,7 +581,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           children: [
             const SizedBox(height: 50),
             Icon(
-              auth.isAuthenticated ? Icons.group : Icons.lock,
+              auth.isAuthorized ? Icons.group : Icons.lock,
               size: 64,
               color: const Color(0xFF937DF3),
             ),

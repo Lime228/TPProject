@@ -1,184 +1,208 @@
-import 'dart:convert';
-
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:zadachok/api/api_interface.dart';
-import 'package:zadachok/models/shop/product/product_model.dart';
+import 'package:zadachok/models/shop/shop_model.dart';
+import '../api/api_client.dart';
+import '../api/api_interface.dart';
+import '../models/shop/product/product_model.dart';
+import 'auth_provider.dart';
+import 'group_provider.dart';
 
 class ShopProvider with ChangeNotifier {
-  final ApiInterface apiClient;
+  final client = ApiClient();
   final SharedPreferences prefs;
+  AuthProvider? authProvider;
 
   List<ProductModel> _products = [];
-  bool _isLoading = false;
-  String? _error;
-
-  List<ProductModel> get products => _products;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
-
   List<ProductModel> _filteredProducts = [];
   String _searchQuery = '';
-  String _sortOption = 'all';
+  String _sortBy = 'name';
+  bool _isLoading = false;
+  String? _error;
+  int? _currentShopId;
 
-  List<ProductModel> get filteredProducts => _filteredProducts;
+  ShopProvider({required this.authProvider, required this.prefs});
 
-  ShopProvider({required this.apiClient, required this.prefs}) {
-    _init();
+  // Геттеры
+  List<ProductModel> get products => _filteredProducts;
+  List<ProductModel> get allProducts => _products;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+  int? get currentShopId => _currentShopId;
+
+  void setAuthProvider(AuthProvider provider) {
+    authProvider = provider;
+    notifyListeners();
   }
 
-  Future<void> _init() async {
-    final groupId = prefs.getString('current_group_id');
-    if (groupId == null) {
-      _products = [];
+
+  Future<void> refreshProducts() async {
+    if (_currentShopId == null || authProvider?.user == null) return;
+
+    if (_isLoading) return;
+
+    _setLoading(true);
+    _error = null;
+
+    try {
+      final apiClient = _getAuthenticatedClient();
+      final products = await apiClient.getShopProducts(_currentShopId!);
+      debugPrint('Начало обновления товаров для магазина $_currentShopId');
+      _products = products;
+      _applyFilters();
+      notifyListeners();
+    } catch (e) {
+      _error = 'Ошибка обновления товаров: ${e.toString()}';
+      debugPrint(_error!);
+    } finally {
+      _setLoading(false);
+    }
+    debugPrint('Загружено ${_products.length} товаров');
+  }
+
+  ApiClient _getAuthenticatedClient() {
+    if (authProvider?.token == null) throw Exception('Токен отсутствует');
+    client.setAuthToken(authProvider!.token!);
+    return client;
+  }
+
+  Future<void> _loadShopId() async {
+    _currentShopId = prefs.getInt('current_shop_id');
+  }
+
+  Future<void> setCurrentShop(int shopId) async {
+    if (shopId <= 0) {
+      debugPrint('Ошибка: некорректный shopId: $shopId');
       return;
     }
-
-    final cachedData = prefs.getString('cached_products_$groupId');
-    if (cachedData != null) {
-      try {
-        final jsonList = jsonDecode(cachedData) as List;
-        _products = ProductModel.listFromJson(jsonList);
-      } catch (e) {
-        print('Ошибка загрузки кэша: $e');
-      }
-    }
-    await loadProducts();
+    _currentShopId = shopId;
+    await prefs.setInt('current_shop_id', shopId);
+    await refreshProducts(); // Запускаем загрузку товаров
   }
 
   Future<void> loadProducts() async {
+    if (_currentShopId == null) {
+      _error = 'Магазин не выбран';
+      return;
+    }
+
+    _setLoading(true);
     try {
-      _isLoading = true;
-      notifyListeners();
-
-      final groupId = prefs.getString('current_group_id');
-      if (groupId == null) {
-        _products = [];
-        return;
-      }
-
-      _products = await apiClient.getShopItems();
-      await prefs.setString(
-          'cached_products_$groupId',
-          jsonEncode(ProductModel.listToJson(_products))
-      );
-      _error = null;
+      final apiClient = _getAuthenticatedClient();
+      _products = await apiClient.getShopProducts(_currentShopId!);
+      _applyFilters();
     } catch (e) {
-      _error = 'Ошибка загрузки товаров';
+      _error = 'Ошибка загрузки товаров: $e';
+      debugPrint(_error!);
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
     }
   }
 
-  Future<void> addProduct(ProductModel product) async {
-    try {
-      _isLoading = true;
-      notifyListeners();
 
-      final newProduct = await apiClient.createShopItem(product);
+  Future<bool> createProduct(ProductModel product) async {
+    if (_currentShopId == null) {
+      _error = 'Магазин не выбран';
+      return false;
+    }
+
+    try {
+      final shop = ShopModel(id: _currentShopId!, productIds: []);
+      final apiClient = _getAuthenticatedClient();
+      final newProduct = await apiClient.createShopItem(shop, product);
       _products.add(newProduct);
-      _error = null;
+      _applyFilters();
+      notifyListeners(); // Добавьте это
+      return true;
     } catch (e) {
-      _error = 'Ошибка добавления товара';
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      _error = 'Ошибка добавления товара: $e';
+      debugPrint(_error!);
+      return false;
     }
-    _applyFilters();
   }
 
-  Future<void> updateProduct(ProductModel product) async {
+  Future<bool> updateProduct(ProductModel product) async {
     try {
-      _isLoading = true;
-      notifyListeners();
-
-      final updatedProduct = await apiClient.updateShopItem(product);
+      final apiClient = _getAuthenticatedClient();
+      final updated = await apiClient.updateShopItem(product);
       final index = _products.indexWhere((p) => p.id == product.id);
-      if (index != -1) {
-        _products[index] = updatedProduct;
-      }
-      _error = null;
+      if (index != -1) _products[index] = updated;
+      _applyFilters();
+      return true;
     } catch (e) {
-      _error = 'Ошибка обновления товара';
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      _error = 'Ошибка обновления товара: $e';
+      debugPrint(_error!);
+      return false;
     }
-
-    _applyFilters();
   }
 
-  Future<void> removeProduct(int productId) async {
+  Future<bool> removeProduct(int productId) async {
     try {
-      _isLoading = true;
-      notifyListeners();
-
-      await apiClient.deleteShopItem(productId.toString());
+      final apiClient = _getAuthenticatedClient();
+      await apiClient.deleteShopItem(productId);
       _products.removeWhere((p) => p.id == productId);
-      _error = null;
+      _applyFilters();
+      return true;
     } catch (e) {
-      _error = 'Ошибка удаления товара';
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      _error = 'Ошибка удаления товара: $e';
+      debugPrint(_error!);
+      return false;
     }
-
-    _applyFilters();
   }
 
   void clearProducts() {
     _products = [];
-    notifyListeners();
-    _applyFilters();
-  }
-
-  void searchProducts(String query) {
-    _searchQuery = query.toLowerCase();
-    _applyFilters();
-    notifyListeners();
-  }
-
-  void sortProducts({String? option}) {
-    _sortOption = option ?? 'all';
-    _applyFilters();
+    _filteredProducts = [];
     notifyListeners();
   }
 
   void resetFilters() {
     _searchQuery = '';
-    _sortOption = 'all';
+    _sortBy = 'name';
     _applyFilters();
-    notifyListeners();
+  }
+
+  void search(String query) {
+    _searchQuery = query.toLowerCase();
+    _applyFilters();
+  }
+
+  void sort({String? option}) {
+    if (option != null) {
+      _sortBy = option;
+      _applyFilters();
+    }
   }
 
   void _applyFilters() {
-    // Фильтрация по поисковому запросу
-    List<ProductModel> result = _products.where((product) {
-      final nameMatches = product.name.toLowerCase().contains(_searchQuery);
-      final descMatches = product.description.toLowerCase().contains(_searchQuery);
-      return nameMatches || descMatches;
+    // Фильтрация
+    _filteredProducts = _products.where((p) {
+      return p.name.toLowerCase().contains(_searchQuery) ||
+          p.description.toLowerCase().contains(_searchQuery);
     }).toList();
 
     // Сортировка
-    switch (_sortOption) {
+    switch (_sortBy) {
       case 'price_asc':
-        result.sort((a, b) => a.price.compareTo(b.price));
+        _filteredProducts.sort((a, b) => a.price.compareTo(b.price));
         break;
       case 'price_desc':
-        result.sort((a, b) => b.price.compareTo(a.price));
+        _filteredProducts.sort((a, b) => b.price.compareTo(a.price));
         break;
-      case 'name':
-        result.sort((a, b) => a.name.compareTo(b.name));
-        break;
-      default:
-      // Без сортировки или обычная сортировка
-        break;
+      default: // name
+        _filteredProducts.sort((a, b) => a.name.compareTo(b.name));
     }
 
-    _filteredProducts = result;
+    notifyListeners();
+  }
+
+  void _setLoading(bool loading) {
+    _isLoading = loading;
+    notifyListeners();
+  }
+  @override
+  void dispose() {
+    _setLoading(false); // Отменяем текущую загрузку при уничтожении
+    super.dispose();
   }
 }

@@ -36,3 +36,16 @@ google-services.json
 docker-compose.ci.yml
 /backend/config/ci-application.properties
 backend/target/
+
+ios
+macos
+windows
+web
+linux
+.metadata
+frontend/analysis_options.yaml
+frontend/devtools_options.yaml
+frontend/pubspec.lock
+frontend/android/.gitignore
+android
+config.json

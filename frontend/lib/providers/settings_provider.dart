@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,12 +7,12 @@ class SettingsProvider with ChangeNotifier {
   bool notificationsEnabled = true;
 
   String? _userName;
-  String? _userSurname;
+  // String? _userSurname;
   String? _birthDate;
   File? _avatarImage;
 
   String? get userName => _userName;
-  String? get userSurname => _userSurname;
+  // String? get userSurname => _userSurname;
   String? get birthDate => _birthDate;
   File? get avatarImage => _avatarImage;
 
@@ -20,7 +21,7 @@ class SettingsProvider with ChangeNotifier {
 
     notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
     _userName = prefs.getString('userName');
-    _userSurname = prefs.getString('userSurname');
+    // _userSurname = prefs.getString('userSurname');
     _birthDate = prefs.getString('birthDate');
     final avatarPath = prefs.getString('avatarPath');
     if (avatarPath != null && File(avatarPath).existsSync()) {
@@ -43,9 +44,9 @@ class SettingsProvider with ChangeNotifier {
       case 'userName':
         _userName = value as String;
         break;
-      case 'userSurname':
-        _userSurname = value as String;
-        break;
+      // case 'userSurname':
+      //   _userSurname = value as String;
+      //   break;
       case 'birthDate':
         _birthDate = value as String;
         break;
@@ -59,7 +60,7 @@ class SettingsProvider with ChangeNotifier {
 
   Future<void> updateUserData({
     String? name,
-    String? surname,
+    // String? surname,
     String? birthDate,
     File? avatar,
   }) async {
@@ -70,10 +71,10 @@ class SettingsProvider with ChangeNotifier {
       await prefs.setString('userName', name);
     }
 
-    if (surname != null) {
-      _userSurname = surname;
-      await prefs.setString('userSurname', surname);
-    }
+    // if (surname != null) {
+    //   _userSurname = surname;
+    //   await prefs.setString('userSurname', surname);
+    // }
 
     if (birthDate != null) {
       _birthDate = birthDate;
@@ -83,6 +84,10 @@ class SettingsProvider with ChangeNotifier {
     if (avatar != null) {
       _avatarImage = avatar;
       await prefs.setString('avatarPath', avatar.path);
+
+      // Сохраняем изображение в base64 для возможной отправки на сервер
+      final bytes = await avatar.readAsBytes();
+      await prefs.setString('avatarBase64', base64Encode(bytes));
     }
 
     notifyListeners();

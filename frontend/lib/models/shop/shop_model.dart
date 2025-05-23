@@ -1,76 +1,76 @@
+import 'dart:convert';
+
 import 'package:zadachok/models/shop/product/product_model.dart';
 
-import '../base_request.dart';
-import '../base_response.dart';
-
-class ShopModel implements BaseRequest<ShopModel>, BaseResponse{
-  int id;
-  List<int> productId;
+class ShopModel {
+  final int id;
+  final List<int> productIds;
 
   ShopModel({
-    this.id = 0, // 0 означает новый объект (для создания)
-    required this.productId,
+    this.id = 0,
+    required this.productIds,
   });
 
-
-  Map<String, dynamic> productCreateRequest(ProductModel p) => {
-    'name': p.name,
-    'description': p.description,
-    'photo': p.photo,
-    'state': p.state,
-    'price': p.price,
+  // Запрос на создание продукта
+  Map<String, dynamic> createProductRequest(ProductModel product) => {
+    'name': product.name,
+    'description': product.description,
+    'photo': base64Encode(product.photoBytes),
+    'state': product.isAvailable,
+    'price': product.price,
     'shopid': id,
+    if (product.link != null) 'link': product.link,
   };
 
-  Map<String, dynamic> productBuyRequest(int cId, int pId) => {
-    'customerId': cId,
-    'productId': pId
+  // Запрос на покупку продукта
+  Map<String, dynamic> buyProductRequest(int customerId, int productId) => {
+    'customerId': customerId,
+    'productId': productId,
   };
 
-  Map<String, dynamic> productUpdateRequest(ProductModel p) => {
-    'productid': p.id,
-    'name': p.name,
-    'description': p.description,
-    'photo': p.photo,
-    'state': p.state,
-    'price': p.price,
+  // Запрос на обновление продукта
+  Map<String, dynamic> updateProductRequest(ProductModel product) => {
+    'productid': product.id,
+    'name': product.name,
+    'description': product.description,
+    'photo': base64Encode(product.photoBytes),
+    'state': product.isAvailable,
+    'price': product.price,
+    if (product.link != null) 'link': product.link,
   };
 
-  //че то с гетами подумать
-
-  Map<String, dynamic> productDeleteRequest(ProductModel p) => {
+  // Запрос на удаление продукта
+  Map<String, dynamic> deleteProductRequest(int productId) => {
     'shopid': id,
-    'productid':p.id
+    'productid': productId,
   };
 
-  // Для полного JSON (с ID)
+  // Сериализация в JSON
   Map<String, dynamic> toJson() => {
-    if (id != 0) 'Shop_ID': id,
-    'Product_ID': productId,
+    if (id != 0) 'shopId': id,
+    'productId': productIds,
   };
+
+
 
   factory ShopModel.fromJson(Map<String, dynamic> json) {
     return ShopModel(
-      id: json['Shop_ID'] ?? 0,
-      productId: json['Product_ID'],
+      id: json['shopId'] ?? 0,
+      productIds: List<int>.from(json['productId'] ?? []),
     );
   }
 
-  // Для списка магазинов по productId
-  static List<ShopModel> listByProductFromJson(List<dynamic> jsonList) {
-    return jsonList.map((json) => ShopModel.fromJson(json)).toList();
+  factory ShopModel.fromResponse(Map<String, dynamic> json) {
+    return ShopModel(
+      id: json['shopId'] ?? 0,
+      productIds: List<int>.from(json['productId'] ?? []),
+    );
   }
 
-  // Валидация
+  // Валидация магазина
   void validate() {
-    if (productId.any((id) => id <= 0)) {
-      throw ArgumentError('All product IDs must be positive');
+    if (productIds.any((id) => id <= 0)) {
+      throw ArgumentError('Все ID продуктов должны быть положительными');
     }
-  }
-
-  @override
-  ShopModel fromJson(Map<String, dynamic> json) {
-    // TODO: implement fromJson
-    throw UnimplementedError();
   }
 }

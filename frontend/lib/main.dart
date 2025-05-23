@@ -19,30 +19,40 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   await EndpointsConfigParse.load();
 
-
   final apiClient = ApiClient();
+
+  // Загружаем начальные данные
+  final authProvider = AuthProvider(groupProvider: GroupProvider(authProvider: null));
+  await authProvider.checkAuth();
+
+  if (authProvider.isAuthorized) {
+    final groupProvider = GroupProvider(authProvider: authProvider);
+    await groupProvider.loadGroupData();
+    if (groupProvider.isInGroup) {
+      await groupProvider.refreshGroupData();
+    }
+  }
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => GroupProvider()),
-        ChangeNotifierProxyProvider<GroupProvider, AuthProvider>(
-          create: (context) => AuthProvider(
-            groupProvider: Provider.of<GroupProvider>(context, listen: false),
+        ChangeNotifierProvider(create: (_) => authProvider),
+        ChangeNotifierProxyProvider<AuthProvider, GroupProvider>(
+          create: (context) => GroupProvider(
+            authProvider: Provider.of<AuthProvider>(context, listen: false),
           ),
-          update: (context, groupProvider, authProvider) =>
-          authProvider ?? AuthProvider(groupProvider: groupProvider),
+          update: (context, authProvider, groupProvider) =>
+          groupProvider ?? GroupProvider(authProvider: authProvider),
         ),
         ChangeNotifierProvider(
-          create: (_) => TaskProvider(apiClient: apiClient),
+          create: (_) => TaskProvider(authProvider: authProvider),
         ),
         ChangeNotifierProvider(
           create: (_) => SettingsProvider()..loadSettings(),
         ),
         ChangeNotifierProvider(
           create: (_) => ShopProvider(
-            apiClient: apiClient,
-            prefs: prefs,
+            prefs: prefs, authProvider: authProvider, 
           ),
         ),
       ],

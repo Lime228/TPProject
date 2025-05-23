@@ -2,106 +2,153 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../api/mock_api_client.dart';
+import 'package:zadachok/models/lobby/lobby_model.dart';
+import 'package:zadachok/providers/shop_provider.dart';
+import 'package:zadachok/providers/task_provider.dart';
+import '../api/api_client.dart';
 import '../models/user/user_model.dart';
 import 'group_provider.dart';
 
 class AuthProvider with ChangeNotifier {
   UserModel? _user;
-  bool _isAuthorized = false;
-  bool _isAdmin = false;
+  String? _token;
+  LobbyModel? _lobby;
 
   UserModel? get user => _user;
-  bool get isAuthorized => _isAuthorized;
-  bool get isAdmin => _isAdmin;
+  String? get token => _token;
+  bool get isAuthorized => _token != null;
+  bool get isAdmin => _user?.role.isAdmin ?? false;
 
-  bool get isAuthenticated => _user != null;
 
   final GroupProvider groupProvider;
+  final apiClient = ApiClient();
 
   AuthProvider({required this.groupProvider});
 
-  Future<void> login(String username, String password) async {
-    try {
-      //временный костыль обязательно переделать
-      final user = await MockApiClient().login(new UserModel(login: username, password: password, name: '', email: '', birthdayDate:DateTime(1980, 1, 1)));
+  Future<void> setAuthData({
+    required UserModel user,
+    required String token,
+  }) async {
+    _user = user;
+    _token = token;
 
-      _user = user;
-      _isAuthorized = true;
-      _isAdmin = user.isAdmin;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', token);
+    await prefs.setString('user', jsonEncode(user.toJson()));
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isAuthorized', true);
-      await prefs.setBool('isAdmin', _isAdmin);
-      await prefs.setString('user', jsonEncode(user.toJson()));
-
-
-      groupProvider.setCurrentUser(user.name, isAdmin: user.isAdmin);
-
-      notifyListeners();
-    } catch (e) {
-      throw Exception('Ошибка авторизации: ${e.toString()}');
-    }
+    groupProvider.setCurrentUser(user);
+    notifyListeners();
   }
 
   Future<void> checkAuth() async {
+    final prefs = await SharedPreferences.getInstance();
+    _token = prefs.getString('token');
+    final userJson = prefs.getString('user');
+
+    if (_token == null || userJson == null) {
+      await _clearAuthData();
+      return;
+    }
+
     try {
-      final prefs = await SharedPreferences.getInstance();
-      _isAuthorized = prefs.getBool('isAuthorized') ?? false;
-      _isAdmin = prefs.getBool('isAdmin') ?? false;
-
-      String? userJson = prefs.getString('user');
-      if (userJson != null) {
-        try {
-          final userMap = jsonDecode(userJson) as Map<String, dynamic>;
-          _user = UserModel.fromResponse(userMap);
-          groupProvider.setCurrentUser(_user!.name, isAdmin: _isAdmin);
-        } catch (e) {
-          debugPrint('Ошибка парсинга userJson: $e');
-          await logout();
-        }
-      }
-
-
+      _user = UserModel.fromJson(jsonDecode(userJson));
+      groupProvider.setCurrentUser(_user!);
       notifyListeners();
     } catch (e) {
-      debugPrint('Ошибка при чтении SharedPreferences: $e');
-      _isAuthorized = false;
-      _isAdmin = false;
-      _user = null;
-      notifyListeners();
+      debugPrint('Auth data parsing error: $e');
+      await _clearAuthData();
+    }
+  }
+
+  Future<void> logout() async {
+    await _clearAuthData();
+    await groupProvider.resetGroup();
+    notifyListeners();
+  }
+
+  Future<void> login(UserModel user, String token) async {
+    try {
+      await setAuthData(user: user, token: token);
+
+
+      await groupProvider.loadGroupData();
+      if (groupProvider.isInGroup) {
+        await groupProvider.refreshGroupData();
+      }
+    } catch (e) {
+      debugPrint('Ошибка при обновлении данных группы после входа: $e');
+      rethrow;
     }
   }
 
 
-  Future<void> setUser(UserModel user) async {
-    _user = user;
-    _isAuthorized = true;
-    _isAdmin = user.isAdmin;
-
+  Future<void> _clearAuthData() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isAuthorized', true);
-    await prefs.setBool('isAdmin', _isAdmin);
-    await prefs.setString('user', jsonEncode(user.toJson()));
-
-
-    groupProvider.setCurrentUser(user.name, isAdmin: user.isAdmin);
-
-    notifyListeners();
-  }
-
-  Future<void> logout() async {
-    await groupProvider.saveGroupData();
-
-    _isAuthorized = false;
-    _isAdmin = false;
-    _user = null;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isAuthorized', false);
-    await prefs.setBool('isAdmin', false);
+    await prefs.remove('token');
     await prefs.remove('user');
 
-    notifyListeners();
+    _user = null;
+    _token = null;
+  }
+
+  Future<void> refreshUserData() async {
+    if (_user == null) return;
+
+    try {
+      final updatedUser = await apiClient.getUserById(UserModel(id: _user!.id, name: '', email: '', login: ''));
+      _user = updatedUser;
+
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user', jsonEncode(_user!.toJson()));
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Ошибка при обновлении данных пользователя: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateUserProfile(UserModel updatedUser) async {
+    apiClient.setAuthToken(_token!);
+
+    try {
+      final responseUser = await apiClient.updateUserProfile(updatedUser);
+      await setAuthData(
+        user: responseUser,
+        token: _token!,
+      );
+    } catch (e) {
+      debugPrint('Ошибка обновления профиля: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> refreshAll(GroupProvider groupProvider, TaskProvider taskProvider, ShopProvider shopProvider) async {
+    try {
+      apiClient.setAuthToken(_token!);
+      await refreshUserData();
+
+      groupProvider.setAuthProvider(this);
+      groupProvider.setCurrentUser(_user!);
+
+      final lobby = await apiClient.getLobbyByUserId(_user!.id);
+      if (lobby != null) {
+        await groupProvider.setCurrentLobby(lobby);
+
+        taskProvider.setAuthProvider(this);
+        taskProvider.setUser(_user!);
+        taskProvider.setLobbyId(lobby.id);
+        await taskProvider.refreshTasks();
+        shopProvider.setCurrentShop(lobby.shopId);
+        await shopProvider.refreshProducts();
+      } else {
+        await groupProvider.resetGroup();
+        taskProvider.resetFilters();
+        shopProvider.clearProducts();
+      }
+    } catch (e) {
+      debugPrint('Ошибка при полном обновлении данных: $e');
+      rethrow;
+    }
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
+import 'package:zadachok/models/shop/shop_model.dart';
 import 'package:zadachok/models/user/user_model.dart';
 import '../models/lobby/lobby_model.dart';
 import '../models/shop/product/product_model.dart';
@@ -14,13 +15,9 @@ class MockApiClient implements ApiInterface {
   Future<UserModel> register(UserModel request) async {
     await Future.delayed(const Duration(seconds: 1));
 
-    if (request.login.isEmpty || request.password.isEmpty) {
-      throw Exception('Все поля обязательны для заполнения');
-    }
 
-    if (request.password.length < 6) {
-      throw Exception('Пароль должен содержать минимум 6 символов');
-    }
+
+
 
     return UserModel(
         id: DateTime.now().millisecondsSinceEpoch,
@@ -28,16 +25,16 @@ class MockApiClient implements ApiInterface {
         email: request.email,
         birthdayDate: DateTime.parse('1969-07-20 20:18:04Z'),
         login: request.login,
-        isAdmin: true
+        role: request.role,
     );
   }
 
-  @override
+
   @override
   Future<UserModel> login(UserModel request) async {
 
     String username = request.login;
-    String password = request.password;
+    String? password = request.password;
     print("Login attempt with username: $username, password: $password");
 
 
@@ -51,7 +48,7 @@ class MockApiClient implements ApiInterface {
         email: 'admin@example.com',
         birthdayDate: DateTime(1980, 1, 1),
         login: 'admin',
-        isAdmin: true, // Администратор
+        role: UserRole.user, // Администратор
       );
     }
     else {
@@ -105,16 +102,15 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<LobbyModel> createLobby(LobbyModel request) async {
+  Future<LobbyModel> createLobby(int creatorID) async {
     await Future.delayed(const Duration(seconds: 1));
 
 
 
-    return LobbyModel(
-      id: DateTime.now().millisecondsSinceEpoch,
-      taskId: request.taskId,
-      shopId: request.shopId,
-      customerId: request.customerId,
+    return  LobbyModel(
+      taskId: [],
+      shopId: 0,
+      customerId: [],
     );
   }
 
@@ -122,7 +118,7 @@ class MockApiClient implements ApiInterface {
 
   @override
   Future<TaskModel> createTask(TaskModel request, int id) async {
-    debugPrint('Создаем задачу: ${request.toJson()}');
+    debugPrint('Создаем задачу: ${request.updateRequest()}');
 
     await Future.delayed(const Duration(seconds: 1));
 
@@ -192,7 +188,7 @@ class MockApiClient implements ApiInterface {
       email: request.email,
       birthdayDate: request.birthdayDate,
       login: request.login,
-      isAdmin: false,
+      role: request.role,
     );
   }
 
@@ -234,17 +230,7 @@ class MockApiClient implements ApiInterface {
     throw UnimplementedError();
   }
 
-  @override
-  Future<List<ProductModel>> getShopItems() async {
-    await Future.delayed(const Duration(seconds: 1));
-    return [];
-  }
 
-  @override
-  Future<ProductModel> createShopItem(ProductModel request) async {
-    await Future.delayed(const Duration(seconds: 1));
-    return request;
-  }
 
   @override
   Future<ProductModel> updateShopItem(ProductModel request) async {
@@ -253,7 +239,30 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<void> deleteShopItem(String itemId) async {
+  Future<void> deleteShopItem(int itemId) async {
     await Future.delayed(const Duration(seconds: 1));
+  }
+
+  @override
+  String? getAuthToken() {
+    // TODO: implement getAuthToken
+    throw UnimplementedError();
+  }
+
+  @override
+  void setAuthToken(String token) {
+    // TODO: implement setAuthToken
+  }
+
+  @override
+  Future<ProductModel> createShopItem(ShopModel shop, ProductModel product) {
+    // TODO: implement createShopItem
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<ProductModel>> getShopProducts(int shopID) {
+    // TODO: implement getShopProducts
+    throw UnimplementedError();
   }
 }

@@ -1,83 +1,66 @@
-import 'package:flutter/cupertino.dart';
-
-import '../base_request.dart';
-import '../base_response.dart';
-
-class LobbyModel implements BaseRequest<LobbyModel>, BaseResponse{
-  @override
+class LobbyModel {
   int id;
   int shopId;
   List<int> taskId;
   List<int> customerId;
+  String? code;
 
   LobbyModel({
-    this.id = 0, // 0 означает новый объект (для создания)
+    this.id = 0,
     required this.taskId,
     required this.shopId,
     required this.customerId,
+    this.code,
   });
 
-
-  @override
-  Map<String, dynamic> createRequest() => {
-    'creatorID': customerId[0],
+  // Для создания лобби
+  Map<String, dynamic> createRequest(int creatorID) => {
+    'creatorID': creatorID,
   };
 
-  Map<String, dynamic> removeRequest() => {
+  // Для удаления пользователя
+  Map<String, dynamic> removeRequest(int userID) => {
     'lobbyid': id,
-    'customerid':customerId
+    'customerid': userID,
   };
 
-  Map<String, dynamic> addRequest() => {
-    'lobbyid': id,
-    'customerid':customerId
+  // Для добавления пользователя (по коду)
+  Map<String, dynamic> addRequest(int userID) => {
+    'code': code,
+    'customerid': userID,
   };
 
-  Map<String, dynamic> getRequest() => { // переделать это явно не так
-    'lobbyid': id,
-    'customerid':customerId
-  };
-
+  // Для удаления лобби
   Map<String, dynamic> deleteRequest() => {
     'lobbyid': id,
   };
 
-
-
-  @override
+  // Для сохранения в SharedPreferences
   Map<String, dynamic> toJson() => {
-    if (id != 0) 'id': id,
+    'id': id,
     'shopId': shopId,
     'taskId': taskId,
     'customerId': customerId,
+    'code': code,
   };
 
-  @override
+  factory LobbyModel.fromJson(Map<String, dynamic> json) {
+    return LobbyModel(
+      id: json['id'] ?? 0,
+      shopId: json['shopId'],
+      taskId: List<int>.from(json['taskId'] ?? []),
+      customerId: List<int>.from(json['customerId'] ?? []),
+      code: json['code'],
+    );
+  }
+
   factory LobbyModel.fromResponse(Map<String, dynamic> json) {
-    try {
-      final id = json['id'] ?? json['lobbyId'] ?? json['data']['id'] ?? 0;
-      if (id == 0) throw Exception('ID лобби не найден в ответе');
-
-      return LobbyModel(
-        id: id,
-        shopId: json['shopId'] ?? 0,
-        taskId: List<int>.from(json['taskId'] ?? []),
-        customerId: List<int>.from(json['customerId'] ?? []),
-      );
-    } catch (e) {
-      debugPrint('Ошибка парсинга LobbyModel: $e\nResponse: $json');
-      rethrow;
-    }
-  }
-
-
-  static List<LobbyModel> listFromJson(List<dynamic> jsonList) {
-    return jsonList.map((json) => LobbyModel.fromResponse(json)).toList();
-  }
-
-  @override
-  @override
-  LobbyModel fromJson(Map<String, dynamic> json) {
-    return LobbyModel.fromResponse(json);
+    return LobbyModel(
+      id: json['lobbyId'] ?? 0,
+      shopId: json['shopId'],
+      taskId: List<int>.from(json['taskId'] ?? []),
+      customerId: List<int>.from(json['customerId'] ?? []),
+      code: json['code'],
+    );
   }
 }

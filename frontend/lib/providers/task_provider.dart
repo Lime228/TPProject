@@ -4,18 +4,24 @@ import 'package:zadachok/models/task/task_model.dart';
 import 'package:zadachok/api/api_interface.dart';
 import 'package:zadachok/providers/group_provider.dart';
 
+import '../api/api_client.dart';
+import '../models/lobby/lobby_model.dart';
 import '../models/user/user_model.dart';
+import 'auth_provider.dart';
 
 class TaskProvider with ChangeNotifier {
-  final ApiInterface apiClient;
+  final client = ApiClient();
   List<TaskModel> _tasks = [];
   List<TaskModel> _filteredTasks = [];
+  AuthProvider? authProvider;
   bool _isLoadingTasks = false;
   bool _isLoadingTaskCreation = false;
   bool _isLoadingTaskDeletion = false;
   String? _error;
+  UserModel? _user;
+  int? _currentLobbyId;
 
-  TaskProvider({required this.apiClient});
+  TaskProvider({required this.authProvider });
 
   List<TaskModel> get tasks => _tasks;
   bool get isLoadingTasks => _isLoadingTasks;
@@ -29,65 +35,113 @@ class TaskProvider with ChangeNotifier {
       ? _filteredTasks
       : _tasks;
 
+  void setUser(UserModel user) {
+    _user = user;
+    notifyListeners();
+  }
+  ApiClient _getAuthenticatedClient() {
+    if (authProvider?.token == null) throw Exception('Токен отсутствует');
+    client.setAuthToken(authProvider!.token!);
+    return client;
+  }
+
+  void setAuthProvider(AuthProvider provider) {
+    authProvider = provider;
+    notifyListeners();
+  }
+
+  void setLobbyId(int lobbyId) {
+    _currentLobbyId = lobbyId;
+    notifyListeners();
+  }
+
+  Future<void> refreshTasks() async {
+    if (_currentLobbyId == null || _user == null) return;
+
+    _setLoadingTasks(true);
+    _error = null;
+
+    try {
+
+
+      final apiClient = _getAuthenticatedClient();
+      final lobby = apiClient.getLobby(_currentLobbyId!);
+      final allTasks = await apiClient.getUserTasks(await lobby, _user!);
+
+
+      _tasks = _user!.role.isAdmin
+          ? allTasks
+          : allTasks.where((task) => task.customerId == _user!.id).toList();
+
+
+
+      notifyListeners();
+    } catch (e) {
+      _error = 'Ошибка обновления задач: ${e.toString()}';
+      debugPrint(_error!);
+    } finally {
+      _setLoadingTasks(false);
+    }
+  }
 
   List<TaskModel> getTasksForDate(DateTime date) {
     return _tasks.where((task) {
-      final taskDate = DateTime.parse(task.endPoint).toLocal();
+      final taskDate = task.deadline ?? DateTime.now();
       return taskDate.year == date.year &&
           taskDate.month == date.month &&
           taskDate.day == date.day;
     }).toList();
   }
 
-
   double getTotalStarsForDate(DateTime date) {
     return getTasksForDate(date).fold(0, (sum, task) => sum + task.reward);
   }
 
+  Future<void> loadTasks(int lobbyId) async {
+    if (_user == null) {
+      throw Exception('Пользователь не авторизован');
+    }
 
+    _setLoadingTasks(true);
+    _error = null;
 
-  Future<bool> addTask(TaskModel task, BuildContext context, int lobbyId) async {
+    try {
+      final lobby = LobbyModel(
+        id: lobbyId,
+        taskId: [],
+        shopId: 0,
+        customerId: [_user!.id],
+      );
+      final apiClient = _getAuthenticatedClient();
+      _tasks = await apiClient.getUserTasks(lobby, _user!);
+      notifyListeners();
+    } catch (e) {
+      _error = 'Ошибка загрузки задач: ${e.toString()}';
+      debugPrint(_error!);
+    } finally {
+      _setLoadingTasks(false);
+    }
+  }
+
+  Future<bool> addTask({
+    required TaskModel task,
+    required int lobbyId,
+  }) async {
     _setLoadingTaskCreation(true);
     _error = null;
 
     try {
-      final groupProvider = Provider.of<GroupProvider>(context, listen: false);
-
-      if (!groupProvider.isInGroup) {
-        throw Exception('Вы должны быть в группе для создания задач');
-      }
-
-      if (!groupProvider.isOwner) {
-        throw Exception('Только администратор может создавать задачи');
-      }
-
-
       if (task.name.isEmpty) {
         throw Exception('Название задачи не может быть пустым');
       }
-      if (task.endPoint.isEmpty) {
-        throw Exception('Дедлайн должен быть указан');
-      }
-      if (task.reward <= 0) {
-        throw Exception('Награда должна быть положительной');
-      }
-
-
-      final taskToCreate = task.copyWith(
-        customerId: 2, //ID
-        startPoint: DateTime.now().toIso8601String(),
-      );
-
-      debugPrint('Создание задачи с reward: ${taskToCreate.reward} и lobbyId: $lobbyId');
-      final newTask = await apiClient.createTask(taskToCreate, lobbyId);
-      debugPrint('Получена задача с reward: ${newTask.reward} и id: ${newTask.id}');
-
+      final apiClient = _getAuthenticatedClient();
+      final newTask = await apiClient.createTask(task, lobbyId);
       _tasks.add(newTask);
       notifyListeners();
       return true;
     } catch (e) {
-      debugPrint('Ошибка при создании задачи: $e');
       _error = e.toString();
+      debugPrint('Ошибка создания задачи: $e');
       return false;
     } finally {
       _setLoadingTaskCreation(false);
@@ -111,7 +165,7 @@ class TaskProvider with ChangeNotifier {
         customerId: 0,
         state: 0,
       );
-
+      final apiClient = _getAuthenticatedClient();
       await apiClient.deleteTask(taskToDelete);
 
       _tasks.removeWhere((task) => task.id == taskId);
@@ -130,24 +184,22 @@ class TaskProvider with ChangeNotifier {
 
   Future<List<TaskModel>> getTasksForDateRange(DateTime start, DateTime end) async {
     return _tasks.where((task) {
-      final taskStart = DateTime.parse(task.startPoint);
-      final taskEnd = DateTime.parse(task.endPoint);
+      final taskStart = task.createdAt;
+      final taskEnd = task.deadline ?? DateTime.now();
       return (taskStart.isBefore(end) || DateUtils.isSameDay(taskStart, end)) &&
           (taskEnd.isAfter(start) || DateUtils.isSameDay(taskEnd, start)) &&
-          task.state != 'Completed';
+          task.state != 2; // Исключаем только подтвержденные задачи
     }).toList();
   }
 
   Future<void> completeTask(int taskId, UserModel user) async {
     try {
       final task = _tasks.firstWhere((t) => t.id == taskId);
-
-
+      final apiClient = _getAuthenticatedClient();
       final updatedTask = await apiClient.completeTask(task, user);
 
-
       _tasks.removeWhere((t) => t.id == taskId);
-      _tasks.add(updatedTask);
+      _tasks.add(updatedTask.copyWith(state: 1)); // 1 - выполнено, но не подтверждено
 
       notifyListeners();
     } catch (e) {
@@ -157,16 +209,33 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
+  Future<void> confirmTask(int taskId) async {
+    try {
+      final task = _tasks.firstWhere((t) => t.id == taskId);
+      final index = _tasks.indexWhere((t) => t.id == taskId);
+      if (index != -1) {
+        final apiClient = _getAuthenticatedClient();
+        final confirmedTask = await apiClient.completeTask(task, _user!);
+        _tasks[index] = confirmedTask; // 2 - выполнено и подтверждено
+        notifyListeners();
+      }
+    } catch (e) {
+      _error = 'Ошибка подтверждения задачи: ${e.toString()}';
+      debugPrint(_error!);
+      rethrow;
+    }
+  }
+
   Future<void> updateTask(TaskModel task) async {
     try {
       final index = _tasks.indexWhere((t) => t.id == task.id);
       if (index != -1) {
-
         if (task.reward < 0) {
           throw Exception('Награда не может быть отрицательной');
         }
-
-        _tasks[index] = task;
+        final apiClient = _getAuthenticatedClient();
+        final updatedTask = await apiClient.updateTask(task);
+        _tasks[index] = updatedTask;
         notifyListeners();
       }
     } catch (e) {
@@ -195,49 +264,45 @@ class TaskProvider with ChangeNotifier {
     notifyListeners();
   }
 
-
   void sortTasks({String? option}) {
     _sortOption = option ?? 'default';
     _applyFilters();
     notifyListeners();
   }
 
-
   void _applyFilters() {
-
     List<TaskModel> result = _tasks.where((task) {
       final nameMatches = task.name.toLowerCase().contains(_searchQuery);
       final descMatches = task.description.toLowerCase().contains(_searchQuery);
       return nameMatches || descMatches;
     }).toList();
 
-
     switch (_sortOption) {
       case 'date':
         result.sort((a, b) {
-          final aDate = DateTime.parse(a.endPoint);
-          final bDate = DateTime.parse(b.endPoint);
+          final aDate = a.deadline ?? DateTime.now();
+          final bDate = b.deadline ?? DateTime.now();
           return aDate.compareTo(bDate);
         });
         break;
       case 'completed':
-        result = result.where((t) => t.state == 'Completed').toList();
+        result = result.where((t) => t.state == 2).toList(); // Только подтвержденные
         break;
       case 'pending':
-        result = result.where((t) => t.state != 'Completed').toList();
+        result = result.where((t) => t.state == 0).toList(); // Только в процессе
+        break;
+      case 'unconfirmed':
+        result = result.where((t) => t.state == 1).toList(); // Выполненные, но не подтвержденные
         break;
       default:
-
         result.sort((a, b) {
-          if (a.state == 'Completed' && b.state != 'Completed') return 1;
-          if (a.state != 'Completed' && b.state == 'Completed') return -1;
-          return 0;
+          // Сначала невыполненные (0), затем ожидающие подтверждения (1), затем подтвержденные (2)
+          return a.state.compareTo(b.state);
         });
     }
 
     _filteredTasks = result;
   }
-
 
   void resetFilters() {
     _searchQuery = '';

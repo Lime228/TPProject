@@ -3,7 +3,10 @@ import 'package:flutter/cupertino.dart' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:zadachok/models/lobby/lobby_model.dart';
 import 'package:zadachok/models/task/task_model.dart';
+import '../api/api_client.dart';
+import '../models/user/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/task_provider.dart';
@@ -39,6 +42,8 @@ class TasksScreen extends StatefulWidget {
 
 class _TasksScreenState extends State<TasksScreen> {
 
+  int? _selectedMemberId;
+
   late final _formKey = GlobalKey<FormState>();
   late final _titleController = TextEditingController();
   late final _descController = TextEditingController();
@@ -52,6 +57,52 @@ class _TasksScreenState extends State<TasksScreen> {
   bool _isLoading = false;
   DateTime? _deadline;
   bool _isFormVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTasks();
+  }
+
+  Future<void> _loadTasks() async {
+    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    if (groupProvider.isInGroup && authProvider.isAuthorized) {
+      taskProvider.setUser(authProvider.user!);
+      taskProvider.setLobbyId(groupProvider.lobbyId);
+      await taskProvider.refreshTasks();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final groupProvider = Provider.of<GroupProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context);
+
+    if (authProvider.isAuthorized && groupProvider.isInGroup) {
+      _loadTasks();
+    }
+  }
+
+  Future<void> _initData() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+
+    if (authProvider.isAuthorized) {
+
+      if (!groupProvider.isInGroup) {
+        await groupProvider.loadGroupData();
+      }
+
+      if (groupProvider.isInGroup) {
+        await _loadTasks();
+      }
+    }
+  }
+
 
   @override
   void dispose() {
@@ -68,10 +119,13 @@ class _TasksScreenState extends State<TasksScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final groupProvider = Provider.of<GroupProvider>(context);
 
-    if (!authProvider.isAuthenticated) {
+    if (!authProvider.isAuthorized) {
       return _buildUnauthorizedView();
     }
+
+
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -152,7 +206,7 @@ class _TasksScreenState extends State<TasksScreen> {
               ),
               const SizedBox(width: 12),
               Text(
-                settingsProvider.userName ?? authProvider.user?.name ?? 'Гость',
+                authProvider.user!.name ?? 'Гость',
                 style: theme.textTheme.titleLarge?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -405,10 +459,21 @@ class _TasksScreenState extends State<TasksScreen> {
         Expanded(
           child: Consumer<TaskProvider>(
             builder: (context, taskProvider, child) {
+              if (taskProvider.isLoadingTasks) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final authProvider = Provider.of<AuthProvider>(context);
+              final isAdmin = authProvider.user?.role.isAdmin ?? false;
+
+              final tasksToShow = isAdmin
+                  ? taskProvider.filteredTasks
+                  : taskProvider.filteredTasks.where((task) => task.customerId == authProvider.user?.id).toList();
+
               return ListView.builder(
                 padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: taskProvider.filteredTasks.length,
-                itemBuilder: (ctx, i) => _buildTaskCard(taskProvider.filteredTasks[i]),
+                itemCount: tasksToShow.length,
+                itemBuilder: (ctx, i) => _buildTaskCard(tasksToShow[i]),
               );
             },
           ),
@@ -418,6 +483,7 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
 
+
   Widget _buildTaskCard(TaskModel task) {
     final theme = Theme.of(context);
     final startPoint = _safeParseDate(task.startPoint);
@@ -425,13 +491,38 @@ class _TasksScreenState extends State<TasksScreen> {
     final isOverdue = endPoint != null && endPoint.isBefore(DateTime.now());
     final groupProvider = Provider.of<GroupProvider>(context);
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context);
+
+    final assignedUser = groupProvider.members.firstWhere(
+          (user) => user.id == task.customerId,
+      orElse: () => UserModel(
+        id: 0,
+        name: 'Не назначено',
+        email: '',
+        login: '',
+      ),
+    );
+
+    Color borderColor;
+    IconData? statusIcon;
+
+    if (task.state == 2) {
+      borderColor = Colors.green;
+      statusIcon = Icons.check;
+    } else if (task.state == 1) {
+      borderColor = Colors.orange;
+      statusIcon = Icons.error_outline;
+    } else {
+      borderColor = TaskScreenConstants.primaryColor;
+    }
+
 
     return Container(
       height: 96,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-
+          // Кнопка выполнения
           InkWell(
             onTap: () => _completeTask(taskProvider, task.id),
             child: Container(
@@ -440,27 +531,21 @@ class _TasksScreenState extends State<TasksScreen> {
               margin: const EdgeInsets.only(right: 12),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: task.state == 'Completed'
-                      ? Colors.green
-                      : TaskScreenConstants.primaryColor,
-                  width: 2,
-                ),
+                border: Border.all(color: borderColor, width: 2),
               ),
-              child: task.state == 'Completed'
-                  ? const Icon(Icons.check, size: 20, color: Colors.green)
+              child: statusIcon != null
+                  ? Icon(statusIcon, size: 20, color: borderColor)
                   : null,
             ),
           ),
 
-
+          // Остальная часть карточки
           Expanded(
             child: InkWell(
               onTap: () => _showEditTaskDialog(task),
               borderRadius: BorderRadius.circular(12),
               child: Stack(
                 children: [
-
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
@@ -471,11 +556,14 @@ class _TasksScreenState extends State<TasksScreen> {
                           offset: const Offset(0, 3),
                         ),
                       ],
-                      color: task.state == 'Completed'
+                      color: task.state == 2
                           ? const Color(0xFFD9FFF3)
+                          : task.state == 1
+                          ? const Color(0xFFFFF3E0)
                           : Colors.white,
                     ),
                   ),
+
 
 
                   Positioned(
@@ -585,6 +673,25 @@ class _TasksScreenState extends State<TasksScreen> {
                                   ],
                                 ),
                               ),
+                              if (task.customerId != 0)
+                                Positioned(
+                                    bottom: 8,
+                                    left: 8,
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.8),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        'Для: ${groupProvider.members.firstWhere((m) => m.id == task.customerId, orElse: () => UserModel(id: 0, name: 'Неизвестно', email: '', login: '')).name}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: TaskScreenConstants.primaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                ),
                               if (task.reward > 0)
                                 Positioned(
                                   top: 0,
@@ -646,6 +753,12 @@ class _TasksScreenState extends State<TasksScreen> {
 
   Widget _buildTaskForm() {
     final theme = Theme.of(context);
+    final group = Provider.of<GroupProvider>(context, listen: false);
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    if (_selectedMemberId == null) {
+      _selectedMemberId = auth.user?.id;
+    }
+
 
     return Dialog(
       backgroundColor: Colors.white,
@@ -706,6 +819,34 @@ class _TasksScreenState extends State<TasksScreen> {
                 controller: _descController,
                 labelText: 'Описание',
                 maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+
+
+              DropdownButtonFormField<int>(
+                value: _selectedMemberId,
+                decoration: InputDecoration(
+                  labelText: 'Назначить участнику',
+                  hintText: 'Оставить для всех',
+                  border: OutlineInputBorder(),
+                ),
+                items: [
+                  DropdownMenuItem<int>(
+                    value: null,
+                    child: Text('Для всех участников'),
+                  ),
+                  ...group.members.map((member) {
+                    return DropdownMenuItem<int>(
+                      value: member.id,
+                      child: Text(member.name),
+                    );
+                  }).toList(),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedMemberId = value;
+                  });
+                },
               ),
               const SizedBox(height: 16),
 
@@ -821,7 +962,7 @@ class _TasksScreenState extends State<TasksScreen> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final group = Provider.of<GroupProvider>(context, listen: false);
 
-    if (!auth.isAuthenticated || !group.isInGroup) return null;
+    if (!auth.isAuthorized || !group.isInGroup) return null;
 
     if (!group.isOwner) {
       return FloatingActionButton(
@@ -887,36 +1028,38 @@ class _TasksScreenState extends State<TasksScreen> {
 
 
   Future<void> _addTask() async {
-    if (_deadline == null) {
-      _showError("Выберите дедлайн для задачи");
-      return;
-    }
+    if (_formKey.currentState!.validate()) {
+      final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+      // Если участник не выбран (null) - ставим customerId = 0 (для всех)
+      // Если выбран конкретный участник - используем его ID
+      final customerId = _selectedMemberId ?? 0;
 
-    final newTask = TaskModel(
-      name: _titleController.text.trim(),
-      description: _descController.text.trim(),
-      endPoint: _deadline!.toIso8601String(),
-      startPoint: DateTime.now().toIso8601String(),
-      reward: int.tryParse(_rewardController.text) ?? 0,
-      customerId: 2, //ID
-      state: 0,
-    );
+      final newTask = TaskModel(
+        name: _titleController.text.trim(),
+        description: _descController.text.trim(),
+        endPoint: _deadline!.toIso8601String(),
+        startPoint: DateTime.now().toIso8601String(),
+        reward: int.tryParse(_rewardController.text) ?? 0,
+        customerId: customerId,
+        state: 0,
+      );
 
-    try {
-      setState(() => _isLoading = true);
-      final success = await Provider.of<TaskProvider>(context, listen: false)
-          .addTask(newTask, context, groupProvider.lobbyId); //lobbyId
+      try {
+        setState(() => _isLoading = true);
+        final success = await Provider.of<TaskProvider>(context, listen: false)
+            .addTask(task: newTask, lobbyId: groupProvider.lobbyId);
 
-      if (success && mounted) {
-        _resetForm();
-        Navigator.of(context).pop();
+        if (success && mounted) {
+          _resetForm();
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        if (mounted) _showError("Ошибка: ${e.toString()}");
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
       }
-    } catch (e) {
-      if (mounted) _showError("Ошибка: ${e.toString()}");
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -926,6 +1069,7 @@ class _TasksScreenState extends State<TasksScreen> {
     _rewardController.clear();
     setState(() {
       _deadline = null;
+      _selectedMemberId = null;
       _isFormVisible = false;
     });
   }
@@ -939,12 +1083,30 @@ class _TasksScreenState extends State<TasksScreen> {
 
   Future<void> _completeTask(TaskProvider taskProvider, int taskId) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
 
     try {
-      await taskProvider.completeTask(taskId, authProvider.user!);
+      final task = taskProvider.tasks.firstWhere((t) => t.id == taskId);
+
+      if (task.customerId != 0 &&
+          task.customerId != authProvider.user?.id &&
+          !authProvider.isAdmin) {
+        _showError("Вы не можете выполнить эту задачу");
+        return;
+      }
+
+
+      final newState = authProvider.isAdmin ? 2 : 1; // Админ сразу подтверждает (2), пользователь - отмечает выполнение (1)
+      final updatedTask = task.copyWith(state: newState);
+      await taskProvider.updateTask(updatedTask);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Задача завершена')),
+          SnackBar(content: Text(
+              authProvider.isAdmin
+                  ? 'Задача подтверждена'
+                  : 'Задача выполнена (ожидает подтверждения)'
+          )),
         );
       }
     } catch (e) {
@@ -1070,15 +1232,6 @@ class _TasksScreenState extends State<TasksScreen> {
           children: [
             ListTile(
               tileColor: Colors.white,
-              leading: const Icon(Icons.edit),
-              title: const Text('Изменить название группы'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showChangeGroupNameDialog(context);
-              },
-            ),
-            ListTile(
-              tileColor: Colors.white,
               leading: const Icon(Icons.people),
               title: const Text('Управление участниками'),
               onTap: () {
@@ -1101,93 +1254,105 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
-  void _showChangeGroupNameDialog(BuildContext context) {
-    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
-    final controller = TextEditingController(text: groupProvider.groupName);
 
+
+  Future<void> _showGroupMembersDialog(BuildContext context) async {
+    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    // Показываем индикатор загрузки
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text('Изменить название группы'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Новое название',
-            hintText: 'Введите новое название группы',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (controller.text.trim().length >= 3) {
-                groupProvider.updateGroupName(controller.text.trim());
-                Navigator.pop(ctx);
-                _showError('Название группы изменено');
-              } else {
-                _showError('Минимум 3 символа');
-              }
-            },
-            child: const Text('Сохранить'),
-          ),
-        ],
-      ),
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
+
+    try {
+      // 1. Обновляем данные группы с сервера
+      await groupProvider.refreshGroupData();
+
+      // 2. Получаем свежий список участников
+      final currentMembers = groupProvider.members;
+
+      // Закрываем индикатор загрузки
+      Navigator.of(context).pop();
+
+      // 3. Показываем диалог с участниками
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: Colors.white,
+          title: const Text('Участники группы'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: currentMembers.length,
+              itemBuilder: (context, index) {
+                final member = currentMembers[index];
+                return ListTile(
+                  leading: CircleAvatar(
+                    child: Text(member.name[0]),
+                  ),
+                  title: Text(member.name),
+                  subtitle: Text(member.role.isAdmin ? 'Администратор' : 'Участник'),
+                  trailing: groupProvider.isOwner &&
+                      !member.role.isAdmin &&
+                      member.id != authProvider.user?.id
+                      ? IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _removeMember(ctx, groupProvider, member),
+                  )
+                      : null,
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Закрыть'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      // Закрываем индикатор загрузки в случае ошибки
+      Navigator.of(context).pop();
+      _showError('Ошибка загрузки участников: ${e.toString()}');
+    }
   }
 
-  void _showGroupMembersDialog(BuildContext context) {
-    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+  Future<void> _removeMember(
+      BuildContext ctx, GroupProvider groupProvider, UserModel member) async {
+    try {
+      // Используем API клиент через GroupProvider
+      final apiClient = ApiClient();
+      apiClient.setAuthToken(Provider.of<AuthProvider>(context, listen: false).token!);
 
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text('Участники группы'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: groupProvider.members.length,
-            itemBuilder: (context, index) {
-              final member = groupProvider.members[index];
-              return ListTile(
-                title: Text(member.name),
-                trailing: groupProvider.isOwner && member.role != GroupRole.owner
-                    ? IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _removeMember(ctx, groupProvider, member),
-                )
-                    : null,
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Закрыть'),
-          ),
-        ],
-      ),
-    );
-  }
+      await apiClient.lobbyRemoveUser(groupProvider.lobbyId, member.id);
 
-  void _removeMember(
-      BuildContext ctx, GroupProvider groupProvider, GroupMember member) {
-    groupProvider.removeMember(member.name);
-    Navigator.pop(ctx);
-    _showError('${member.name} удален из группы');
+      // Обновляем локальное состояние через публичные методы
+      final updatedMembers = groupProvider.members.where((m) => m.id != member.id).toList();
+      // Нужно добавить метод setMembers в GroupProvider или обновить другим способом
+      // Например, через загрузку обновленных данных:
+      await groupProvider.loadGroupData();
 
-    if (member.name == groupProvider.currentUser?.name) {
-      groupProvider.leaveGroup();
+      Navigator.pop(ctx);
+      _showError('${member.name} удален из группы');
+
+      // Если удаляем себя - выходим из группы
+      if (member.id == groupProvider.currentUser?.id) {
+        await groupProvider.leaveGroup();
+      }
+    } catch (e) {
+      _showError('Ошибка удаления участника: ${e.toString()}');
     }
   }
 
   void _confirmGroupDisband(BuildContext context) {
+    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -1201,10 +1366,16 @@ class _TasksScreenState extends State<TasksScreen> {
             child: const Text('Отмена'),
           ),
           TextButton(
-            onPressed: () {
-              Provider.of<GroupProvider>(context, listen: false).disbandGroup();
-              Navigator.pop(ctx);
-              _showError('Группа распущена');
+            onPressed: () async {
+              try {
+                // Используем метод disbandGroup, который уже содержит всю логику
+                await groupProvider.disbandGroup();
+
+                Navigator.pop(ctx);
+                _showError('Группа распущена');
+              } catch (e) {
+                _showError('Ошибка распускания группы: ${e.toString()}');
+              }
             },
             child: const Text('Распустить', style: TextStyle(color: Colors.red)),
           ),
@@ -1215,56 +1386,39 @@ class _TasksScreenState extends State<TasksScreen> {
 
   void _showCreateGroupDialog() {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
-    final TextEditingController nameController = TextEditingController();
 
     if (groupProvider.isInGroup) {
-      _showError('Вы уже в группе');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Вы уже в группе')),
+      );
       return;
     }
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text('Создать группу'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(
-            labelText: 'Название группы',
-            hintText: 'Минимум 3 символа',
-          ),
-        ),
+        title: const Text("Создать новую группу"),
+        content: const Text("Нажмите 'Создать' для генерации группы с уникальным кодом"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена'),
+            child: const Text("Отмена"),
           ),
           TextButton(
             onPressed: () async {
-              final scaffold = ScaffoldMessenger.of(context);
+              Navigator.pop(ctx);
               try {
-                final name = nameController.text.trim();
-                if (name.isEmpty) {
-                  scaffold.showSnackBar(
-                    const SnackBar(content: Text('Введите название группы')),
-                  );
-                  return;
-                }
-
-                await groupProvider.createGroup(name);
-                if (mounted) {
-                  Navigator.pop(ctx);
-                  scaffold.showSnackBar(
-                    const SnackBar(content: Text('Группа создана!')),
-                  );
-                }
+                await groupProvider.createGroup();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Группа создана! Код: ${groupProvider.groupCode}')),
+                );
               } catch (e) {
-                scaffold.showSnackBar(
+                ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Ошибка: ${e.toString()}')),
                 );
               }
             },
-            child: const Text('Создать'),
+            child: const Text("Создать"),
           ),
         ],
       ),
@@ -1275,14 +1429,18 @@ class _TasksScreenState extends State<TasksScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
         title: const Text("Вступить в группу"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: _joinCodeController,
-              decoration: const InputDecoration(labelText: "Код группы"),
+              decoration: const InputDecoration(
+                labelText: "Код группы",
+                hintText: "Введите 6-значный код",
+              ),
+              maxLength: 6,
+              textCapitalization: TextCapitalization.characters,
             ),
           ],
         ),
@@ -1293,29 +1451,29 @@ class _TasksScreenState extends State<TasksScreen> {
           ),
           TextButton(
             onPressed: () async {
-              final scaffold = ScaffoldMessenger.of(context);
-              try {
-                final success = await Provider.of<GroupProvider>(context, listen: false)
-                    .joinGroup(_joinCodeController.text.trim());
+              final code = _joinCodeController.text.trim();
+              if (code.length != 6) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text("Код должен содержать 6 символов")),
+                );
+                return;
+              }
 
-                if (success && mounted) {
-                  Navigator.pop(context);
-                  scaffold.showSnackBar(
-                    const SnackBar(content: Text('Вы успешно вступили в группу!')),
-                  );
-                } else {
-                  scaffold.showSnackBar(
-                    const SnackBar(content: Text('Неверный код группы')),
-                  );
-                }
-              } catch (e) {
-                scaffold.showSnackBar(
-                  SnackBar(content: Text('Ошибка: ${e.toString()}')),
+              final success = await Provider.of<GroupProvider>(context, listen: false)
+                  .joinGroup(code);
+
+              if (success && mounted) {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Вы успешно присоединились!")),
+                );
+              } else {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text("Ошибка присоединения")),
                 );
               }
-              _joinCodeController.clear();
             },
-            child: const Text("Вступить"),
+            child: const Text("Присоединиться"),
           ),
         ],
       ),
@@ -1373,6 +1531,8 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 }
+
+
 class _DiagonalClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
