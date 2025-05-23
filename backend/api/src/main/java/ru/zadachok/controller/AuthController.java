@@ -22,6 +22,7 @@ import ru.zadachok.dto.CustomerDto;
 import ru.zadachok.exception.CustomerAlreadyExistsException;
 import ru.zadachok.service.CustomerService;
 
+import java.util.Collections;
 import java.util.Map;
 
 @RestController
@@ -158,11 +159,11 @@ public class AuthController {
                     content = @Content)
     })
     @PostMapping("/restore")
-    public ResponseEntity<String> restorePassword(@Valid @RequestBody RestorePasswordRequest request) {
+    public ResponseEntity<?> restorePassword(@Valid @RequestBody RestorePasswordRequest request) {
         if (customerService.restorePassword(request)) {
-            return ResponseEntity.ok("Код для восстановления отправлен на указанную почт.");
+            return ResponseEntity.ok(Collections.singletonMap("message", "Код для восстановления отправлен на указанную почту."));
         }
-        return ResponseEntity.status(400).body("Почта пользователя не совпадает с введенной");
+        return ResponseEntity.status(400).body(Collections.singletonMap("message", "Почта пользователя не совпадает с введенной"));
     }
 
     @Operation(summary = "Проверка кода восстановления и сброс пароля")
@@ -176,10 +177,10 @@ public class AuthController {
                     content = @Content)
     })
     @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         if (customerService.resetPassword(request)) {
-            return ResponseEntity.ok("Пароль успешно изменён");
+            return ResponseEntity.ok(Collections.singletonMap("message", "Пароль успешно изменён"));
         }
-        return ResponseEntity.status(400).body("Неверный или просроченный код");
+        return ResponseEntity.status(400).body(Collections.singletonMap("message", "Неверный или просроченный код"));
     }
 }
