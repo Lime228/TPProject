@@ -206,7 +206,7 @@ class _TasksScreenState extends State<TasksScreen> {
               ),
               const SizedBox(width: 12),
               Text(
-                settingsProvider.userName ?? authProvider.user?.name ?? 'Гость',
+                authProvider.user!.name ?? 'Гость',
                 style: theme.textTheme.titleLarge?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,

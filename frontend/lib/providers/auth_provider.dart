@@ -138,15 +138,13 @@ class AuthProvider with ChangeNotifier {
         taskProvider.setAuthProvider(this);
         taskProvider.setUser(_user!);
         taskProvider.setLobbyId(lobby.id);
-
-        shopProvider.setCurrentShop(lobby.shopId);
-        shopProvider.setAuthProvider(this);
-
         await taskProvider.refreshTasks();
+        shopProvider.setCurrentShop(lobby.shopId);
         await shopProvider.refreshProducts();
       } else {
         await groupProvider.resetGroup();
         taskProvider.resetFilters();
+        shopProvider.clearProducts();
       }
     } catch (e) {
       debugPrint('Ошибка при полном обновлении данных: $e');

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -7,6 +8,8 @@ import 'package:zadachok/providers/auth_provider.dart';
 import 'package:zadachok/providers/group_provider.dart';
 import 'package:zadachok/providers/settings_provider.dart';
 import 'package:zadachok/providers/shop_provider.dart';
+import 'dart:typed_data';
+
 
 
 class ShopScreenConstants {
@@ -153,6 +156,9 @@ class _ShopScreenState extends State<ShopScreen> {
     final settingsProvider = Provider.of<SettingsProvider>(context);
     final userName = settingsProvider.userName ?? authProvider.user?.name ?? 'Гость';
 
+    return Consumer<ShopProvider>(
+        builder: (context, shopProvider, child) {
+
     return Scaffold(
 
       backgroundColor: Colors.white,
@@ -168,6 +174,8 @@ class _ShopScreenState extends State<ShopScreen> {
         ],
       ),
       floatingActionButton: _buildFloatingActionButton(),
+    );
+  }
     );
   }
 
@@ -213,7 +221,7 @@ class _ShopScreenState extends State<ShopScreen> {
               ),
               const SizedBox(width: 12),
               Text(
-                settingsProvider.userName ?? authProvider.user?.name ?? 'Гость',
+                authProvider.user!.name ?? authProvider.user?.name ?? 'Гость',
                 style: theme.textTheme.titleLarge?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -253,20 +261,12 @@ class _ShopScreenState extends State<ShopScreen> {
     final groupProvider = Provider.of<GroupProvider>(context);
     final shopProvider = Provider.of<ShopProvider>(context);
 
-    if (!authProvider.isAuthorized) {
-      return _buildUnauthorizedView();
-    }
 
     if (!groupProvider.isInGroup) {
       return _buildNoGroupView();
     }
 
-    void _debugPrintProducts() {
-      debugPrint('Текущие товары: ${shopProvider.products.map((p) => p.toJson())}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Всего товаров: ${shopProvider.products.length}')),
-      );
-    }
+
 
 
     if (!shopProvider.isLoading && shopProvider.products.isEmpty) {
@@ -311,10 +311,6 @@ class _ShopScreenState extends State<ShopScreen> {
 
         return Column(
           children: [
-            ElevatedButton(
-              onPressed: _debugPrintProducts,
-              child: const Text('DEBUG: Показать товары'),
-            ),
             _buildSearchAndSortBar(),
             Expanded(
               child: RefreshIndicator(
@@ -378,6 +374,18 @@ class _ShopScreenState extends State<ShopScreen> {
         : null;
   }
 
+  Widget _buildProductImage(Uint8List photoBytes) {
+    if (photoBytes.isEmpty) {
+      return _buildPlaceholderImage();
+    }
+
+    return Image.memory(
+      photoBytes,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _buildPlaceholderImage(),
+    );
+  }
+
   Widget _buildProductCard(ProductModel product) {
     return SizedBox(
       width: 168,
@@ -404,12 +412,8 @@ class _ShopScreenState extends State<ShopScreen> {
               child: SizedBox(
                 width: 200,
                 height: 170,
-                child: product.photoBase64.isNotEmpty
-                    ? Image.file(
-                  File(product.photoBase64),
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _buildPlaceholderImage(),
-                )
+                child: product.photoBytes.isNotEmpty
+                    ? _buildProductImage(product.photoBytes)
                     : _buildPlaceholderImage(),
               ),
             ),
@@ -490,21 +494,7 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
-  Widget _buildUnauthorizedView() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.warning_amber_rounded, size: 64, color: Colors.orange),
-          SizedBox(height: 20),
-          Text('Доступ ограничен', style: TextStyle(fontSize: 24)),
-          SizedBox(height: 10),
-          Text('Для работы с магазином необходимо авторизоваться',
-              textAlign: TextAlign.center),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildNoGroupView() {
     return Center(
@@ -565,18 +555,17 @@ class _ShopScreenState extends State<ShopScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
         title: Text(product.name),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (product.photoBase64.isNotEmpty)
+              if (product.photoBytes.isNotEmpty)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    product.photoBase64,
+                  child: Image.memory(
+                    Uint8List.fromList(product.photoBytes),
                     height: 150,
                     width: double.infinity,
                     fit: BoxFit.cover,
@@ -588,15 +577,11 @@ class _ShopScreenState extends State<ShopScreen> {
               if (product.description.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    product.description,
-                    style: const TextStyle(fontSize: 16),
-                  ),
+                  child: Text(product.description),
                 ),
               Text(
-                'Цена: ${product.price.toStringAsFixed(0)} звёзд',
+                'Цена: ${product.price} звёзд',
                 style: const TextStyle(
-                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: Colors.amber,
                 ),
@@ -692,7 +677,6 @@ class _ShopScreenState extends State<ShopScreen> {
                         ),
                         const SizedBox(height: 16),
 
-
                         GestureDetector(
                           onTap: () async {
                             final image = await _picker.pickImage(source: ImageSource.gallery);
@@ -727,7 +711,6 @@ class _ShopScreenState extends State<ShopScreen> {
                         ),
                         const SizedBox(height: 16),
 
-
                         _buildRoundedTextField(
                           controller: _nameController,
                           labelText: 'Название товара',
@@ -740,14 +723,12 @@ class _ShopScreenState extends State<ShopScreen> {
                         ),
                         const SizedBox(height: 16),
 
-
                         _buildRoundedTextField(
                           controller: _descController,
                           labelText: 'Описание',
                           maxLines: 3,
                         ),
                         const SizedBox(height: 16),
-
 
                         _buildRoundedTextField(
                           controller: _priceController,
@@ -764,7 +745,6 @@ class _ShopScreenState extends State<ShopScreen> {
                           },
                         ),
                         const SizedBox(height: 16),
-
 
                         _buildRoundedTextField(
                           controller: _linkController,
@@ -827,64 +807,49 @@ class _ShopScreenState extends State<ShopScreen> {
     if (!_addProductFormKey.currentState!.validate()) return;
 
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     try {
+      Uint8List imageBytes = Uint8List(0); // Пустой массив по умолчанию
+
+      if (_tempProductImage != null) {
+        imageBytes = await _tempProductImage!.readAsBytes();
+      }
+
       final newProduct = ProductModel(
         name: _nameController.text,
         description: _descController.text,
-        photoBase64: _tempProductImage?.path ?? '',
+        photoBytes: imageBytes,
         isAvailable: true,
-        price : int.parse(_priceController.text),
-        link: _linkController.text,
+        price: int.parse(_priceController.text),
+        link: _linkController.text.isEmpty ? null : _linkController.text,
       );
-      debugPrint(newProduct.id.toString());
-      debugPrint(shopProvider.currentShopId.toString());
-      debugPrint(newProduct.name);
-      debugPrint(newProduct.description);
-      debugPrint(newProduct.photoBase64);
-      debugPrint(newProduct.isAvailable.toString());
-      debugPrint(newProduct.price.toString());
-      debugPrint(newProduct.link);
-      debugPrint(newProduct.customerId.toString());
 
       final success = await shopProvider.createProduct(newProduct);
 
-      if (!mounted) return;
-
-      if (success) {
-        setState(() {
-          _tempProductImage = null;
-        });
-
+      if (success && mounted) {
         Navigator.pop(dialogContext);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Товар успешно добавлен!')),
         );
-
-        await shopProvider.loadProducts();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка: ${shopProvider.error ?? "Неизвестная ошибка"}')),
-        );
+        await shopProvider.refreshProducts();
       }
     } catch (e) {
       debugPrint('Ошибка при добавлении товара: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка: ${e.toString()}')),
-        );
-      }
-    } finally {
-      _nameController.clear();
-      _descController.clear();
-      _priceController.clear();
-      _linkController.clear();
-      if (mounted) {
-        setState(() {
-          _tempProductImage = null;
-        });
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка: ${e.toString()}')),
+      );
+    }
+  }
+
+  void _clearForm() {
+    _nameController.clear();
+    _descController.clear();
+    _priceController.clear();
+    _linkController.clear();
+    if (mounted) {
+      setState(() {
+        _tempProductImage = null;
+      });
     }
   }
 
@@ -1187,7 +1152,9 @@ class _ShopScreenState extends State<ShopScreen> {
     final updatedProduct = product.copyWith(
       name: _nameController.text,
       description: _descController.text,
-      photoBase64: _tempProductImage?.path ?? product.photoBase64,
+      photoBytes: _tempProductImage != null
+          ? await _tempProductImage!.readAsBytes()
+          : product.photoBytes,
       price: int.parse(_priceController.text),
       link: _linkController.text,
     );

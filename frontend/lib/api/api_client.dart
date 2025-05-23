@@ -351,7 +351,6 @@ class ApiClient implements ApiInterface {
     debugPrint(shop.id.toString());
     debugPrint(product.name);
     debugPrint(product.description);
-    debugPrint(product.photoBase64);
     debugPrint(product.isAvailable.toString());
     debugPrint(product.price.toString());
     debugPrint(product.link);

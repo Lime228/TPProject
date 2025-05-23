@@ -1,8 +1,11 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 class ProductModel {
   final int id;
   final String name;
   final String description;
-  final String photoBase64;
+  final Uint8List photoBytes; // Изменяем на Uint8List
   final bool isAvailable;
   final int price;
   final String? link;
@@ -12,11 +15,11 @@ class ProductModel {
     this.id = 0,
     required this.name,
     required this.description,
-    required this.photoBase64,
+    required this.photoBytes, // Обязательное поле
     required this.isAvailable,
     required this.price,
-    this.customerId,
     this.link,
+    this.customerId,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -24,30 +27,30 @@ class ProductModel {
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
       description: json['description'] ?? '',
-      photoBase64: json['photo'] ?? '',
+      photoBytes: base64Decode(json['photo'] ?? ''),
       isAvailable: json['state'] ?? false,
-      price: json['price'] ?? '',
-      customerId: json['customerId'],
+      price: json['price'] ?? 0,
       link: json['link'],
+      customerId: json['customerId'],
     );
   }
 
   Map<String, dynamic> toJson() => {
-    if (id != 0) 'id': id,
+    'id': id,
     'name': name,
     'description': description,
-    'photo': photoBase64,
+    'photo': base64Encode(photoBytes),
     'state': isAvailable,
     'price': price,
-    if (customerId != null) 'customerId': customerId,
     if (link != null) 'link': link,
+    if (customerId != null) 'customerId': customerId,
   };
 
   ProductModel copyWith({
     int? id,
     String? name,
     String? description,
-    String? photoBase64,
+    Uint8List? photoBytes,
     bool? isAvailable,
     int? price,
     int? customerId,
@@ -57,7 +60,7 @@ class ProductModel {
       id: id ?? this.id,
       name: name ?? this.name,
       description: description ?? this.description,
-      photoBase64: photoBase64 ?? this.photoBase64,
+      photoBytes: photoBytes ?? this.photoBytes,
       isAvailable: isAvailable ?? this.isAvailable,
       price: price ?? this.price,
       customerId: customerId ?? this.customerId,
