@@ -1,6 +1,5 @@
 package ru.zadachok.service;
 
-import lombok.Getter;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -47,7 +46,7 @@ public class PasswordResetCodeService {
     }
 
     // Внутренний класс для хранения кода и времени создания
-    @Getter
+
     private record ResetCode(String code, long creationTime) {
 
     }
