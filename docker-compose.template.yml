@@ -39,6 +39,8 @@ services:
       jwt.secret: aSBoYXZlIG5vIGtleSBidXQgaSBtdXN0IGVuY3J5cHQAAAAAAAAAAAAABBAABAAABBABABABBBBAAAAAAAAAAAAAAAAAAAAAAA==
       jwt.expiration: 3600
       ai.service.url: poka-chto-net
+      email: aeshechepokazat
+      email.password: secretiki
     volumes:
       - ./backend/config:/app/config:ro
     depends_on:

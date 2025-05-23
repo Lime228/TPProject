@@ -12,7 +12,7 @@ import java.util.Properties;
 public class JavaMailConfig {
     @Value("${email}")
     String email;
-    @Value("${email_password}")
+    @Value("${email.password}")
     String password;
 
     @Bean
