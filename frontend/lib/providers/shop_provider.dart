@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zadachok/models/shop/shop_model.dart';
+import 'package:zadachok/models/user/user_model.dart';
 import '../api/api_client.dart';
 import '../api/api_interface.dart';
 import '../models/shop/product/product_model.dart';
@@ -135,6 +136,33 @@ class ShopProvider with ChangeNotifier {
       return false;
     }
   }
+
+  Future<bool> buyProduct(int productId) async {
+    if (_currentShopId == null || authProvider?.user == null || authProvider?.user?.role == UserRole.admin) {
+      _error = 'Магазин не выбран или пользователь неавторизован/администратор';
+      return false;
+    }
+
+    try {
+      final apiClient = _getAuthenticatedClient();
+      final success = await apiClient.buyShopItem(
+        ShopModel(id: _currentShopId!, productIds: []),
+        productId,
+        authProvider!.user!.id,
+      );
+
+      if (success) {
+        await refreshProducts();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      _error = 'Ошибка покупки товара: ${e.toString()}';
+      debugPrint(_error!);
+      return false;
+    }
+  }
+
 
   Future<bool> removeProduct(int productId) async {
     try {

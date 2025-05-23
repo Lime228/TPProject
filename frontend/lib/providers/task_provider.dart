@@ -7,6 +7,7 @@ import 'package:zadachok/providers/group_provider.dart';
 import '../api/api_client.dart';
 import '../models/lobby/lobby_model.dart';
 import '../models/user/user_model.dart';
+import '../models/wallet/wallet_model.dart';
 import 'auth_provider.dart';
 
 class TaskProvider with ChangeNotifier {
@@ -195,11 +196,18 @@ class TaskProvider with ChangeNotifier {
   Future<void> completeTask(int taskId, UserModel user) async {
     try {
       final task = _tasks.firstWhere((t) => t.id == taskId);
+
+      // Обновляем endPoint на текущее время
+      final updatedTask = task.copyWith(
+        state: 1, // выполнено, но не подтверждено
+        endPoint: DateTime.now().toUtc().toIso8601String(),
+      );
+
       final apiClient = _getAuthenticatedClient();
-      final updatedTask = await apiClient.completeTask(task, user);
+      final serverResponse = await apiClient.completeTask(updatedTask, user);
 
       _tasks.removeWhere((t) => t.id == taskId);
-      _tasks.add(updatedTask.copyWith(state: 1)); // 1 - выполнено, но не подтверждено
+      _tasks.add(serverResponse);
 
       notifyListeners();
     } catch (e) {
@@ -215,8 +223,27 @@ class TaskProvider with ChangeNotifier {
       final index = _tasks.indexWhere((t) => t.id == taskId);
       if (index != -1) {
         final apiClient = _getAuthenticatedClient();
-        final confirmedTask = await apiClient.completeTask(task, _user!);
-        _tasks[index] = confirmedTask; // 2 - выполнено и подтверждено
+        TaskModel confirmedTask;
+
+        if (task.state == 1) {
+          // Если задача уже выполнена (state=1), просто подтверждаем
+          confirmedTask = await apiClient.completeTask(
+            task.copyWith(state: 2), // подтверждено
+            _user!,
+          );
+        } else {
+          // Если задача новая (state=0), сразу подтверждаем и обновляем время
+          confirmedTask = await apiClient.completeTask(
+            task.copyWith(
+              state: 2, // подтверждено
+              endPoint: DateTime.now().toUtc().toIso8601String(),
+              customerId: _user!.id, // назначаем на админа
+            ),
+            _user!,
+          );
+        }
+
+        _tasks[index] = confirmedTask;
         notifyListeners();
       }
     } catch (e) {
@@ -225,6 +252,8 @@ class TaskProvider with ChangeNotifier {
       rethrow;
     }
   }
+
+
 
   Future<void> updateTask(TaskModel task) async {
     try {

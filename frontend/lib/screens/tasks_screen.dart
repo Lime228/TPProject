@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/cupertino.dart' as ui;
 import 'package:flutter/material.dart';
@@ -241,6 +243,11 @@ class _TasksScreenState extends State<TasksScreen> {
     final settingsProvider = Provider.of<SettingsProvider>(context);
     final theme = Theme.of(context);
 
+    final avatarBytes = settingsProvider.avatarBytes ??
+        (authProvider.user?.photoBytes?.isNotEmpty ?? false
+            ? authProvider.user!.photoBytes
+            : null);
+
     return Container(
       width: double.infinity,
       height: TaskScreenConstants.headerHeight,
@@ -268,13 +275,17 @@ class _TasksScreenState extends State<TasksScreen> {
               CircleAvatar(
                 radius: TaskScreenConstants.avatarRadius,
                 backgroundColor: Colors.white,
-                backgroundImage: settingsProvider.avatarImage != null
-                    ? FileImage(settingsProvider.avatarImage!)
+                backgroundImage: authProvider.user?.photoBytes != null &&
+                    authProvider.user!.photoBytes!.isNotEmpty
+                    ? MemoryImage(base64Decode(authProvider.user!.photoBytes!))
                     : null,
-                child: settingsProvider.avatarImage == null
-                    ? Icon(Icons.person,
-                    color: theme.colorScheme.secondary,
-                    size: TaskScreenConstants.avatarRadius)
+                child: authProvider.user?.photoBytes == null ||
+                    authProvider.user!.photoBytes!.isEmpty
+                    ? Icon(
+                  Icons.person,
+                  color: theme.colorScheme.secondary,
+                  size: TaskScreenConstants.avatarRadius,
+                )
                     : null,
               ),
               const SizedBox(width: 12),
@@ -708,6 +719,24 @@ class _TasksScreenState extends State<TasksScreen> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
+                              if (task.customerId != 0)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.8),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      'Для: ${groupProvider.members.firstWhere((m) => m.id == task.customerId, orElse: () => UserModel(id: 0, name: 'Неизвестно', email: '', login: '')).name}',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: TaskScreenConstants.primaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         ),
@@ -746,25 +775,6 @@ class _TasksScreenState extends State<TasksScreen> {
                                   ],
                                 ),
                               ),
-                              if (task.customerId != 0)
-                                Positioned(
-                                    bottom: 8,
-                                    left: 8,
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.8),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        'Для: ${groupProvider.members.firstWhere((m) => m.id == task.customerId, orElse: () => UserModel(id: 0, name: 'Неизвестно', email: '', login: '')).name}',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: TaskScreenConstants.primaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                ),
                               if (task.reward > 0)
                                 Positioned(
                                   top: 0,

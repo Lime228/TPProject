@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:zadachok/api/api_interface.dart';
 import 'package:zadachok/models/user/user_model.dart';

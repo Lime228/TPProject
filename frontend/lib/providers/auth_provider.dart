@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -105,6 +106,25 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       debugPrint('Ошибка при обновлении данных пользователя: $e');
       rethrow;
+    }
+  }
+
+  Future<void> updateUserPhoto(String base64Image) async {
+    if (_user != null) {
+      try {
+        final updatedUser = _user!.copyWith(photoBytes: base64Image);
+        await apiClient.updateUserProfile(updatedUser);
+
+        // Обновляем локально
+        _user = updatedUser;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user', jsonEncode(_user!.toJson()));
+
+        notifyListeners();
+      } catch (e) {
+        debugPrint('Ошибка обновления фото: $e');
+        rethrow;
+      }
     }
   }
 

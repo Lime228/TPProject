@@ -7,6 +7,8 @@ import '../models/shop/product/product_model.dart';
 import '../models/task/task_model.dart';
 import '../models/wallet/wallet_model.dart';
 import 'api_interface.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
 class MockApiClient implements ApiInterface {
   const MockApiClient();
@@ -187,6 +189,7 @@ class MockApiClient implements ApiInterface {
       name: request.name,
       email: request.email,
       birthdayDate: request.birthdayDate,
+      photoBytes: request.photoBytes,
       login: request.login,
       role: request.role,
     );

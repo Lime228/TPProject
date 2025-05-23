@@ -10,6 +10,8 @@ import 'package:zadachok/screens/password_recovery_screen.dart';
 import 'package:zadachok/screens/register_screen.dart';
 import '../api/mock_api_client.dart';
 import '../providers/group_provider.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
 class LoginScreen extends StatefulWidget {
   final ApiInterface apiClient;
@@ -70,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
           password: _passwordController.text,
           name: '',
           email: '',
-          birthdayDate: DateTime(1980, 1, 1),
+          birthdayDate: DateTime.timestamp(),
         ),
       );
 

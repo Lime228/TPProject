@@ -42,10 +42,10 @@ class UpperNavigation extends StatelessWidget {
               CircleAvatar(
                 radius: 30,
                 backgroundColor: Colors.white,
-                backgroundImage: settingsProvider.avatarImage != null
-                    ? FileImage(settingsProvider.avatarImage!)
+                backgroundImage: settingsProvider.avatarBytes != null
+                    ? FileImage(settingsProvider.avatarBytes! as File)
                     : null,
-                child: settingsProvider.avatarImage == null
+                child: settingsProvider.avatarBytes == null
                     ? const Icon(Icons.person, color: Colors.deepPurple)
                     : null,
               ),

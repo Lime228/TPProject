@@ -10,7 +10,7 @@ import 'package:zadachok/providers/settings_provider.dart';
 import 'package:zadachok/providers/shop_provider.dart';
 import 'dart:typed_data';
 
-
+import '../models/wallet/wallet_model.dart';
 
 class ShopScreenConstants {
   static const double headerHeight = 100.0;
@@ -27,8 +27,6 @@ class ShopScreenConstants {
   static const double productCardWidth = 137.0;
   static const double productCardHeight = 137.0;
   static const double productInfoHeight = 4.0;
-
-
 }
 
 class ShopScreen extends StatefulWidget {
@@ -109,6 +107,7 @@ class _ShopScreenState extends State<ShopScreen> {
   void _searchProducts(String query) {
     Provider.of<ShopProvider>(context, listen: false).search(query);
   }
+
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
@@ -154,105 +153,150 @@ class _ShopScreenState extends State<ShopScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final settingsProvider = Provider.of<SettingsProvider>(context);
-    final userName = settingsProvider.userName ?? authProvider.user?.name ?? 'Гость';
+    final userName =
+        settingsProvider.userName ?? authProvider.user?.name ?? 'Гость';
 
     return Consumer<ShopProvider>(
-        builder: (context, shopProvider, child) {
+      builder: (context, shopProvider, child) {
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: Column(
+            children: [
+              _buildHeader(userName, settingsProvider.avatarBytes),
 
-    return Scaffold(
-
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-
-          _buildHeader(userName, settingsProvider.avatarImage),
-
-
-          Expanded(
-            child: _buildMainContent(),
+              Expanded(child: _buildMainContent()),
+            ],
           ),
-        ],
-      ),
-      floatingActionButton: _buildFloatingActionButton(),
-    );
-  }
+          floatingActionButton: _buildFloatingActionButton(),
+        );
+      },
     );
   }
 
-  Widget _buildHeader(String userName, File? avatarImage) {
+  Widget _buildHeader(String userName, String? avatarBytes) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final settingsProvider = Provider.of<SettingsProvider>(context, listen: true);
+    final settingsProvider = Provider.of<SettingsProvider>(context);
     final theme = Theme.of(context);
 
 
-    return Container(
-      width: double.infinity,
-      height: ShopScreenConstants.headerHeight,
-      decoration: BoxDecoration(
-        color: ShopScreenConstants.primaryColor,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(40),
-          bottomRight: Radius.circular(40),
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 12,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      padding: ShopScreenConstants.headerPadding,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: ShopScreenConstants.avatarRadius,
-                backgroundColor: Colors.white,
-                backgroundImage: avatarImage != null
-                    ? FileImage(avatarImage)
-                    : null,
-                child: avatarImage == null
-                    ? const Icon(Icons.person, color: Colors.deepPurple, size: 25)
-                    : null,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                authProvider.user!.name ?? authProvider.user?.name ?? 'Гость',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+    final avatar = settingsProvider.avatarBytes ??
+        (authProvider.user?.photoBytes?.isNotEmpty ?? false
+            ? authProvider.user!.photoBytes
+            : null);
+
+
+    return FutureBuilder<WalletModel>(
+      future:
+          authProvider.isAuthorized
+              ? authProvider.apiClient.updateWallet(
+                WalletModel(
+                  customerId: authProvider.user!.id,
+                  lobbyId: Provider.of<GroupProvider>(context).lobbyId,
+                  balance: 0,
                 ),
+              )
+              : null,
+      builder: (context, snapshot) {
+        final balance = snapshot.hasData ? snapshot.data!.balance : 0;
+
+        return Container(
+          width: double.infinity,
+          height: ShopScreenConstants.headerHeight,
+          decoration: BoxDecoration(
+            color: ShopScreenConstants.primaryColor,
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(40),
+              bottomRight: Radius.circular(40),
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 12,
+                offset: Offset(0, 6),
               ),
             ],
           ),
-          if (Provider.of<GroupProvider>(context).isOwner)
-            Theme(
-              data: Theme.of(context).copyWith(
-                popupMenuTheme: const PopupMenuThemeData(
-                  color: Colors.white,
-                  textStyle: TextStyle(color: Colors.black),
-                ),
-                splashColor: Colors.transparent,
-                highlightColor: Colors.transparent,
-                hoverColor: Colors.transparent,
-              ),
-              child: PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: Colors.white, size: 25),
-                onSelected: (value) => _handleMenuSelection(value),
-                itemBuilder: (BuildContext context) => [
-                  const PopupMenuItem<String>(
-                    value: 'edit',
-                    child: Text('Управление товарами'),
+          padding: ShopScreenConstants.headerPadding,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: ShopScreenConstants.avatarRadius,
+                    backgroundColor: Colors.white,
+                    backgroundImage: authProvider.user?.photoBytes != null &&
+                        authProvider.user!.photoBytes!.isNotEmpty
+                        ? MemoryImage(base64Decode(authProvider.user!.photoBytes!))
+                        : null,
+                    child: authProvider.user?.photoBytes == null ||
+                        authProvider.user!.photoBytes!.isEmpty
+                        ? Icon(
+                      Icons.person,
+                      color: theme.colorScheme.secondary,
+                      size: ShopScreenConstants.avatarRadius,
+                    )
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    authProvider.user?.name ?? 'Гость',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
-            )
-        ],
-      ),
+              Row(
+                children: [
+                  if (authProvider.isAuthorized)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.star, color: Colors.amber, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            balance.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (Provider.of<GroupProvider>(context).isOwner)
+                    PopupMenuButton<String>(
+                      icon: const Icon(
+                        Icons.more_vert,
+                        color: Colors.white,
+                        size: 25,
+                      ),
+                      onSelected: _handleMenuSelection,
+                      itemBuilder:
+                          (context) => [
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Text('Управление товарами'),
+                            ),
+                          ],
+                    ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -261,27 +305,24 @@ class _ShopScreenState extends State<ShopScreen> {
     final groupProvider = Provider.of<GroupProvider>(context);
     final shopProvider = Provider.of<ShopProvider>(context);
 
-
     if (!groupProvider.isInGroup) {
       return _buildNoGroupView();
     }
-
-
-
 
     if (!shopProvider.isLoading && shopProvider.products.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.shopping_bag_outlined, size: 64, color: Colors.grey),
+            const Icon(
+              Icons.shopping_bag_outlined,
+              size: 64,
+              color: Colors.grey,
+            ),
             const SizedBox(height: 16),
             const Text('Нет товаров', style: TextStyle(fontSize: 18)),
             const SizedBox(height: 8),
-            TextButton(
-              onPressed: _loadData,
-              child: const Text('Обновить'),
-            ),
+            TextButton(onPressed: _loadData, child: const Text('Обновить')),
           ],
         ),
       );
@@ -315,42 +356,48 @@ class _ShopScreenState extends State<ShopScreen> {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _loadData,
-                child: shopProvider.products.isEmpty
-                    ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.search_off, size: 64, color: Colors.grey),
-                      const SizedBox(height: 16),
-                      const Text('Ничего не найдено'),
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: _resetFilters,
-                        child: const Text('Сбросить фильтры'),
-                      ),
-                    ],
-                  ),
-                )
-                    : GridView.builder(
-                  padding: const EdgeInsets.only(top: 8),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.8,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                  ),
-                  itemCount: shopProvider.products.length,
-                  itemBuilder: (context, index) {
-                    final product = shopProvider.products[index];
-                    return GestureDetector(
-                      onTap: () => _showProductDetails(product),
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: _buildProductCard(product),
-                      ),
-                    );
-                  },
-                ),
+                child:
+                    shopProvider.products.isEmpty
+                        ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.search_off,
+                                size: 64,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(height: 16),
+                              const Text('Ничего не найдено'),
+                              const SizedBox(height: 8),
+                              TextButton(
+                                onPressed: _resetFilters,
+                                child: const Text('Сбросить фильтры'),
+                              ),
+                            ],
+                          ),
+                        )
+                        : GridView.builder(
+                          padding: const EdgeInsets.only(top: 8),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 0.8,
+                                crossAxisSpacing: 8,
+                                mainAxisSpacing: 8,
+                              ),
+                          itemCount: shopProvider.products.length,
+                          itemBuilder: (context, index) {
+                            final product = shopProvider.products[index];
+                            return GestureDetector(
+                              onTap: () => _showProductDetails(product),
+                              child: Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: _buildProductCard(product),
+                              ),
+                            );
+                          },
+                        ),
               ),
             ),
           ],
@@ -367,10 +414,10 @@ class _ShopScreenState extends State<ShopScreen> {
     if (!auth.isAuthorized || !group.isInGroup) return null;
     return groupProvider.isOwner
         ? FloatingActionButton(
-      backgroundColor: ShopScreenConstants.primaryColor,
-      onPressed: () => _showAddProductDialog(),
-      child: const Icon(Icons.add, color: Colors.white,),
-    )
+          backgroundColor: ShopScreenConstants.primaryColor,
+          onPressed: () => _showAddProductDialog(),
+          child: const Icon(Icons.add, color: Colors.white),
+        )
         : null;
   }
 
@@ -387,88 +434,119 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Widget _buildProductCard(ProductModel product) {
-    return SizedBox(
-      width: 168,
-      height: 145,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Card(
-            elevation: ShopScreenConstants.productCardElevation,
-            margin: EdgeInsets.zero,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-                bottomRight: Radius.circular(12),
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-              child: SizedBox(
-                width: 200,
-                height: 170,
-                child: product.photoBytes.isNotEmpty
-                    ? _buildProductImage(product.photoBytes)
-                    : _buildPlaceholderImage(),
-              ),
-            ),
-          ),
-          Container(
-            width: 145,
-            height: 50,
-            decoration: BoxDecoration(
-              color: ShopScreenConstants.primaryColor,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(12),
-                bottomRight: Radius.circular(12),
-              ),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 6,
-                  offset: Offset(0, 3),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Column(
+    final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    return GestureDetector(
+      onTap: () {
+        if (authProvider.isAdmin) {
+          _showProductDetails(product);
+        } else {
+          _showPurchaseDialog(product, shopProvider);
+        }
+      },
+      child: SizedBox(
+        width: 168,
+        height: 145,
+        child: Stack(
+          children: [
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  product.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
+                Card(
+                  elevation: ShopScreenConstants.productCardElevation,
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      topRight: Radius.circular(12),
+                      bottomRight: Radius.circular(12),
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      topRight: Radius.circular(12),
+                    ),
+                    child: SizedBox(
+                      width: 200,
+                      height: 170,
+                      child:
+                          product.photoBytes.isNotEmpty
+                              ? _buildProductImage(product.photoBytes)
+                              : _buildPlaceholderImage(),
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 0),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  width: 145,
+                  height: 50,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(10),
+                    color: ShopScreenConstants.primaryColor,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(12),
+                      bottomRight: Radius.circular(12),
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 6,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.star, size: 14, color: Colors.amber),
-                      const SizedBox(width: 2),
                       Text(
-                        product.price.toStringAsFixed(
-                            product.price.truncateToDouble() == product.price ? 0 : 1),
+                        product.name,
                         style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black87,
+                          color: Colors.white,
+                          fontSize: 15,
                           fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 0),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              size: 14,
+                              color: Colors.amber,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              product.price.toStringAsFixed(
+                                product.price.truncateToDouble() ==
+                                        product.price
+                                    ? 0
+                                    : 1,
+                              ),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.black87,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -476,14 +554,57 @@ class _ShopScreenState extends State<ShopScreen> {
                 ),
               ],
             ),
-          ),
-        ],
+            if (!product.isAvailable)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black54,
+                  child: const Center(
+                    child: Icon(
+                      Icons.check_circle,
+                      color: Colors.white,
+                      size: 50,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 
-
-
+  void _showPurchaseDialog(ProductModel product, ShopProvider shopProvider) {
+    showDialog(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: Text('Купить ${product.name}?'),
+            content: Text('Цена: ${product.price} звёзд'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Отмена'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  final success = await shopProvider.buyProduct(product.id);
+                  if (success && mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Товар успешно куплен!')),
+                    );
+                  } else if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Ошибка: ${shopProvider.error}')),
+                    );
+                  }
+                },
+                child: const Text('Купить'),
+              ),
+            ],
+          ),
+    );
+  }
 
   Widget _buildPlaceholderImage() {
     return Container(
@@ -493,8 +614,6 @@ class _ShopScreenState extends State<ShopScreen> {
       ),
     );
   }
-
-
 
   Widget _buildNoGroupView() {
     return Center(
@@ -521,12 +640,18 @@ class _ShopScreenState extends State<ShopScreen> {
               onPressed: _showCreateGroupDialog,
               style: ElevatedButton.styleFrom(
                 backgroundColor: ShopScreenConstants.secondaryColor,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Создать группу', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                'Создать группу',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
             const SizedBox(height: 15),
             TextButton(
@@ -542,7 +667,6 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
-
   void _handleMenuSelection(String value) {
     switch (value) {
       case 'edit':
@@ -554,62 +678,63 @@ class _ShopScreenState extends State<ShopScreen> {
   void _showProductDetails(ProductModel product) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(product.name),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (product.photoBytes.isNotEmpty)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.memory(
-                    Uint8List.fromList(product.photoBytes),
-                    height: 150,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                )
-              else
-                _buildPlaceholderImage(),
-              const SizedBox(height: 16),
-              if (product.description.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(product.description),
-                ),
-              Text(
-                'Цена: ${product.price} звёзд',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.amber,
-                ),
-              ),
-              if (product.link?.isNotEmpty ?? false)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: InkWell(
-                    onTap: () => _openProductLink(product.link!),
-                    child: Text(
-                      product.link!,
-                      style: const TextStyle(
-                        color: Colors.blue,
-                        decoration: TextDecoration.underline,
+      builder:
+          (ctx) => AlertDialog(
+            title: Text(product.name),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (product.photoBytes.isNotEmpty)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.memory(
+                        Uint8List.fromList(product.photoBytes),
+                        height: 150,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
                       ),
+                    )
+                  else
+                    _buildPlaceholderImage(),
+                  const SizedBox(height: 16),
+                  if (product.description.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(product.description),
+                    ),
+                  Text(
+                    'Цена: ${product.price} звёзд',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber,
                     ),
                   ),
-                ),
+                  if (product.link?.isNotEmpty ?? false)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: InkWell(
+                        onTap: () => _openProductLink(product.link!),
+                        child: Text(
+                          product.link!,
+                          style: const TextStyle(
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Закрыть'),
+              ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Закрыть'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -622,144 +747,162 @@ class _ShopScreenState extends State<ShopScreen> {
 
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) {
-          return Dialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16.0),
-            ),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.8,
-              ),
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Form(
-                    key: _addProductFormKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      builder:
+          (ctx) => StatefulBuilder(
+            builder: (context, setState) {
+              return Dialog(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.0),
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.8,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Form(
+                        key: _addProductFormKey,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            TextButton(
-                              onPressed: () {
-                                _tempProductImage = null;
-                                Navigator.pop(ctx);
-                              },
-                              child: const Text(
-                                'Отмена',
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            ),
-                            const Text(
-                              'Новый товар',
-                              style: TextStyle(
-                                color: ShopScreenConstants.primaryColor,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () => _handleAddProduct(ctx),
-                              child: const Text(
-                                'Готово',
-                                style: TextStyle(
-                                  color: ShopScreenConstants.primaryColor,
-                                  fontWeight: FontWeight.bold,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                TextButton(
+                                  onPressed: () {
+                                    _tempProductImage = null;
+                                    Navigator.pop(ctx);
+                                  },
+                                  child: const Text(
+                                    'Отмена',
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
                                 ),
+                                const Text(
+                                  'Новый товар',
+                                  style: TextStyle(
+                                    color: ShopScreenConstants.primaryColor,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () => _handleAddProduct(ctx),
+                                  child: const Text(
+                                    'Готово',
+                                    style: TextStyle(
+                                      color: ShopScreenConstants.primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+
+                            GestureDetector(
+                              onTap: () async {
+                                final image = await _picker.pickImage(
+                                  source: ImageSource.gallery,
+                                );
+                                if (image != null) {
+                                  setState(
+                                    () => _tempProductImage = File(image.path),
+                                  );
+                                }
+                              },
+                              child: Container(
+                                height: 150,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child:
+                                    _tempProductImage != null
+                                        ? ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          child: Image.file(
+                                            _tempProductImage!,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        )
+                                        : Center(
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.add_a_photo,
+                                                size: 40,
+                                                color: Colors.grey,
+                                              ),
+                                              Text(
+                                                'Добавить фото',
+                                                style: TextStyle(
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                               ),
                             ),
+                            const SizedBox(height: 16),
+
+                            _buildRoundedTextField(
+                              controller: _nameController,
+                              labelText: 'Название товара',
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Введите название';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            _buildRoundedTextField(
+                              controller: _descController,
+                              labelText: 'Описание',
+                              maxLines: 3,
+                            ),
+                            const SizedBox(height: 16),
+
+                            _buildRoundedTextField(
+                              controller: _priceController,
+                              labelText: 'Цена в звёздах',
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Введите цену';
+                                }
+                                if (double.tryParse(value) == null) {
+                                  return 'Введите число';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            _buildRoundedTextField(
+                              controller: _linkController,
+                              labelText: 'Ссылка на товар',
+                            ),
+                            const SizedBox(height: 16),
                           ],
                         ),
-                        const SizedBox(height: 16),
-
-                        GestureDetector(
-                          onTap: () async {
-                            final image = await _picker.pickImage(source: ImageSource.gallery);
-                            if (image != null) {
-                              setState(() => _tempProductImage = File(image.path));
-                            }
-                          },
-                          child: Container(
-                            height: 150,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: _tempProductImage != null
-                                ? ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.file(
-                                _tempProductImage!,
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                                : Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.add_a_photo, size: 40, color: Colors.grey),
-                                  Text('Добавить фото', style: TextStyle(color: Colors.grey)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        _buildRoundedTextField(
-                          controller: _nameController,
-                          labelText: 'Название товара',
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Введите название';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        _buildRoundedTextField(
-                          controller: _descController,
-                          labelText: 'Описание',
-                          maxLines: 3,
-                        ),
-                        const SizedBox(height: 16),
-
-                        _buildRoundedTextField(
-                          controller: _priceController,
-                          labelText: 'Цена в звёздах',
-                          keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Введите цену';
-                            }
-                            if (double.tryParse(value) == null) {
-                              return 'Введите число';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        _buildRoundedTextField(
-                          controller: _linkController,
-                          labelText: 'Ссылка на товар',
-                        ),
-                        const SizedBox(height: 16),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-          );
-        },
-      ),
+              );
+            },
+          ),
     );
   }
 
@@ -835,9 +978,9 @@ class _ShopScreenState extends State<ShopScreen> {
       }
     } catch (e) {
       debugPrint('Ошибка при добавлении товара: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Ошибка: ${e.toString()}')));
     }
   }
 
@@ -853,7 +996,6 @@ class _ShopScreenState extends State<ShopScreen> {
     }
   }
 
-
   void _showProductListForEdit() {
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
@@ -866,84 +1008,116 @@ class _ShopScreenState extends State<ShopScreen> {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text('Управление товарами'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: shopProvider.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : shopProvider.products.isEmpty
-              ? const Center(child: Text('Нет товаров для отображения'))
-              : ListView.builder(
-            shrinkWrap: true,
-            itemCount: shopProvider.products.length,
-            itemBuilder: (context, index) {
-              final product = shopProvider.products[index];
-              return ListTile(
-                title: Text(product.name),
-                subtitle: Text('${product.price} звёзд'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        _showEditProductDialog(product);
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: const Text('Подтверждение'),
-                            content: const Text('Удалить этот товар?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, false),
-                                child: const Text('Отмена'),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, true),
-                                child: const Text('Удалить', style: TextStyle(color: Colors.red)),
-                              ),
-                            ],
-                          ),
-                        );
+      builder:
+          (ctx) => AlertDialog(
+            backgroundColor: Colors.white,
+            title: const Text('Управление товарами'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child:
+                  shopProvider.isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : shopProvider.products.isEmpty
+                      ? const Center(child: Text('Нет товаров для отображения'))
+                      : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: shopProvider.products.length,
+                        itemBuilder: (context, index) {
+                          final product = shopProvider.products[index];
+                          return ListTile(
+                            title: Text(product.name),
+                            subtitle: Text('${product.price} звёзд'),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () {
+                                    Navigator.pop(ctx);
+                                    _showEditProductDialog(product);
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder:
+                                          (ctx) => AlertDialog(
+                                            title: const Text('Подтверждение'),
+                                            content: const Text(
+                                              'Удалить этот товар?',
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed:
+                                                    () => Navigator.pop(
+                                                      ctx,
+                                                      false,
+                                                    ),
+                                                child: const Text('Отмена'),
+                                              ),
+                                              TextButton(
+                                                onPressed:
+                                                    () => Navigator.pop(
+                                                      ctx,
+                                                      true,
+                                                    ),
+                                                child: const Text(
+                                                  'Удалить',
+                                                  style: TextStyle(
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                    );
 
-                        if (confirm == true) {
-                          final success = await shopProvider.removeProduct(product.id);
-                          if (mounted) {
-                            if (success) {
-                              await shopProvider.refreshProducts();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Товар удалён')),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Ошибка: ${shopProvider.error}')),
-                              );
-                            }
-                          }
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              );
-            },
+                                    if (confirm == true) {
+                                      final success = await shopProvider
+                                          .removeProduct(product.id);
+                                      if (mounted) {
+                                        if (success) {
+                                          await shopProvider.refreshProducts();
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Товар удалён'),
+                                            ),
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Ошибка: ${shopProvider.error}',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Закрыть'),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Закрыть'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -965,31 +1139,34 @@ class _ShopScreenState extends State<ShopScreen> {
               color: Colors.white,
               offset: const Offset(0, 30),
               onSelected: (value) => _sortProducts(option: value),
-              itemBuilder: (context) => [
-                const PopupMenuItem<String>(
-                  value: 'price_asc',
-                  child: Text('По возрастанию цены'),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'price_desc',
-                  child: Text('По убыванию цены'),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'name',
-                  child: Text('По названию'),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'all',
-                  child: Text('Обычная сортировка'),
-                ),
-              ],
+              itemBuilder:
+                  (context) => [
+                    const PopupMenuItem<String>(
+                      value: 'price_asc',
+                      child: Text('По возрастанию цены'),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'price_desc',
+                      child: Text('По убыванию цены'),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'name',
+                      child: Text('По названию'),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'all',
+                      child: Text('Обычная сортировка'),
+                    ),
+                  ],
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: const [
                   Icon(Icons.sort, color: Colors.white, size: 16),
                   SizedBox(width: 5),
-                  Text('Сортировка',
-                      style: TextStyle(color: Colors.white, fontSize: 12)),
+                  Text(
+                    'Сортировка',
+                    style: TextStyle(color: Colors.white, fontSize: 12),
+                  ),
                 ],
               ),
             ),
@@ -1005,15 +1182,19 @@ class _ShopScreenState extends State<ShopScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(
                 children: [
-                  const Icon(Icons.search,
-                      color: ShopScreenConstants.primaryColor, size: 16),
+                  const Icon(
+                    Icons.search,
+                    color: ShopScreenConstants.primaryColor,
+                    size: 16,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: TextField(
                       controller: _searchController,
                       style: const TextStyle(
-                          fontSize: 12,
-                          color: ShopScreenConstants.primaryColor),
+                        fontSize: 12,
+                        color: ShopScreenConstants.primaryColor,
+                      ),
                       decoration: const InputDecoration(
                         hintText: 'Поиск товаров...',
                         border: InputBorder.none,
@@ -1023,8 +1204,7 @@ class _ShopScreenState extends State<ShopScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.close,
-                        color: Colors.grey[600], size: 16),
+                    icon: Icon(Icons.close, color: Colors.grey[600], size: 16),
                     onPressed: _resetFilters,
                   ),
                 ],
@@ -1045,106 +1225,133 @@ class _ShopScreenState extends State<ShopScreen> {
 
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            backgroundColor: Colors.white,
-            title: const Text('Редактировать товар'),
-            content: SingleChildScrollView(
-              child: Form(
-                key: _editProductFormKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    GestureDetector(
-                      onTap: () async {
-                        final image = await _picker.pickImage(source: ImageSource.gallery);
-                        if (image != null) {
-                          setState(() => _tempProductImage = File(image.path));
-                        }
-                      },
-                      child: Container(
-                        height: 150,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: _tempProductImage != null
-                            ? ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            _tempProductImage!,
-                            fit: BoxFit.cover,
+      builder:
+          (ctx) => StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                backgroundColor: Colors.white,
+                title: const Text('Редактировать товар'),
+                content: SingleChildScrollView(
+                  child: Form(
+                    key: _editProductFormKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          onTap: () async {
+                            final image = await _picker.pickImage(
+                              source: ImageSource.gallery,
+                            );
+                            if (image != null) {
+                              setState(
+                                () => _tempProductImage = File(image.path),
+                              );
+                            }
+                          },
+                          child: Container(
+                            height: 150,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child:
+                                _tempProductImage != null
+                                    ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Image.file(
+                                        _tempProductImage!,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                                    : Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.add_a_photo,
+                                            size: 40,
+                                            color: Colors.grey,
+                                          ),
+                                          Text(
+                                            'Добавить фото',
+                                            style: TextStyle(
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                           ),
-                        )
-                            : Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.add_a_photo, size: 40, color: Colors.grey),
-                              Text('Добавить фото', style: TextStyle(color: Colors.grey)),
-                            ],
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Название товара',
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Введите название';
+                            }
+                            return null;
+                          },
+                        ),
+                        TextFormField(
+                          controller: _descController,
+                          decoration: const InputDecoration(
+                            labelText: 'Описание',
                           ),
                         ),
-                      ),
+                        TextFormField(
+                          controller: _priceController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Цена в звёздах',
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Введите цену';
+                            }
+                            if (double.tryParse(value) == null) {
+                              return 'Введите число';
+                            }
+                            return null;
+                          },
+                        ),
+                        TextFormField(
+                          controller: _linkController,
+                          decoration: const InputDecoration(
+                            labelText: 'Ссылка на товар',
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Название товара'),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Введите название';
-                        }
-                        return null;
-                      },
-                    ),
-                    TextFormField(
-                      controller: _descController,
-                      decoration: const InputDecoration(labelText: 'Описание'),
-                    ),
-                    TextFormField(
-                      controller: _priceController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Цена в звёздах'),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Введите цену';
-                        }
-                        if (double.tryParse(value) == null) {
-                          return 'Введите число';
-                        }
-                        return null;
-                      },
-                    ),
-                    TextFormField(
-                      controller: _linkController,
-                      decoration: const InputDecoration(labelText: 'Ссылка на товар'),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  _tempProductImage = null;
-                  Navigator.pop(ctx);
-                },
-                child: const Text('Отмена'),
-              ),
-              TextButton(
-                onPressed: () => _handleEditProduct(ctx, product),
-                child: const Text('Сохранить'),
-              ),
-            ],
-          );
-        },
-      ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      _tempProductImage = null;
+                      Navigator.pop(ctx);
+                    },
+                    child: const Text('Отмена'),
+                  ),
+                  TextButton(
+                    onPressed: () => _handleEditProduct(ctx, product),
+                    child: const Text('Сохранить'),
+                  ),
+                ],
+              );
+            },
+          ),
     );
   }
 
-  Future<void> _handleEditProduct(BuildContext dialogContext, ProductModel product) async {
+  Future<void> _handleEditProduct(
+    BuildContext dialogContext,
+    ProductModel product,
+  ) async {
     if (!_editProductFormKey.currentState!.validate()) return;
 
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
@@ -1152,9 +1359,10 @@ class _ShopScreenState extends State<ShopScreen> {
     final updatedProduct = product.copyWith(
       name: _nameController.text,
       description: _descController.text,
-      photoBytes: _tempProductImage != null
-          ? await _tempProductImage!.readAsBytes()
-          : product.photoBytes,
+      photoBytes:
+          _tempProductImage != null
+              ? await _tempProductImage!.readAsBytes()
+              : product.photoBytes,
       price: int.parse(_priceController.text),
       link: _linkController.text,
     );
@@ -1176,9 +1384,9 @@ class _ShopScreenState extends State<ShopScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка: ${e.toString()}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Ошибка: ${e.toString()}')));
       }
     }
   }
@@ -1186,55 +1394,62 @@ class _ShopScreenState extends State<ShopScreen> {
   void _showJoinGroupDialog() {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Вступить в группу"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _joinCodeController,
-              decoration: const InputDecoration(
-                labelText: "Код группы",
-                hintText: "Введите 6-значный код",
-              ),
-              maxLength: 6,
-              textCapitalization: TextCapitalization.characters,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text("Вступить в группу"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _joinCodeController,
+                  decoration: const InputDecoration(
+                    labelText: "Код группы",
+                    hintText: "Введите 6-значный код",
+                  ),
+                  maxLength: 6,
+                  textCapitalization: TextCapitalization.characters,
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Отмена"),
-          ),
-          TextButton(
-            onPressed: () async {
-              final code = _joinCodeController.text.trim();
-              if (code.length != 6) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text("Код должен содержать 6 символов")),
-                );
-                return;
-              }
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Отмена"),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final code = _joinCodeController.text.trim();
+                  if (code.length != 6) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(
+                        content: Text("Код должен содержать 6 символов"),
+                      ),
+                    );
+                    return;
+                  }
 
-              final success = await Provider.of<GroupProvider>(context, listen: false)
-                  .joinGroup(code);
+                  final success = await Provider.of<GroupProvider>(
+                    context,
+                    listen: false,
+                  ).joinGroup(code);
 
-              if (success && mounted) {
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Вы успешно присоединились!")),
-                );
-              } else {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text("Ошибка присоединения")),
-                );
-              }
-            },
-            child: const Text("Присоединиться"),
+                  if (success && mounted) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Вы успешно присоединились!"),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text("Ошибка присоединения")),
+                    );
+                  }
+                },
+                child: const Text("Присоединиться"),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -1242,58 +1457,51 @@ class _ShopScreenState extends State<ShopScreen> {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
 
     if (groupProvider.isInGroup) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Вы уже в группе')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Вы уже в группе')));
       return;
     }
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Создать новую группу"),
-        content: const Text("Нажмите 'Создать' для генерации группы с уникальным кодом"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Отмена"),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text("Создать новую группу"),
+            content: const Text(
+              "Нажмите 'Создать' для генерации группы с уникальным кодом",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Отмена"),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  try {
+                    await groupProvider.createGroup();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Группа создана! Код: ${groupProvider.groupCode}',
+                        ),
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Ошибка: ${e.toString()}')),
+                    );
+                  }
+                },
+                child: const Text("Создать"),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              try {
-                await groupProvider.createGroup();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Группа создана! Код: ${groupProvider.groupCode}')),
-                );
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Ошибка: ${e.toString()}')),
-                );
-              }
-            },
-            child: const Text("Создать"),
-          ),
-        ],
-      ),
     );
   }
 
-  Future<void> _pickImage() async {
-    try {
-      final image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image != null) {
-        setState(() => _avatarImage = File(image.path));
-        _uploadAvatarToServer(_avatarImage!);
-      }
-    } catch (e) {
-      debugPrint('Ошибка при выборе изображения: $e');
-    }
-  }
-
   void _openProductLink(String url) async {
-
-
     // TODO: Реализовать открытие ссылки
   }
 }

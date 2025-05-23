@@ -1,33 +1,26 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsProvider with ChangeNotifier {
-  bool notificationsEnabled = true;
+  bool _notificationsEnabled = true;
 
   String? _userName;
   // String? _userSurname;
   String? _birthDate;
-  File? _avatarImage;
+  String? _avatarBytes; // Храним как base64 строку
 
+  String? get avatarBytes => _avatarBytes;
   String? get userName => _userName;
-  // String? get userSurname => _userSurname;
   String? get birthDate => _birthDate;
-  File? get avatarImage => _avatarImage;
+
+  bool get notificationsEnabled => _notificationsEnabled;
 
   Future<void> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-
-    notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
-    _userName = prefs.getString('userName');
-    // _userSurname = prefs.getString('userSurname');
-    _birthDate = prefs.getString('birthDate');
-    final avatarPath = prefs.getString('avatarPath');
-    if (avatarPath != null && File(avatarPath).existsSync()) {
-      _avatarImage = File(avatarPath);
-    }
-
+    _avatarBytes = prefs.getString('avatar');
     notifyListeners();
   }
 
@@ -39,7 +32,7 @@ class SettingsProvider with ChangeNotifier {
 
     switch (key) {
       case 'notificationsEnabled':
-        notificationsEnabled = value as bool;
+        _notificationsEnabled = value as bool;
         break;
       case 'userName':
         _userName = value as String;
@@ -51,7 +44,7 @@ class SettingsProvider with ChangeNotifier {
         _birthDate = value as String;
         break;
       case 'avatarPath':
-        _avatarImage = File(value as String);
+        _avatarBytes = File(value as String) as String?;
         break;
     }
 
@@ -60,34 +53,14 @@ class SettingsProvider with ChangeNotifier {
 
   Future<void> updateUserData({
     String? name,
-    // String? surname,
     String? birthDate,
-    File? avatar,
+    String? avatarBytes, // Принимаем base64 строку
   }) async {
     final prefs = await SharedPreferences.getInstance();
 
-    if (name != null) {
-      _userName = name;
-      await prefs.setString('userName', name);
-    }
-
-    // if (surname != null) {
-    //   _userSurname = surname;
-    //   await prefs.setString('userSurname', surname);
-    // }
-
-    if (birthDate != null) {
-      _birthDate = birthDate;
-      await prefs.setString('birthDate', birthDate);
-    }
-
-    if (avatar != null) {
-      _avatarImage = avatar;
-      await prefs.setString('avatarPath', avatar.path);
-
-      // Сохраняем изображение в base64 для возможной отправки на сервер
-      final bytes = await avatar.readAsBytes();
-      await prefs.setString('avatarBase64', base64Encode(bytes));
+    if (avatarBytes != null) {
+      _avatarBytes = avatarBytes;
+      await prefs.setString('avatar', avatarBytes);
     }
 
     notifyListeners();

@@ -1,5 +1,4 @@
-class WalletModel{
-  @override
+class WalletModel {
   int id;
   int customerId;
   int lobbyId;
@@ -12,18 +11,21 @@ class WalletModel{
     required this.balance,
   });
 
-
-
-  //ну тут пока ничего не могу гарантировать, но точно не так будет
-  WalletModel fromJson(Map<String, dynamic> json) {
+  factory WalletModel.fromJson(Map<String, dynamic> json) {
     return WalletModel(
-      id: json['Wallet_ID'] ?? 0,
-      customerId: json['Customer_ID'],
-      lobbyId: json['Lobby_ID'],
-      balance: json['Balance'] is int
-          ? (json['Balance'] as int).toDouble()
-          : json['Balance'].toDouble(),
+      id: json['id'] ?? 0,
+      customerId: json['customerId'],
+      lobbyId: json['lobbyId'],
+      balance: json['balance'] is int ? json['balance'] : json['balance'].toInt(),
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'customerId': customerId,
+      'lobbyId': lobbyId,
+      'balance': balance,
+    };
+  }
 }

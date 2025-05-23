@@ -40,7 +40,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _birthDateController = TextEditingController(text: 'ДД.ММ.ГГГГ');
   final _picker = ImagePicker();
 
-  File? _avatarImage;
+  String? _avatarBytes;
 
   final Map<String, int> _taskStatistics = {
     'Пн': 3, 'Вт': 7, 'Ср': 3,
@@ -72,20 +72,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (authProvider.isAuthorized && authProvider.user != null) {
       final user = authProvider.user!;
       _nameController.text = user.name;
-      // _surnameController.text = user.name.split(' ').length > 1 ? user.name.split(' ')[1] : '';
 
       if (user.birthdayDate != null) {
         _birthDateController.text =
         '${user.birthdayDate!.day}.${user.birthdayDate!.month}.${user.birthdayDate!.year}';
       }
 
-      // Загрузка аватарки из настроек
+      // Загрузка аватарки
       await settingsProvider.loadSettings();
-      if (settingsProvider.avatarImage != null) {
-        setState(() => _avatarImage = settingsProvider.avatarImage);
+      if (settingsProvider.avatarBytes != null) {
+        setState(() => _avatarBytes = settingsProvider.avatarBytes);
+      } else if (user.photoBytes != null && user.photoBytes!.isNotEmpty) {
+        setState(() => _avatarBytes = user.photoBytes);
+        await settingsProvider.updateUserData(avatarBytes: user.photoBytes!);
       }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -185,13 +188,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildAvatar() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+
+    final avatar = settingsProvider.avatarBytes ??
+        (authProvider.user?.photoBytes?.isNotEmpty ?? false
+            ? authProvider.user!.photoBytes
+            : null);
+
     return Stack(
       children: [
         CircleAvatar(
           radius: AVATAR_RADIUS,
           backgroundColor: Colors.grey,
-          backgroundImage: _avatarImage != null ? FileImage(_avatarImage!) : null,
-          child: _avatarImage == null
+          backgroundImage: authProvider.user?.photoBytes != null &&
+              authProvider.user!.photoBytes!.isNotEmpty
+              ? MemoryImage(base64Decode(authProvider.user!.photoBytes!))
+              : null,
+          child: authProvider.user?.photoBytes == null ||
+              authProvider.user!.photoBytes!.isEmpty
               ? const Icon(Icons.person, size: 50, color: Colors.white)
               : null,
         ),
@@ -443,6 +458,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildStatisticsBlock(AuthProvider authProvider, bool isAuthorized) {
+    // Создаем статистику на основе задач пользователя
+    Map<String, int> _buildTaskStatistics() {
+      final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+      final stats = <String, int>{
+        'Пн': 0, 'Вт': 0, 'Ср': 0, 'Чт': 0, 'Пт': 0, 'Сб': 0, 'Вс': 0,
+      };
+
+      if (authProvider.user == null) return stats;
+
+      // Фильтруем задачи: только выполненные (статус 2) и принадлежащие текущему пользователю
+      final completedTasks = taskProvider.tasks.where((task) =>
+      task.state == 2 && task.customerId == authProvider.user!.id
+      ).toList();
+
+      // Группируем по дням недели
+      for (final task in completedTasks) {
+        final endPoint = task.deadline;
+        if (endPoint != null) {
+          final dayName = _getDayOfWeekName(endPoint.weekday);
+          stats[dayName] = (stats[dayName] ?? 0) + 1;
+        }
+      }
+
+      return stats;
+    }
+
     return _buildBlock(
       key: _blockKeys['статистика']!,
       title: 'Статистика',
@@ -458,33 +499,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
             height: 220,
             child: Padding(
               padding: const EdgeInsets.only(bottom: 20),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: _taskStatistics.entries.map((entry) {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Container(
-                        width: 28,
-                        height: entry.value * 18.0,
-                        decoration: BoxDecoration(
-                          color: TITLE_COLOR,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        entry.key,
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      Text(
-                        entry.value.toString(),
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ],
+              child: Consumer<TaskProvider>(
+                builder: (context, taskProvider, child) {
+                  final stats = _buildTaskStatistics();
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: stats.entries.map((entry) {
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Container(
+                            width: 28,
+                            height: entry.value * 18.0,
+                            decoration: BoxDecoration(
+                              color: TITLE_COLOR,
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            entry.key,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          Text(
+                            entry.value.toString(),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      );
+                    }).toList(),
                   );
-                }).toList(),
+                },
               ),
             ),
           ),
@@ -493,6 +539,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
           : _unauthorizedMessage('Упс(\nСтатистику можно просматривать\nтолько авторизовавшись'),
     );
   }
+
+// Вспомогательная функция для получения названия дня недели
+  String _getDayOfWeekName(int weekday) {
+    switch (weekday) {
+      case 1: return 'Пн';
+      case 2: return 'Вт';
+      case 3: return 'Ср';
+      case 4: return 'Чт';
+      case 5: return 'Пт';
+      case 6: return 'Сб';
+      case 7: return 'Вс';
+      default: return '';
+    }
+  }
+
 
   Widget _buildNotificationsBlock(SettingsProvider settings) {
     return _buildBlock(
@@ -725,26 +786,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
-        final file = File(image.path);
-        setState(() => _avatarImage = file);
+        final bytes = await image.readAsBytes();
+        final base64Image = base64Encode(bytes);
+
+        setState(() => _avatarBytes = base64Image);
 
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
 
         // Сохраняем локально
-        await settingsProvider.updateUserData(avatar: file);
+        await settingsProvider.updateUserData(avatarBytes: base64Image);
 
         // Обновляем на сервере
         if (authProvider.isAuthorized && authProvider.user != null) {
-          final updatedUser = authProvider.user!.copyWith(photoBase64: base64Encode(await file.readAsBytes()));
-          await authProvider.setAuthData(
-            user: updatedUser,
-            token: authProvider.token!,
-          );
-
-          final apiClient = ApiClient();
-          apiClient.setAuthToken(authProvider.token!);
-          await apiClient.updateUserProfile(updatedUser);
+          await authProvider.updateUserPhoto(base64Image);
         }
       }
     } catch (e) {
@@ -754,6 +809,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     }
   }
+
 
 
   Future<void> _updateUserProfile(UserModel updatedUser) async {

@@ -13,6 +13,7 @@ import 'api_endpoints.dart';
 class ApiClient implements ApiInterface {
   final http.Client _client;
   String? _authToken;
+  static const Duration requestTimeout = Duration(minutes: 1);
 
   ApiClient({http.Client? client}) : _client = client ?? http.Client();
 
@@ -53,7 +54,7 @@ class ApiClient implements ApiInterface {
         registerUrl,
         headers: _getHeaders(includeAuth: false),
         body: json.encode(request.toRegisterRequest()),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       if (registerResponse.statusCode != 201) {
         throw Exception('Ошибка регистрации: ${registerResponse.statusCode}');
@@ -68,7 +69,7 @@ class ApiClient implements ApiInterface {
       final userResponse = await _client.get(
         userDataUrl,
         headers: _getHeaders(),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
 
       return _handleUserResponse(userResponse);
@@ -87,7 +88,7 @@ class ApiClient implements ApiInterface {
         loginUrl,
         headers: _getHeaders(includeAuth: false),
         body: json.encode(request.toLoginRequest()),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       if (loginResponse.statusCode != 200) {
         throw Exception('Ошибка авторизации: ${loginResponse.statusCode}');
@@ -109,7 +110,7 @@ class ApiClient implements ApiInterface {
         userDataUrl,
         headers: {'Content-Type': 'application/json',
           'Authorization': 'Bearer $_authToken'},
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       if (userResponse.statusCode != 200) {
         throw Exception('Ошибка получения данных пользователя: ${userResponse.statusCode}');
@@ -133,7 +134,7 @@ class ApiClient implements ApiInterface {
         restoreUrl,
         headers: _getHeaders(includeAuth: false),
         body: json.encode(request.toRestoreRequest()),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       final responseBody = json.decode(response.body);
 
@@ -157,7 +158,7 @@ class ApiClient implements ApiInterface {
         resetUrl,
         headers: _getHeaders(includeAuth: false),
         body: json.encode(request.toResetRequest(code, password)),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       final responseBody = json.decode(response.body);
 
@@ -191,7 +192,7 @@ class ApiClient implements ApiInterface {
         url,
         headers: _getHeaders(),
         body: json.encode(user.toUpdateRequest()),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       return _handleUserResponse(response);
     } on http.ClientException catch (e) {
@@ -212,7 +213,7 @@ class ApiClient implements ApiInterface {
         getURL,
         headers: {'Content-Type': 'application/json',
           'Authorization': 'Bearer $_authToken'},
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       if (userResponse.statusCode != 200) {
         throw Exception('Ошибка получения данных пользователя: ${userResponse.statusCode}');
@@ -236,7 +237,7 @@ class ApiClient implements ApiInterface {
         userDataUrl,
         headers: {'Content-Type': 'application/json',
           'Authorization': 'Bearer $_authToken'},
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       if (userResponse.statusCode != 200) {
         throw Exception('Ошибка получения данных пользователя: ${userResponse.statusCode}');
@@ -264,7 +265,7 @@ class ApiClient implements ApiInterface {
           'email': email,
           'login': login,
         }),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       _handlePasswordRecoveryResponse(response);
     } on http.ClientException catch (e) {
@@ -286,7 +287,7 @@ class ApiClient implements ApiInterface {
         url,
         headers: _getHeaders(),
         body: json.encode(lobby.addRequest(userId)),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       return _handleLobbyResponse(response);
     } on http.ClientException catch (e) {
@@ -313,7 +314,7 @@ class ApiClient implements ApiInterface {
         url,
         headers: headers,
         body: json.encode(lobbyModel.createRequest(creatorID)),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       return _handleLobbyResponse(response);
     } on http.ClientException catch (e) {
@@ -332,7 +333,7 @@ class ApiClient implements ApiInterface {
         url,
         headers: _getHeaders(),
         body: json.encode(lobby.removeRequest(userId)),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       return _handleLobbyResponse(response);
     } on http.ClientException catch (e) {
@@ -349,7 +350,7 @@ class ApiClient implements ApiInterface {
       final response = await _client.get(
         url,
         headers: _getHeaders(),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       return _handleLobbyResponse(response);
     } on http.ClientException catch (e) {
@@ -366,7 +367,7 @@ class ApiClient implements ApiInterface {
       final response = await _client.get(
         url,
         headers: _getHeaders(),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       return _handleLobbyResponse(response);
     } on http.ClientException catch (e) {
@@ -385,7 +386,7 @@ class ApiClient implements ApiInterface {
         url,
         headers: _getHeaders(),
         body: json.encode(lobby.deleteRequest()),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       return _handleLobbyResponse(response);
     } on http.ClientException catch (e) {
@@ -414,7 +415,7 @@ class ApiClient implements ApiInterface {
         url,
         headers: _getHeaders(),
         body: json.encode(shop.createProductRequest(product)),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       return _handleProductResponse(response);
     } catch (e) {
@@ -430,7 +431,7 @@ class ApiClient implements ApiInterface {
         url,
         headers: _getHeaders(),
         body: json.encode(shop.buyProductRequest(customerId, productId)),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       if (response.statusCode == 200) {
         final responseBody = response.body;
@@ -486,7 +487,7 @@ class ApiClient implements ApiInterface {
         url,
         headers: _getHeaders(),
         body: json.encode({'productid': itemId}),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception('Ошибка при удалении товара: ${response.statusCode}');
@@ -515,7 +516,7 @@ class ApiClient implements ApiInterface {
         url,
         headers: _getHeaders(),
         body: json.encode(shop.updateProductRequest(product)),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       return _handleProductResponse(response);
     } on http.ClientException catch (e) {
@@ -540,7 +541,7 @@ class ApiClient implements ApiInterface {
         url,
         headers: _getHeaders(),
         body: json.encode(task.deleteRequest()),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception('Ошибка при удалении задачи: ${response.statusCode}');
@@ -565,7 +566,7 @@ class ApiClient implements ApiInterface {
         url,
         headers: _getHeaders(),
         body: json.encode(task.updateRequest()),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       return _handleTaskResponse(response);
     } on http.ClientException catch (e) {
@@ -589,7 +590,7 @@ class ApiClient implements ApiInterface {
         final taskResponse = await _client.get(
           taskUrl,
           headers: _getHeaders(),
-        ).timeout(const Duration(seconds: 10));
+        ).timeout(requestTimeout);
 
         if (taskResponse.statusCode == 200) {
           final taskJson = json.decode(taskResponse.body);
@@ -625,7 +626,7 @@ class ApiClient implements ApiInterface {
         url,
         headers: _getHeaders(),
         body: json.encode(request.createRequest(lId)),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       return _handleTaskResponse(response);
     } on http.ClientException catch (e) {
@@ -652,7 +653,7 @@ class ApiClient implements ApiInterface {
         url,
         headers: _getHeaders(),
         body: json.encode(updatedTask.updateRequest()),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(requestTimeout);
 
       return _handleTaskResponse(response);
     } on http.ClientException catch (e) {
@@ -662,6 +663,38 @@ class ApiClient implements ApiInterface {
     }
   }
 
+  @override
+  Future<WalletModel> updateWallet(WalletModel request) async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/api/shop/wallet/${request.customerId}');
+    try {
+      final response = await _client.get(
+        url,
+        headers: _getHeaders(),
+      ).timeout(requestTimeout);
+
+      return _handleWalletResponse(response);
+    } on http.ClientException catch (e) {
+      throw Exception('Connection error: ${e.message}');
+    } on Exception catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  WalletModel _handleWalletResponse(http.Response response) {
+    switch (response.statusCode) {
+      case 200:
+      case 201:
+        return WalletModel.fromJson(json.decode(response.body));
+      case 400:
+        throw Exception('Invalid request: ${response.body}');
+      case 401:
+        throw Exception('Authorization error');
+      case 500:
+        throw Exception('Server error: ${response.body}');
+      default:
+        throw Exception('Error: ${response.statusCode}');
+    }
+  }
 
   @override
   void dispose() {
@@ -752,9 +785,4 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override
-  Future<WalletModel> updateWallet(WalletModel request) {
-    // TODO: implement updateWallet
-    throw UnimplementedError();
-  }
 }

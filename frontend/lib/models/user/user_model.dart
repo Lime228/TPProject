@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 class UserModel {
   final int id;
   final String name;
@@ -5,7 +8,7 @@ class UserModel {
   final DateTime? birthdayDate;
   final String login;
   final UserRole role;
-  final String photoBase64;
+  final String? photoBytes;
   String? password; // Только для регистрации/авторизации
 
   UserModel({
@@ -14,7 +17,7 @@ class UserModel {
     required this.email,
     this.birthdayDate,
     required this.login,
-    this.photoBase64 = '',
+    this.photoBytes, // Делаем параметр nullable
     this.password,
     this.role = UserRole.user,
   });
@@ -25,7 +28,7 @@ class UserModel {
     String? email,
     DateTime? birthdayDate,
     String? login,
-    String? photoBase64,
+    String? photoBytes,
     String? password,
     UserRole? role,
   }) {
@@ -35,7 +38,7 @@ class UserModel {
       email: email ?? this.email,
       birthdayDate: birthdayDate ?? this.birthdayDate,
       login: login ?? this.login,
-      photoBase64: photoBase64 ?? this.photoBase64,
+      photoBytes: photoBytes ?? this.photoBytes,
       password: password ?? this.password,
       role: role ?? this.role,
     );
@@ -50,7 +53,7 @@ class UserModel {
       birthdayDate: json['birthdayDate'] != null
           ? DateTime.tryParse(json['birthdayDate'])
           : null,
-      photoBase64: json['customer_photo'] ?? '',
+      photoBytes: json['customer_photo']?.toString(),
       name: json['customer_name'] ?? '',
     );
   }
@@ -61,7 +64,7 @@ class UserModel {
     'email': email,
     'name': name,
     if (birthdayDate != null) 'birthdayDate': birthdayDate!.toIso8601String(),
-    if (photoBase64.isNotEmpty) 'photo': photoBase64,
+    if (photoBytes!.isNotEmpty) 'photo': photoBytes,
   };
 
   Map<String, dynamic> toLoginRequest() => {
@@ -85,7 +88,7 @@ class UserModel {
     'name': name,
     'email': email,
     if (birthdayDate != null) 'birthdayDate': birthdayDate!.toIso8601String(),
-    if (photoBase64.isNotEmpty) 'photo': photoBase64,
+    if (photoBytes!.isNotEmpty) 'photo': photoBytes,
     'admin': role == UserRole.admin ? "ADMIN" : "USER",
   };
 
@@ -95,23 +98,30 @@ class UserModel {
     'email': email,
     if (birthdayDate != null) 'birthdayDate': birthdayDate!.toIso8601String(),
     'login': login,
+    'photo': photoBytes,
     'admin': role == UserRole.admin ? "ADMIN" : "USER",
-    'photo': photoBase64,
   };
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] ?? 0,
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
-      birthdayDate: json['birthdayDate'] != null
-          ? DateTime.tryParse(json['birthdayDate'])
-          : null,
+      id: json['customer_ID'] ?? 0,
       login: json['login'] ?? '',
-      photoBase64: json['photo'] ?? '',
+      email: json['customer_email'] ?? '',
       role: UserRole.fromString(json['admin']?.toString() ?? ''),
+      birthdayDate: json['birthday_date'] != null
+          ? DateTime.tryParse(json['birthday_date'])
+          : null,
+      photoBytes: json['customer_photo'] ?? '', // Может быть null
+      name: json['customer_name'] ?? '',
     );
   }
+
+  Uint8List? get photoBytesUint8List {
+    return photoBytes != null && photoBytes!.isNotEmpty
+        ? base64Decode(photoBytes!)
+        : null;
+  }
+
 
   @override
   bool operator ==(Object other) => identical(this, other) ||
