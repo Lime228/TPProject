@@ -2,7 +2,9 @@
 package ru.zadachok.service;
 
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,6 +31,8 @@ public class CustomerService {
     private final LobbyRepository lobbyRepository;
     private final LobbyService lobbyService;
     private final WalletRepository walletRepository;
+    private final PasswordResetCodeService passwordResetCodeService;
+    private final EmailSenderService emailSenderService;
 
     public CustomerDto register(RegisterRequest request) {
         if (request.getLogin().matches(".*[а-яА-ЯёЁ].*")) {
@@ -170,5 +174,36 @@ public class CustomerService {
                 .customer_name(customer.getCustomer_name())
                 .customer_photo(customer.getCustomer_photo())
                 .build();
+    }
+
+    public boolean restorePassword(@Valid RestorePasswordRequest request) {
+        Customer customer = customerRepository.findByLogin(request.getLogin())
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+
+        if (!customer.getCustomer_email().equalsIgnoreCase(request.getEmail())) {
+            return false;
+        }
+
+        String generatedCode = passwordResetCodeService.generateAndStoreCode(request.getLogin());
+        emailSenderService.sendCode(customer.getCustomer_email(), generatedCode);
+        return true;
+    }
+
+    public boolean resetPassword(@Valid ResetPasswordRequest request) {
+        if (!passwordResetCodeService.isValidCode(request.getLogin(), request.getCode())) {
+            return false;
+        }
+
+        // Находим пользователя
+        Customer customer = customerRepository.findByLogin(request.getLogin())
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+
+        // Обновляем пароль
+        customer.setPassword(request.getNewPassword());
+        customerRepository.save(customer);
+
+        // Удаляем использованный код
+        passwordResetCodeService.removeCode(request.getLogin());
+        return true;
     }
 }

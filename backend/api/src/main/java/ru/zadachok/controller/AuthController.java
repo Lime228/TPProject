@@ -26,6 +26,7 @@ import ru.zadachok.dto.CustomerDto;
 import ru.zadachok.exception.CustomerAlreadyExistsException;
 import ru.zadachok.service.CustomerService;
 import ru.zadachok.service.EmailSenderService;
+import ru.zadachok.service.PasswordResetCodeService;
 
 import java.util.Map;
 
@@ -39,6 +40,7 @@ public class AuthController {
     private final JwtTokenProvider tokenProvider;
     private final CustomerRepository customerRepository;
     private final EmailSenderService emailSenderService;
+
 
     @Operation(summary = "Регистрация нового пользователя")
     @ApiResponses(value = {
@@ -165,68 +167,27 @@ public class AuthController {
     })
     @PostMapping("/restore")
     public ResponseEntity<String> restorePassword(@Valid @RequestBody RestorePasswordRequest request) {
-        // 1. Найти пользователя по login
-        Customer customer = customerRepository.findByLogin(request.getLogin())
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
-
-        // 2. Проверить, что email совпадает
-        if (!customer.getCustomer_email().equalsIgnoreCase(request.getEmail())) {
-            return ResponseEntity.badRequest().body("Email не совпадает с логином");
+        if (customerService.restorePassword(request)){
+            return ResponseEntity.ok("Код для восстановления отправлен на указанную почт.");
         }
+        return ResponseEntity.status(400).body("Почта пользователя не совпадает с введенной");
+    }
 
-        // 3. Заглушка генерации кода
-        String generatedCode = "123456"; // TODO: Заменить на реальную генерацию кода
-
-        // 4. Отправить письмо с этим кодом
-        emailSenderService.sendTestCode(customer.getCustomer_email());
-
-        // 5. Ответить успехом
-        return ResponseEntity.ok("Код для восстановления отправлен на почту: " + customer.getCustomer_email());
+    @Operation(summary = "Проверка кода восстановления и сброс пароля")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Пароль успешно изменен",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(example = "{\"message\": \"Пароль успешно изменён\"}"))}),
+            @ApiResponse(responseCode = "400", description = "Неверный или просроченный код",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "Пользователь не найден",
+                    content = @Content)
+    })
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        if(customerService.resetPassword(request)) {
+            return ResponseEntity.ok("Пароль успешно изменён");
+        }
+        return ResponseEntity.status(400).body("Неверный или просроченный код");
     }
 }
-
-//    @Operation(summary = "Запрос на восстановление пароля")
-//    @ApiResponses(value = {
-//            @ApiResponse(responseCode = "200", description = "Ссылка для сброса пароля отправлена на email",
-//                    content = {@Content(mediaType = "application/json",
-//                            schema = @Schema(example = "{\"message\": \"Password reset link sent to email\"}"))}),
-//            @ApiResponse(responseCode = "404", description = "Пользователь с таким email не найден",
-//                    content = @Content)
-//    })
-//    @PostMapping("/forgot-password")
-//    public ResponseEntity<?> forgotPassword(@RequestParam String email) {
-//        try {
-//            customerService.initiatePasswordReset(email);
-//            return ResponseEntity.ok(Map.of("message", "Password reset link sent to email"));
-//        } catch (CustomerNotFoundException e) {
-//            return ResponseEntity.status(404).body(
-//                    Map.of("error", e.getMessage())
-//            );
-//        }
-//    }
-//
-//    @Operation(summary = "Сброс пароля")
-//    @ApiResponses(value = {
-//            @ApiResponse(responseCode = "200", description = "Пароль успешно изменен",
-//                    content = {@Content(mediaType = "application/json",
-//                            schema = @Schema(example = "{\"message\": \"Password reset successfully\"}"))}),
-//            @ApiResponse(responseCode = "400", description = "Неверный или просроченный токен",
-//                    content = @Content),
-//            @ApiResponse(responseCode = "404", description = "Пользователь не найден",
-//                    content = @Content)
-//    })
-//    @PostMapping("/reset-password")
-//    public ResponseEntity<?> resetPassword(@RequestBody PasswordResetRequest request) {
-//        try {
-//            customerService.resetPassword(request.getToken(), request.getNewPassword());
-//            return ResponseEntity.ok(Map.of("message", "Password reset successfully"));
-//        } catch (CustomerNotFoundException e) {
-//            return ResponseEntity.status(404).body(
-//                    Map.of("error", e.getMessage())
-//            );
-//        } catch (IllegalArgumentException e) {
-//            return ResponseEntity.badRequest().body(
-//                    Map.of("error", e.getMessage())
-//            );
-//        }
-//    }
