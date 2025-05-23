@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:zadachok/api/mock_api_client.dart';
 import '../providers/auth_provider.dart';
-import 'package:zadachok/routes/transitions.dart';
 import '/screens/calendar_screen.dart';
 import '/screens/login_screen.dart';
 import '/screens/settings_screen.dart';
 import '/screens/shop_screen.dart';
 import '/screens/tasks_screen.dart';
 import 'package:zadachok/api/api_client.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -17,19 +16,37 @@ class MainNavigationScreen extends StatefulWidget {
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
-class _MainNavigationScreenState extends State<MainNavigationScreen> {
+class _MainNavigationScreenState extends State<MainNavigationScreen> with TickerProviderStateMixin {
   static const int DEFAULT_SELECTED_INDEX = 1;
   static const Color NAV_BAR_SHADOW_COLOR = Colors.black12;
   static const double NAV_BAR_SHADOW_BLUR = 8.0;
   static const Offset NAV_BAR_SHADOW_OFFSET = Offset(0, -2);
-  static const Color SELECTED_ITEM_COLOR = Color(0xFF937DF3);
-  static const Color UNSELECTED_ITEM_COLOR = Colors.grey;
+  static const Color UNSELECTED_ITEM_COLOR = Color(0xFF937DF3);
+  static const Color SELECTED_ITEM_COLOR = Color(0xFF6E44FF);
+  static const double ICON_SIZE = 35.0;
+  static const double ACTIVE_ICON_SIZE = 50.0;
+  static const String ICON_PATH = 'lib/assets/';
+
 
   int _selectedIndex = DEFAULT_SELECTED_INDEX;
-  int _previousIndex = DEFAULT_SELECTED_INDEX;
-
 
   final PageController _pageController = PageController(initialPage: DEFAULT_SELECTED_INDEX);
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeAnimations();
+  }
+
+  void _initializeAnimations() {
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    _animationController.forward();
+  }
 
   List<Widget> _getScreens(BuildContext context) {
     final isAuthorized = Provider.of<AuthProvider>(context).isAuthorized;
@@ -56,43 +73,56 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   List<BottomNavigationBarItem> _getNavItems(bool isAuthorized) {
     return isAuthorized
-        ? const [
+        ? [
       BottomNavigationBarItem(
-        icon: Icon(Icons.calendar_today),
+        icon: _buildSvgIcon('calendar', false),
+        activeIcon: _buildSvgIcon('calendar_active', true),
         label: 'Календарь',
       ),
       BottomNavigationBarItem(
-        icon: Icon(Icons.shopping_bag),
+        icon: _buildSvgIcon('shop', false),
+        activeIcon: _buildSvgIcon('shop_active', true),
         label: 'Магазин',
       ),
       BottomNavigationBarItem(
-        icon: Icon(Icons.task_alt),
+        icon: _buildSvgIcon('tasks', false),
+        activeIcon: _buildSvgIcon('tasks_active', true),
         label: 'Задачи',
       ),
       BottomNavigationBarItem(
-        icon: Icon(Icons.settings),
+        icon: _buildSvgIcon('settings', false),
+        activeIcon: _buildSvgIcon('settings_active', true),
         label: 'Настройки',
       ),
     ]
-        : const [
+        : [
       BottomNavigationBarItem(
-        icon: Icon(Icons.calendar_today),
+        icon: _buildSvgIcon('calendar', false),
+        activeIcon: _buildSvgIcon('calendar_active', true),
         label: 'Календарь',
       ),
       BottomNavigationBarItem(
-        icon: Icon(Icons.login),
+        icon: _buildSvgIcon('login', false),
+        activeIcon: _buildSvgIcon('login_active', true),
         label: 'Вход',
       ),
       BottomNavigationBarItem(
-        icon: Icon(Icons.settings),
+        icon: _buildSvgIcon('settings', false),
+        activeIcon: _buildSvgIcon('settings_active', true),
         label: 'Настройки',
       ),
     ];
   }
 
+  Widget _buildSvgIcon(String iconName, bool isActive) {
+    return SvgPicture.asset(
+      '$ICON_PATH$iconName.svg',
+      width: isActive ? ACTIVE_ICON_SIZE : ICON_SIZE,
+    );
+  }
+
   void _onItemTapped(int index) {
     setState(() {
-      _previousIndex = _selectedIndex;
       _selectedIndex = index;
     });
 
@@ -105,6 +135,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   void dispose() {
+    _animationController.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -129,7 +160,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         physics: const NeverScrollableScrollPhysics(),
         onPageChanged: (index) {
           setState(() {
-            _previousIndex = _selectedIndex;
             _selectedIndex = index;
           });
         },
