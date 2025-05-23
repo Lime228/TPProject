@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+import java.sql.Timestamp;
 import java.time.LocalDate;
 
 @Data
@@ -30,11 +31,11 @@ public class CreateTaskRequest {
 
     @JsonProperty("startdate")
     @Schema(description = "Дата начала выполнения (YYYY-MM-DD)", example = "2023-06-01", format = "date")
-    private LocalDate startDate;
+    private Timestamp startDate;
 
     @JsonProperty("enddate")
     @Schema(description = "Выполнить до (YYYY-MM-DD)", example = "2023-06-15", format = "date")
-    private LocalDate endDate;
+    private Timestamp endDate;
 
     @JsonProperty("lobbyid")
     @NotNull

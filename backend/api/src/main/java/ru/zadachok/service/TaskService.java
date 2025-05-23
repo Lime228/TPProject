@@ -45,8 +45,8 @@ public class TaskService {
                 .name(request.getName())
                 .reward(request.getReward())
                 .description(request.getDescription())
-                .startDate(convertToTimestamp(request.getStartDate()))
-                .endDate(convertToTimestamp(request.getEndDate()))
+                .startDate(request.getStartDate())
+                .endDate(request.getEndDate())
                 .isActive(0) // по умолчанию неактивная
                 .customerId(request.getCustomerId())
                 .build();
@@ -56,10 +56,6 @@ public class TaskService {
         updateLobbyTasks(lobby, savedTask.getId());
 
         return savedTask;
-    }
-
-    private Timestamp convertToTimestamp(LocalDate date) {
-        return date != null ? Timestamp.valueOf(date.atStartOfDay()) : null;
     }
 
 
@@ -103,8 +99,8 @@ public class TaskService {
 
         if (request.getName() != null) task.setName(request.getName());
         if (request.getDescription() != null) task.setDescription(request.getDescription());
-        if (request.getStartDate() != null) task.setStartDate(convertToTimestamp(request.getStartDate()));
-        if (request.getEndDate() != null) task.setEndDate(convertToTimestamp(request.getEndDate()));
+        if (request.getStartDate() != null) task.setStartDate(request.getStartDate());
+        if (request.getEndDate() != null) task.setEndDate(request.getEndDate());
         if (request.getReward() != null) task.setReward(request.getReward());
         if (request.getState() != null) task.setIsActive(request.getState());
         if (request.getCustomerId() != null) task.setCustomerId(request.getCustomerId());

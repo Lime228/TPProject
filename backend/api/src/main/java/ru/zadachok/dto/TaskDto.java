@@ -3,6 +3,7 @@ package ru.zadachok.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
+import java.sql.Timestamp;
 import java.time.LocalDate;
 
 @Data
@@ -50,12 +51,12 @@ public class TaskDto {
     @Schema(description = "Дата начала выполнения задачи (в формате YYYY-MM-DD)",
             example = "2023-06-01",
             requiredMode = Schema.RequiredMode.REQUIRED)
-    private LocalDate startDate;
+    private Timestamp startDate;
 
     @Schema(description = "Планируемая дата до которой нужно завершить задачу (в формате YYYY-MM-DD)",
             example = "2023-06-15",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private LocalDate endDate;
+    private Timestamp endDate;
 
     @Schema(description = "Флаг выполнения задачи (0 - в процессе 1 - отмечена пользователем 2 - проверена админом)",
             example = "1",

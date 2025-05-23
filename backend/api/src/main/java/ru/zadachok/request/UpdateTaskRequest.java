@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.sql.Timestamp;
 import java.time.LocalDate;
 
 @Data
@@ -28,11 +29,11 @@ public class UpdateTaskRequest {
 
     @JsonProperty("startDate")
     @Schema(description = "Новая дата начала", example = "2025-05-15")
-    private LocalDate startDate;
+    private Timestamp startDate;
 
     @JsonProperty("endDate")
     @Schema(description = "Новая дата окончания", example = "2025-05-20")
-    private LocalDate endDate;
+    private Timestamp endDate;
 
     @JsonProperty("state")
     @Schema(description = "Состояние задачи 0-2", example = "0")
@@ -42,5 +43,4 @@ public class UpdateTaskRequest {
     @Schema(description = "ID исполнителя", example = "3")
     private Integer customerId;
 
-    //TODO: state и customerID
 }
