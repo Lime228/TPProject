@@ -125,6 +125,56 @@ class ApiClient implements ApiInterface {
     }
   }
 
+  @override // работает проверяли
+  Future<bool> restorePassword(UserModel request) async {
+    final restoreUrl = Uri.parse('${ApiEndpoints.baseUrl}/api/auth/restore');
+    try {
+      final loginResponse = await _client.post(
+        restoreUrl,
+        headers: _getHeaders(includeAuth: false),
+        body: json.encode(request.toRestoreRequest()),
+      ).timeout(const Duration(seconds: 10));
+
+      //здесь пока просто заглушка обработать потом правильно
+      if (loginResponse.statusCode != 200) {
+        throw Exception('Ошибка восстановления: ${loginResponse.statusCode}');
+      }
+
+      return true;
+    } on http.ClientException catch (e) {
+      throw Exception('Ошибка подключения: ${e.message}');
+    } on FormatException catch (e) {
+      throw Exception('Ошибка формата данных: ${e.message}');
+    } on Exception catch (e) {
+      throw Exception('Ошибка: $e');
+    }
+  }
+
+  @override // работает проверяли
+  Future<bool> resetPassword(UserModel request, String code, String password) async {
+    final resetUrl = Uri.parse('${ApiEndpoints.baseUrl}/api/auth/reset-password');
+    try {
+      final loginResponse = await _client.post(
+        resetUrl,
+        headers: _getHeaders(includeAuth: false),
+        body: json.encode(request.toResetRequest(code, password)),
+      ).timeout(const Duration(seconds: 10));
+
+      //здесь пока просто заглушка обработать потом правильно
+      if (loginResponse.statusCode != 200) {
+        throw Exception('Ошибка восстановления: ${loginResponse.statusCode}');
+      }
+
+      return true;
+    } on http.ClientException catch (e) {
+      throw Exception('Ошибка подключения: ${e.message}');
+    } on FormatException catch (e) {
+      throw Exception('Ошибка формата данных: ${e.message}');
+    } on Exception catch (e) {
+      throw Exception('Ошибка: $e');
+    }
+  }
+
   @override // в теории работает
   Future<UserModel> updateUserProfile(UserModel user) async {
     if (user.name.isEmpty || user.email.isEmpty) {

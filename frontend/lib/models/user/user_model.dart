@@ -69,6 +69,17 @@ class UserModel {
     'password': password,
   };
 
+  Map<String, dynamic> toRestoreRequest() => {
+    'login': login,
+    'email': email,
+  };
+
+  Map<String, dynamic> toResetRequest(String code, String newPassword) => {
+    'login': login,
+    'code': code,
+    'newPassword': newPassword
+  };
+
   Map<String, dynamic> toUpdateRequest() => {
     'customerId': id,
     'name': name,
