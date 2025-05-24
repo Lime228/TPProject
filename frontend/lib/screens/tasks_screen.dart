@@ -264,9 +264,12 @@ class _TasksScreenState extends State<TasksScreen> {
   Widget _buildProfileHeader(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final settingsProvider = Provider.of<SettingsProvider>(context);
-    final groupProvider = Provider.of<GroupProvider>(context);
     final theme = Theme.of(context);
 
+    final avatarBytes = settingsProvider.avatarBytes ??
+        (authProvider.user?.photoBytes?.isNotEmpty ?? false
+            ? authProvider.user!.photoBytes
+            : null);
 
     return Container(
       width: double.infinity,
@@ -316,7 +319,7 @@ class _TasksScreenState extends State<TasksScreen> {
             ],
           ),
 
-          if(groupProvider.isInGroup)
+          if (authProvider.groupProvider.isInGroup)
 
           Theme(
             data: Theme.of(context).copyWith(
@@ -899,165 +902,170 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
+  InputDecoration _buildInputDecoration(String labelText, {String? hintText}) {
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      border: InputBorder.none,
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+    );
+  }
 
   Widget _buildTaskForm() {
     final theme = Theme.of(context);
     final group = Provider.of<GroupProvider>(context, listen: false);
     final auth = Provider.of<AuthProvider>(context, listen: false);
+
     if (_selectedMemberId == null) {
       _selectedMemberId = auth.user?.id;
     }
 
-
-    return Dialog(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16.0),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text(
-                      'Отмена',
-                      style: TextStyle(color: Colors.grey),
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
+      child: SingleChildScrollView( // Добавляем возможность скролла
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Остальной код формы остается без изменений
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text(
+                        'Отмена',
+                        style: TextStyle(color: Colors.grey),
+                      ),
                     ),
-                  ),
-                  const Text(
-                    'Новая задача',
-                    style: TextStyle(
-                      color: TaskScreenStyles.primaryColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: _isLoading ? null : _validateAndAddTask,
-                    child: const Text(
-                      'Готово',
+                    const Text(
+                      'Новая задача',
                       style: TextStyle(
                         color: TaskScreenStyles.primaryColor,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-
-              _buildRoundedTextField(
-                controller: _titleController,
-                labelText: 'Название задачи',
-                validator: (value) =>
-                value?.isEmpty ?? true ? 'Введите название задачи' : null,
-              ),
-              const SizedBox(height: 16),
-
-
-              _buildRoundedTextField(
-                controller: _descController,
-                labelText: 'Описание',
-                maxLines: 3,
-              ),
-              const SizedBox(height: 16),
-
-
-              DropdownButtonFormField<int>(
-                value: _selectedMemberId,
-                decoration: InputDecoration(
-                  labelText: 'Назначить участнику',
-                  hintText: 'Оставить для всех',
-                  border: OutlineInputBorder(),
-                ),
-                items: [
-                  DropdownMenuItem<int>(
-                    value: null,
-                    child: Text('Для всех участников'),
-                  ),
-                  ...group.members.map((member) {
-                    return DropdownMenuItem<int>(
-                      value: member.id,
-                      child: Text(member.name),
-                    );
-                  }).toList(),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedMemberId = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-
-
-              _buildRoundedTextField(
-                controller: _rewardController,
-                labelText: 'Количество звёзд',
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Введите количество';
-                  final num = double.tryParse(value);
-                  if (num == null) return 'Введите число';
-                  if (num < 0) return 'Число должно быть положительным';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _deadline == null
-                            ? 'Выберите дедлайн'
-                            : 'Дедлайн: ${DateFormat('dd.MM.yyyy HH:mm').format(_deadline!)}',
+                    TextButton(
+                      onPressed: _isLoading ? null : _validateAndAddTask,
+                      child: const Text(
+                        'Готово',
                         style: TextStyle(
-                          fontSize: 14,
-                          color: _deadline == null
-                              ? Colors.grey[600]
-                              : Colors.black,
+                          color: TaskScreenStyles.primaryColor,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                    TextButton(
-                      onPressed: () => _selectDeadline(context),
-                      child: const Text(
-                        'Выбрать',
-                        style: TextStyle(color: TaskScreenStyles.primaryColor),
-                      ),
-                    ),
                   ],
                 ),
-              ),
-              if (_isLoading)
-                const Padding(
-                  padding: EdgeInsets.only(top: 16),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-            ],
+                    const SizedBox(height: 16),
+
+                    _buildRoundedTextField(
+                      controller: _titleController,
+                      labelText: 'Название задачи',
+                      validator: (value) =>
+                      value?.isEmpty ?? true ? 'Введите название задачи' : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildRoundedTextField(
+                      controller: _descController,
+                      labelText: 'Описание',
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 16),
+
+                    DropdownButtonFormField<int>(
+                      value: _selectedMemberId,
+                      decoration: _buildInputDecoration(
+                          'Назначить участнику',
+                          hintText: 'Оставить для всех'
+                      ),
+                      items: [
+                        DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Для всех участников'),
+                        ),
+                        ...group.members.map((member) {
+                          return DropdownMenuItem<int>(
+                            value: member.id,
+                            child: Text(member.name),
+                          );
+                        }).toList(),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedMemberId = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildRoundedTextField(
+                      controller: _rewardController,
+                      labelText: 'Количество звёзд',
+                      validator: (value) {
+                        if (value == null || value.isEmpty) return 'Введите количество';
+                        final num = double.tryParse(value);
+                        if (num == null) return 'Введите число';
+                        if (num < 0) return 'Число должно быть положительным';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _deadline == null
+                                  ? 'Выберите дедлайн'
+                                  : 'Дедлайн: ${DateFormat('dd.MM.yyyy HH:mm').format(_deadline!)}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: _deadline == null
+                                    ? Colors.grey[600]
+                                    : Colors.black,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => _selectDeadline(context),
+                            child: const Text(
+                              'Выбрать',
+                              style: TextStyle(color: TaskScreenStyles.primaryColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_isLoading)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 16),
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1208,9 +1216,16 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   void _showAddTaskDialog() {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => _buildTaskForm(),
+      isScrollControlled: true, // важно для правильного отображения
+      backgroundColor: Colors.transparent, // прозрачный фон
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom, // Учитываем клавиатуру
+        ),
+        child: _buildTaskForm(),
+      ),
     );
   }
 
@@ -1531,7 +1546,6 @@ class _TasksScreenState extends State<TasksScreen> {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     groupProvider.refreshGroupData();
 
     if (groupProvider.isInGroup) {
@@ -1556,10 +1570,7 @@ class _TasksScreenState extends State<TasksScreen> {
               Navigator.pop(ctx);
               try {
                 await groupProvider.createGroup();
-                await groupProvider.isInGroup;
                 await groupProvider.authProvider!.refreshAll(groupProvider, taskProvider, shopProvider);
-                await groupProvider.authProvider!.refreshUserData();
-
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Группа создана! Код: ${groupProvider.groupCode}')),
                 );

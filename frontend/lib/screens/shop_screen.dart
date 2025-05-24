@@ -734,164 +734,165 @@ class _ShopScreenState extends State<ShopScreen> {
     _linkController.clear();
     _tempProductImage = null;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder:
-          (ctx) => StatefulBuilder(
-            builder: (context, setState) {
-              return Dialog(
-                backgroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16.0),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AnimatedPadding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            duration: const Duration(milliseconds: 100),
+            child: Material(
+              color: Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16.0)),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.9,
                 ),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.8,
-                  ),
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Form(
-                        key: _addProductFormKey,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                TextButton(
-                                  onPressed: () {
-                                    _tempProductImage = null;
-                                    Navigator.pop(ctx);
-                                  },
-                                  child: const Text(
-                                    'Отмена',
-                                    style: TextStyle(color: Colors.grey),
-                                  ),
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Form(
+                      key: _addProductFormKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              TextButton(
+                                onPressed: () {
+                                  _tempProductImage = null;
+                                  Navigator.pop(ctx);
+                                },
+                                child: const Text(
+                                  'Отмена',
+                                  style: TextStyle(color: Colors.grey),
                                 ),
-                                const Text(
-                                  'Новый товар',
+                              ),
+                              const Text(
+                                'Новый товар',
+                                style: TextStyle(
+                                  color: ShopScreenConstants.primaryColor,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () => _handleAddProduct(ctx),
+                                child: const Text(
+                                  'Готово',
                                   style: TextStyle(
                                     color: ShopScreenConstants.primaryColor,
-                                    fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                TextButton(
-                                  onPressed: () => _handleAddProduct(ctx),
-                                  child: const Text(
-                                    'Готово',
-                                    style: TextStyle(
-                                      color: ShopScreenConstants.primaryColor,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
 
-                            GestureDetector(
-                              onTap: () async {
-                                final image = await _picker.pickImage(
-                                  source: ImageSource.gallery,
+                          GestureDetector(
+                            onTap: () async {
+                              final image = await _picker.pickImage(
+                                source: ImageSource.gallery,
+                              );
+                              if (image != null) {
+                                setState(
+                                      () => _tempProductImage = File(image.path),
                                 );
-                                if (image != null) {
-                                  setState(
-                                    () => _tempProductImage = File(image.path),
-                                  );
-                                }
-                              },
-                              child: Container(
-                                height: 150,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200],
-                                  borderRadius: BorderRadius.circular(12),
+                              }
+                            },
+                            child: Container(
+                              height: 150,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: _tempProductImage != null
+                                  ? ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.file(
+                                  _tempProductImage!,
+                                  fit: BoxFit.cover,
                                 ),
-                                child:
-                                    _tempProductImage != null
-                                        ? ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          child: Image.file(
-                                            _tempProductImage!,
-                                            fit: BoxFit.cover,
-                                          ),
-                                        )
-                                        : Center(
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.add_a_photo,
-                                                size: 40,
-                                                color: Colors.grey,
-                                              ),
-                                              Text(
-                                                'Добавить фото',
-                                                style: TextStyle(
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
+                              )
+                                  : Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.add_a_photo,
+                                      size: 40,
+                                      color: Colors.grey,
+                                    ),
+                                    Text(
+                                      'Добавить фото',
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 16),
+                          ),
+                          const SizedBox(height: 16),
 
-                            _buildRoundedTextField(
-                              controller: _nameController,
-                              labelText: 'Название товара',
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Введите название';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
+                          _buildRoundedTextField(
+                            controller: _nameController,
+                            labelText: 'Название товара',
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Введите название';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
 
-                            _buildRoundedTextField(
-                              controller: _descController,
-                              labelText: 'Описание',
-                              maxLines: 3,
-                            ),
-                            const SizedBox(height: 16),
+                          _buildRoundedTextField(
+                            controller: _descController,
+                            labelText: 'Описание',
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 16),
 
-                            _buildRoundedTextField(
-                              controller: _priceController,
-                              labelText: 'Цена в звёздах',
-                              keyboardType: TextInputType.number,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Введите цену';
-                                }
-                                if (double.tryParse(value) == null) {
-                                  return 'Введите число';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
+                          _buildRoundedTextField(
+                            controller: _priceController,
+                            labelText: 'Цена в звёздах',
+                            keyboardType: TextInputType.number,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Введите цену';
+                              }
+                              if (double.tryParse(value) == null) {
+                                return 'Введите число';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
 
-                            _buildRoundedTextField(
-                              controller: _linkController,
-                              labelText: 'Ссылка на товар',
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-                        ),
+                          _buildRoundedTextField(
+                            controller: _linkController,
+                            labelText: 'Ссылка на товар',
+                          ),
+                          const SizedBox(height: 16),
+                        ],
                       ),
                     ),
                   ),
                 ),
-              );
-            },
-          ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
