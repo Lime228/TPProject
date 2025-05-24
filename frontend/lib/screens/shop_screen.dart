@@ -997,117 +997,126 @@ class _ShopScreenState extends State<ShopScreen> {
     }
 
     showDialog(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            backgroundColor: Colors.white,
-            title: const Text('Управление товарами'),
-            content: SizedBox(
-              width: double.maxFinite,
-              child:
+        context: context,
+        builder: (ctx) => StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                backgroundColor: Colors.white,
+                title: const Text('Управление товарами'),
+                content: SizedBox(
+                  width: double.maxFinite,
+                  child:
                   shopProvider.isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : shopProvider.products.isEmpty
                       ? const Center(child: Text('Нет товаров для отображения'))
                       : ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: shopProvider.products.length,
-                        itemBuilder: (context, index) {
-                          final product = shopProvider.products[index];
-                          return ListTile(
-                            title: Text(product.name),
-                            subtitle: Text('${product.price} звёзд'),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () {
-                                    Navigator.pop(ctx);
-                                    _showEditProductDialog(product);
-                                  },
-                                ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete,
-                                    color: Colors.red,
-                                  ),
-                                  onPressed: () async {
-                                    final confirm = await showDialog<bool>(
-                                      context: context,
-                                      builder:
-                                          (ctx) => AlertDialog(
-                                            title: const Text('Подтверждение'),
-                                            content: const Text(
-                                              'Удалить этот товар?',
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed:
-                                                    () => Navigator.pop(
-                                                      ctx,
-                                                      false,
-                                                    ),
-                                                child: const Text('Отмена'),
-                                              ),
-                                              TextButton(
-                                                onPressed:
-                                                    () => Navigator.pop(
-                                                      ctx,
-                                                      true,
-                                                    ),
-                                                child: const Text(
-                                                  'Удалить',
-                                                  style: TextStyle(
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                    );
-
-                                    if (confirm == true) {
-                                      final success = await shopProvider
-                                          .removeProduct(product.id);
-                                      if (mounted) {
-                                        if (success) {
-                                          await shopProvider.refreshProducts();
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text('Товар удалён'),
-                                            ),
-                                          );
-                                        } else {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                'Ошибка: ${shopProvider.error}',
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      }
-                                    }
-                                  },
-                                ),
-                              ],
+                    shrinkWrap: true,
+                    itemCount: shopProvider.products.length,
+                    itemBuilder: (context, index) {
+                      final product = shopProvider.products[index];
+                      return ListTile(
+                        title: Text(product.name),
+                        subtitle: Text('${product.price} звёзд'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                                _showEditProductDialog(product);
+                              },
                             ),
-                          );
-                        },
-                      ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Закрыть'),
-              ),
-            ],
-          ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete,
+                                color: Colors.red,
+                              ),
+                              onPressed: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder:
+                                      (ctx) =>
+                                      AlertDialog(
+                                        title: const Text('Подтверждение'),
+                                        content: const Text(
+                                          'Удалить этот товар?',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed:
+                                                () =>
+                                                Navigator.pop(
+                                                  ctx,
+                                                  false,
+                                                ),
+                                            child: const Text('Отмена'),
+                                          ),
+                                          TextButton(
+                                            onPressed:
+                                                () =>
+                                                Navigator.pop(
+                                                  ctx,
+                                                  true,
+                                                ),
+                                            child: const Text(
+                                              'Удалить',
+                                              style: TextStyle(
+                                                color: Colors.red,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                );
+
+                                if (confirm == true) {
+                                  final success = await shopProvider
+                                      .removeProduct(product.id);
+
+                                  if (mounted) {
+                                    if (success) {
+                                      await shopProvider.refreshProducts();
+
+                                      setState(() {});
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Товар удалён'),
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Ошибка: ${shopProvider.error}',
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Закрыть'),
+                  ),
+                ],
+              );
+            }
+        )
     );
   }
 

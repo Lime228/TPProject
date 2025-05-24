@@ -78,7 +78,7 @@ class ShopProvider with ChangeNotifier {
     }
     _currentShopId = shopId;
     await prefs.setInt('current_shop_id', shopId);
-    await refreshProducts(); // Запускаем загрузку товаров
+    await refreshProducts();
   }
 
   Future<void> loadProducts() async {
@@ -165,11 +165,18 @@ class ShopProvider with ChangeNotifier {
 
 
   Future<bool> removeProduct(int productId) async {
+
+    if (_currentShopId == null) {
+      _error = 'Магазин не выбран';
+      return false;
+    }
+
     try {
       final apiClient = _getAuthenticatedClient();
-      await apiClient.deleteShopItem(productId);
+      await apiClient.deleteShopItem(_currentShopId!, productId);
       _products.removeWhere((p) => p.id == productId);
       _applyFilters();
+      notifyListeners();
       return true;
     } catch (e) {
       _error = 'Ошибка удаления товара: $e';

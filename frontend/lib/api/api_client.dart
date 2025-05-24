@@ -474,10 +474,10 @@ class ApiClient implements ApiInterface {
 
 
 
-  @override // в теории работает
-  Future<void> deleteShopItem(int itemId) async {
-    if (itemId <= 0) {
-      throw Exception('ID товара не может быть пустым');
+  @override
+  Future<void> deleteShopItem(int shopId, int productId) async {
+    if (shopId <= 0 || productId <= 0) {
+      throw Exception('ID магазина и товара не могут быть пустыми');
     }
 
     final url = Uri.parse(ApiEndpoints.shopProductDeleteUrl);
@@ -486,7 +486,10 @@ class ApiClient implements ApiInterface {
       final response = await _client.delete(
         url,
         headers: _getHeaders(),
-        body: json.encode({'productid': itemId}),
+        body: json.encode({
+          'shopid': shopId,
+          'productid': productId
+        }),
       ).timeout(requestTimeout);
 
       if (response.statusCode != 200 && response.statusCode != 204) {

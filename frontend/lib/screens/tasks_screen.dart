@@ -76,6 +76,8 @@ class _TasksScreenState extends State<TasksScreen> {
   late final _rewardController = TextEditingController(text: '0');
   final _searchController = TextEditingController();
 
+  DateTime? _editDeadline;
+
   bool _isLoading = false;
   DateTime? _deadline;
   bool _isFormVisible = false;
@@ -121,17 +123,15 @@ class _TasksScreenState extends State<TasksScreen> {
     super.dispose();
   }
 
-  Future<void> _selectDeadline(BuildContext context) async {
+  Future<DateTime?> _selectDeadline(BuildContext context) async {
     if (!_formKey.currentState!.validate()) {
       _showError("Проверьте заполнение полей");
-      return;
+      return null;
     }
 
-    // Получаем текущую дату и время
-    DateTime initialDateTime = _deadline ?? DateTime.now().add(const Duration(days: 1));
+    DateTime initialDateTime = DateTime.now().add(const Duration(days: 1));
     TimeOfDay initialTime = TimeOfDay.fromDateTime(initialDateTime);
 
-    // Сначала выбираем дату
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: initialDateTime,
@@ -145,16 +145,14 @@ class _TasksScreenState extends State<TasksScreen> {
       },
     );
 
-    if (pickedDate == null) return; // Пользователь отменил выбор даты
+    if (pickedDate == null) return null;
 
-    // Затем выбираем время
     final TimeOfDay? pickedTime = await showTimePicker(
       context: context,
       initialTime: initialTime,
       builder: (context, child) {
         return Theme(
           data: _datePickerTheme.copyWith(
-            // Стилизация TimePicker аналогично DatePicker
             timePickerTheme: TimePickerThemeData(
               backgroundColor: Colors.white,
               hourMinuteTextColor: TaskScreenStyles.primaryColor,
@@ -171,7 +169,6 @@ class _TasksScreenState extends State<TasksScreen> {
           ),
           child: MediaQuery(
             data: MediaQuery.of(context).copyWith(
-              // Фиксируем ориентацию для TimePicker
               alwaysUse24HourFormat: true,
             ),
             child: child!,
@@ -181,17 +178,15 @@ class _TasksScreenState extends State<TasksScreen> {
     );
 
     if (pickedTime != null && mounted) {
-      // Комбинируем выбранную дату и время
-      setState(() {
-        _deadline = DateTime(
-          pickedDate.year,
-          pickedDate.month,
-          pickedDate.day,
-          pickedTime.hour,
-          pickedTime.minute,
-        );
-      });
+      return DateTime(
+        pickedDate.year,
+        pickedDate.month,
+        pickedDate.day,
+        pickedTime.hour,
+        pickedTime.minute,
+      );
     }
+    return null;
   }
 
   Future<void> _initData() async {
@@ -265,11 +260,7 @@ class _TasksScreenState extends State<TasksScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final settingsProvider = Provider.of<SettingsProvider>(context);
     final theme = Theme.of(context);
-
-    final avatarBytes = settingsProvider.avatarBytes ??
-        (authProvider.user?.photoBytes?.isNotEmpty ?? false
-            ? authProvider.user!.photoBytes
-            : null);
+    final groupProvider = Provider.of<GroupProvider>(context);
 
     return Container(
       width: double.infinity,
@@ -319,7 +310,7 @@ class _TasksScreenState extends State<TasksScreen> {
             ],
           ),
 
-          if (authProvider.groupProvider.isInGroup)
+          if(groupProvider.isInGroup)
 
           Theme(
             data: Theme.of(context).copyWith(
@@ -611,17 +602,44 @@ class _TasksScreenState extends State<TasksScreen> {
   Widget _buildTasksList() {
     return Column(
       children: [
-        _buildSearchAndSortBar(),
+        // Показываем поиск и сортировку только если есть задачи
+        Consumer<TaskProvider>(
+          builder: (context, taskProvider, child) {
+            return taskProvider.filteredTasks.isNotEmpty
+                ? _buildSearchAndSortBar()
+                : SizedBox.shrink();
+          },
+        ),
         Expanded(
           child: Consumer<TaskProvider>(
             builder: (context, taskProvider, child) {
-
               final authProvider = Provider.of<AuthProvider>(context);
               final isAdmin = authProvider.user?.role.isAdmin ?? false;
 
               final tasksToShow = isAdmin
                   ? taskProvider.filteredTasks
                   : taskProvider.filteredTasks.where((task) => task.customerId == authProvider.user?.id).toList();
+
+              // Если задач нет, показываем сообщение
+              if (tasksToShow.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.task_outlined,
+                        size: 64,
+                        color: Colors.grey,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'Нет задач',
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                );
+              }
 
               return ListView.builder(
                 padding: EdgeInsets.symmetric(vertical: MediaQuery.of(context).size.height * 0.01),
@@ -982,30 +1000,80 @@ class _TasksScreenState extends State<TasksScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    DropdownButtonFormField<int>(
-                      value: _selectedMemberId,
-                      decoration: _buildInputDecoration(
-                          'Назначить участнику',
-                          hintText: 'Оставить для всех'
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
                       ),
-                      items: [
-                        DropdownMenuItem<int>(
-                          value: null,
-                          child: Text('Для всех участников'),
+                    ],
+                  ),
+                  child: DropdownButtonFormField<int>(
+                    value: _selectedMemberId,
+                    decoration: InputDecoration(
+                      labelText: 'Назначить участнику',
+                      hintText: 'Оставить для всех',
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Color(0xFF937DF3),
+                          width: 2,
                         ),
-                        ...group.members.map((member) {
-                          return DropdownMenuItem<int>(
-                            value: member.id,
-                            child: Text(member.name),
-                          );
-                        }).toList(),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedMemberId = value;
-                        });
-                      },
+                      ),
                     ),
+                    dropdownColor: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    menuMaxHeight: 300,
+                    icon: Icon(Icons.arrow_drop_down, color: Color(0xFF937DF3)),
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                    ),
+                    // Убираем эффекты нажатия
+                    focusColor: Colors.transparent,
+
+                    items: [
+                      DropdownMenuItem<int>(
+                        value: null,
+                        child: Text(
+                          'Для всех участников',
+                          style: TextStyle(color: Colors.black),
+                        ),
+                      ),
+                      ...group.members.map((member) {
+                        return DropdownMenuItem<int>(
+                          value: member.id,
+                          child: Text(
+                            member.name,
+                            style: TextStyle(color: Colors.black),
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedMemberId = value;
+                      });
+                    },
+                  ),
+                ),
                     const SizedBox(height: 16),
 
                     _buildRoundedTextField(
@@ -1546,6 +1614,7 @@ class _TasksScreenState extends State<TasksScreen> {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     groupProvider.refreshGroupData();
 
     if (groupProvider.isInGroup) {
@@ -1570,7 +1639,9 @@ class _TasksScreenState extends State<TasksScreen> {
               Navigator.pop(ctx);
               try {
                 await groupProvider.createGroup();
+                await groupProvider.isInGroup;
                 await groupProvider.authProvider!.refreshAll(groupProvider, taskProvider, shopProvider);
+                await groupProvider.authProvider!.refreshUserData();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Группа создана! Код: ${groupProvider.groupCode}')),
                 );
@@ -1646,50 +1717,260 @@ class _TasksScreenState extends State<TasksScreen> {
     final _editTitleController = TextEditingController(text: task.name);
     final _editDescController = TextEditingController(text: task.description);
     final _editRewardController = TextEditingController(text: task.reward.toString());
-    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    DateTime? deadline = _safeParseDate(task.endPoint);
+    int? selectedMemberId = task.customerId;
+    final _editFormKey = GlobalKey<FormState>();
+    bool isEditing = false;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text('Редактировать задачу'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _editTitleController,
-              decoration: const InputDecoration(labelText: 'Название'),
-            ),
-            TextField(
-              controller: _editDescController,
-              decoration: const InputDecoration(labelText: 'Описание'),
-            ),
-            TextField(
-              controller: _editRewardController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Количество звёзд'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final updatedTask = task.copyWith(
-                name: _editTitleController.text,
-                description: _editDescController.text,
-                reward: int.tryParse(_editRewardController.text) ?? task.reward,
-              );
-              await taskProvider.updateTask(updatedTask);
-              if (mounted) Navigator.pop(ctx);
-            },
-            child: const Text('Сохранить'),
-          ),
-        ],
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Material(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Form(
+                      key: _editFormKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                child: const Text(
+                                  'Отмена',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ),
+                              const Text(
+                                'Редактировать задачу',
+                                style: TextStyle(
+                                  color: TaskScreenStyles.primaryColor,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: isEditing ? null : () async {
+                                  if (_editFormKey.currentState!.validate()) {
+                                    setModalState(() => isEditing = true);
+                                    try {
+                                      final updatedTask = task.copyWith(
+                                        name: _editTitleController.text.trim(),
+                                        description: _editDescController.text.trim(),
+                                        reward: int.tryParse(_editRewardController.text) ?? task.reward,
+                                        customerId: selectedMemberId,
+                                        endPoint: deadline?.toUtc().toIso8601String() ?? task.endPoint,
+                                      );
+
+                                      await Provider.of<TaskProvider>(context, listen: false)
+                                          .updateTask(updatedTask);
+
+                                      if (mounted) {
+                                        Navigator.of(context).pop();
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Задача обновлена')),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (mounted) {
+                                        _showError('Ошибка обновления: ${e.toString()}');
+                                      }
+                                    } finally {
+                                      if (mounted) {
+                                        setModalState(() => isEditing = false);
+                                      }
+                                    }
+                                  }
+                                },
+                                child: const Text(
+                                  'Сохранить',
+                                  style: TextStyle(
+                                    color: TaskScreenStyles.primaryColor,
+                                    fontSize: 12
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          _buildRoundedTextField(
+                            controller: _editTitleController,
+                            labelText: 'Название задачи',
+                            validator: (value) =>
+                            value?.isEmpty ?? true ? 'Введите название задачи' : null,
+                          ),
+                          const SizedBox(height: 16),
+
+                          _buildRoundedTextField(
+                            controller: _editDescController,
+                            labelText: 'Описание',
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 16),
+
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: DropdownButtonFormField<int>(
+                              value: selectedMemberId,
+                              decoration: InputDecoration(
+                                labelText: 'Назначить участнику',
+                                hintText: 'Оставить для всех',
+                                filled: true,
+                                fillColor: Colors.white,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Color(0xFF937DF3),
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                              dropdownColor: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              menuMaxHeight: 300,
+                              icon: Icon(Icons.arrow_drop_down, color: Color(0xFF937DF3)),
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 16,
+                              ),
+                              items: [
+                                DropdownMenuItem<int>(
+                                  value: 0,
+                                  child: Text(
+                                    'Для всех участников',
+                                    style: TextStyle(color: Colors.black),
+                                  ),
+                                ),
+                                ...Provider.of<GroupProvider>(context, listen: false)
+                                    .members
+                                    .map((member) {
+                                  return DropdownMenuItem<int>(
+                                    value: member.id,
+                                    child: Text(
+                                      member.name,
+                                      style: TextStyle(color: Colors.black),
+                                    ),
+                                  );
+                                }).toList(),
+                              ],
+                              onChanged: (value) {
+                                setModalState(() {
+                                  selectedMemberId = value;
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          _buildRoundedTextField(
+                            controller: _editRewardController,
+                            labelText: 'Количество звёзд',
+                            validator: (value) {
+                              if (value == null || value.isEmpty) return 'Введите количество';
+                              final num = double.tryParse(value);
+                              if (num == null) return 'Введите число';
+                              if (num < 0) return 'Число должно быть положительным';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    deadline == null
+                                        ? 'Выберите дедлайн'
+                                        : 'Дедлайн: ${DateFormat('dd.MM.yyyy HH:mm').format(deadline!)}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: deadline == null
+                                          ? Colors.grey[600]
+                                          : Colors.black,
+                                    ),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () async {
+                                    final newDeadline = await _selectDeadline(context);
+                                    if (newDeadline != null) {
+                                      setModalState(() {
+                                        deadline = newDeadline;
+                                      });
+                                    }
+                                  },
+                                  child: const Text(
+                                    'Выбрать',
+                                    style: TextStyle(color: TaskScreenStyles.primaryColor),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isEditing)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 16),
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

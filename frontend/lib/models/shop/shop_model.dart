@@ -40,9 +40,9 @@ class ShopModel {
   };
 
   // Запрос на удаление продукта
-  Map<String, dynamic> deleteProductRequest(int productId) => {
-    'shopid': id,
-    'productid': productId,
+  Map<String, dynamic> deleteProductRequest(int shopId, int productId) => {
+    'shopId': shopId,
+    'productId': productId,
   };
 
   // Сериализация в JSON
