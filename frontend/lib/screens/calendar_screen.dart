@@ -7,19 +7,21 @@ import '../providers/auth_provider.dart';
 import '../providers/group_provider.dart';
 import '../providers/task_provider.dart';
 
-
 class CalendarStyles {
-  static const double headerHeight = 100.0;
-  static const double monthHeaderHeight = 62.0;
-  static const double calendarHeight = 240.0;
-  static const double dayLabelFontSize = 25.0;
-  static const double dayNumberFontSize = 25.0;
-  static const double monthNameFontSize = 36.0;
-  static const double yearFontSize = 40.0;
-  static const double taskTitleFontSize = 18.0;
-  static const double taskDescriptionFontSize = 14.0;
-  static const double titleMonthCalendarSize = 23.0;
+  // Изменяем фиксированные размеры на функции, которые учитывают размер экрана
+  static double headerHeight(BuildContext context) => MediaQuery.of(context).size.height * 0.12;
+  static double monthHeaderHeight(BuildContext context) => MediaQuery.of(context).size.height * 0.07;
+  static double calendarHeight(BuildContext context) => MediaQuery.of(context).size.height * 0.28;
+  // Размеры шрифтов относительно ширины экрана
+  static double dayLabelFontSize(BuildContext context) => MediaQuery.of(context).size.width * 0.06;
+  static double dayNumberFontSize(BuildContext context) => MediaQuery.of(context).size.width * 0.06;
+  static double monthNameFontSize(BuildContext context) => MediaQuery.of(context).size.width * 0.09;
+  static double yearFontSize(BuildContext context) => MediaQuery.of(context).size.width * 0.1;
+  static double taskTitleFontSize(BuildContext context) => MediaQuery.of(context).size.width * 0.045;
+  static double taskDescriptionFontSize(BuildContext context) => MediaQuery.of(context).size.width * 0.035;
+  static double titleMonthCalendarSize(BuildContext context) => MediaQuery.of(context).size.width * 0.055;
 
+  // Цвета остаются без изменений
   static const Color primaryColor = Color(0xFF937DF3);
   static const Color secondaryColor = Color(0xFF6E44FF);
   static const Color monthHeaderColor = Color(0xFFCCC1FF);
@@ -31,16 +33,24 @@ class CalendarStyles {
   static const Color taskOnTimeColor = Colors.green;
   static const Color todayMonthColor = Color(0xFFC1FFEB);
 
-  static const BorderRadius headerBorderRadius = BorderRadius.only(
-    bottomLeft: Radius.circular(40),
-    bottomRight: Radius.circular(40),
+  static BorderRadius headerBorderRadius(BuildContext context) => BorderRadius.only(
+    bottomLeft: Radius.circular(MediaQuery.of(context).size.width * 0.1),
+    bottomRight: Radius.circular(MediaQuery.of(context).size.width * 0.1),
   );
 
-  static const EdgeInsets headerPadding = EdgeInsets.fromLTRB(25, 15, 24, 10);
-  static const EdgeInsets calendarPadding = EdgeInsets.all(16);
-  static const EdgeInsets taskCardPadding = EdgeInsets.all(12);
-  static const EdgeInsets monthPickerPadding = EdgeInsets.all(16);
+  // Адаптивные отступы
+  static EdgeInsets headerPadding(BuildContext context) => EdgeInsets.fromLTRB(
+    MediaQuery.of(context).size.width * 0.06,
+    MediaQuery.of(context).size.height * 0.02,
+    MediaQuery.of(context).size.width * 0.06,
+    MediaQuery.of(context).size.height * 0.01,
+  );
 
+  static EdgeInsets calendarPadding(BuildContext context) => EdgeInsets.all(MediaQuery.of(context).size.width * 0.04);
+  static EdgeInsets taskCardPadding(BuildContext context) => EdgeInsets.all(MediaQuery.of(context).size.width * 0.03);
+  static EdgeInsets monthPickerPadding(BuildContext context) => EdgeInsets.all(MediaQuery.of(context).size.width * 0.04);
+
+  // Тени остаются без изменений
   static const BoxShadow headerShadow = BoxShadow(
     color: Colors.black26,
     blurRadius: 12,
@@ -72,26 +82,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   DateTime _selectedDate = DateTime.now();
   bool _showYearPicker = false;
 
-  Widget _buildYearPickerOverlay() {
-    return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      child: AnimatedSize(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        alignment: Alignment.topCenter,
-        child: _showYearPicker
-            ? Material(
-          elevation: 2,
-          borderRadius: BorderRadius.circular(6),
-          child: _buildYearPicker(),
-        )
-            : const SizedBox(),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,11 +98,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Widget _buildMainContent() {
     return Column(
       children: [
-
         _buildYearHeader(),
-        const SizedBox(height: 12),
-
-
+        SizedBox(height: MediaQuery.of(context).size.height * 0.01),
         Expanded(
           child: _buildCalendarContentWithAuthCheck(),
         ),
@@ -131,7 +118,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           children: [
             _buildMonthHeader(),
             _buildCalendarGrid(),
-            const SizedBox(height: 12),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.01),
             auth.isAuthorized && group.isInGroup
                 ? _buildTaskList()
                 : _buildUnauthorizedTaskMessage(),
@@ -144,21 +131,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Widget _buildYearHeader() {
     return Container(
       width: double.infinity,
-      height: CalendarStyles.headerHeight,
+      height: CalendarStyles.headerHeight(context),
       decoration: BoxDecoration(
         color: CalendarStyles.primaryColor,
-        borderRadius: CalendarStyles.headerBorderRadius,
+        borderRadius: CalendarStyles.headerBorderRadius(context),
         boxShadow: [CalendarStyles.headerShadow],
       ),
-      padding: CalendarStyles.headerPadding,
+      padding: CalendarStyles.headerPadding(context),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
             '${_selectedDate.year}',
-            style: const TextStyle(
-              fontSize: CalendarStyles.yearFontSize,
+            style: TextStyle(
+              fontSize: CalendarStyles.yearFontSize(context),
               color: Colors.white,
               fontWeight: FontWeight.bold,
             ),
@@ -167,7 +154,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             icon: Icon(
               _showYearPicker ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
               color: Colors.white,
-              size: 40,
+              size: MediaQuery.of(context).size.width * 0.1,
             ),
             onPressed: () => setState(() => _showYearPicker = !_showYearPicker),
           ),
@@ -184,12 +171,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
         _showYearPicker = false;
       }),
       child: Container(
-        height: CalendarStyles.monthHeaderHeight,
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        height: CalendarStyles.monthHeaderHeight(context),
+        margin: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.04),
+        padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.04),
         decoration: BoxDecoration(
           color: CalendarStyles.monthHeaderColor,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
           boxShadow: [CalendarStyles.monthHeaderShadow],
         ),
         child: Row(
@@ -197,9 +184,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
           children: [
             Text(
               currentMonth!,
-              style: const TextStyle(
+              style: TextStyle(
                 color: CalendarStyles.secondaryColor,
-                fontSize: CalendarStyles.monthNameFontSize,
+                fontSize: CalendarStyles.monthNameFontSize(context),
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -213,30 +200,26 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final tasks = Provider.of<TaskProvider>(context).tasks;
 
     return Container(
-      height: CalendarStyles.calendarHeight,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      // margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-      padding: CalendarStyles.calendarPadding,
+      height: CalendarStyles.calendarHeight(context),
+      margin: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.04),
+      padding: CalendarStyles.calendarPadding(context),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.04),
         boxShadow: [CalendarStyles.calendarShadow],
       ),
       child: Column(
         children: [
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: _buildDayLabels(),
           ),
-
-
           Expanded(
             child: GridView.count(
               shrinkWrap: true,
               crossAxisCount: 7,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
+              mainAxisSpacing: MediaQuery.of(context).size.width * 0.02,
+              crossAxisSpacing: MediaQuery.of(context).size.width * 0.02,
               children: _buildCalendarDays(_selectedDate, tasks),
             ),
           ),
@@ -250,10 +233,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return days.map((day) => Center(
       child: Text(
         day,
-        style: const TextStyle(
+        style: TextStyle(
           color: CalendarStyles.dayLabelColor,
           fontWeight: FontWeight.bold,
-          fontSize: CalendarStyles.dayLabelFontSize,
+          fontSize: CalendarStyles.dayLabelFontSize(context),
         ),
       ),
     )).toList();
@@ -287,10 +270,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     return GestureDetector(
       onTap: () => setState(() => _selectedDate = date),
-      // child: Transform.translate(
-      // offset: Offset(0, -35), // ← Сдвиг по X и Y //вот тут короче надо пофиксить
       child: Container(
-        padding: EdgeInsets.only(left: 0, bottom: 7),
+        padding: EdgeInsets.only(left: 0, bottom: MediaQuery.of(context).size.width * 0.02),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
@@ -309,26 +290,26 @@ class _CalendarScreenState extends State<CalendarScreen> {
               '$day',
               style: TextStyle(
                 color: isSelected ? CalendarStyles.selectedDayColor : CalendarStyles.dayNumberColor,
-                fontSize: CalendarStyles.dayNumberFontSize,
+                fontSize: CalendarStyles.dayNumberFontSize(context),
                 fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
               ),
             ),
             if (hasTasks)
               Positioned(
                 top: 0.1,
-                right: 2,
+                right: MediaQuery.of(context).size.width * 0.01,
                 child: Container(
-                  width: 8,
-                  height: 8,
+                  width: MediaQuery.of(context).size.width * 0.02,
+                  height: MediaQuery.of(context).size.width * 0.02,
                   decoration: const BoxDecoration(
                     color: Colors.red,
                     shape: BoxShape.circle,
                   ),
                 ),
               ),
-          ],),
+          ],
         ),
-      // ),
+      ),
     );
   }
 
@@ -340,18 +321,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }).toList();
 
     if (filteredTasks.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(16.0),
+      return Padding(
+        padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.04),
         child: Text('Нет задач на выбранную дату'),
       );
     }
 
     return SizedBox(
-      height: 300,
+      height: MediaQuery.of(context).size.height * 0.35,
       child: ListView.builder(
         shrinkWrap: true,
         physics: const ClampingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.04),
         itemCount: filteredTasks.length,
         itemBuilder: (context, i) => _buildTaskCard(filteredTasks[i]),
       ),
@@ -367,22 +348,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
 
     return Container(
-      height: 96,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      height: MediaQuery.of(context).size.height * 0.12,
+      margin: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width * 0.04,
+        vertical: MediaQuery.of(context).size.height * 0.01,
+      ),
       child: Row(
         children: [
-
-
-
           Expanded(
             child: InkWell(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
               child: Stack(
                 children: [
-
                   Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.1),
@@ -395,18 +375,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           : Colors.white,
                     ),
                   ),
-
-
                   Positioned(
                     right: 0,
                     top: 0,
                     bottom: 0,
-                    width: 100,
+                    width: MediaQuery.of(context).size.width * 0.25,
                     child: ClipPath(
                       clipper: _DiagonalClipper(),
                       child: Container(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
                           gradient: LinearGradient(
                             begin: Alignment.centerLeft,
                             end: Alignment.centerRight,
@@ -427,13 +405,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       ),
                     ),
                   ),
-
-
                   Padding(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.03),
                     child: Row(
                       children: [
-
                         Expanded(
                           flex: 7,
                           child: Column(
@@ -443,9 +418,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               Text(
                                 task.name,
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: CalendarStyles.taskTitleFontSize(context),
                                   fontWeight: FontWeight.bold,
-                                  color: TaskScreenConstants.primaryColor,
+                                  color: TaskScreenStyles.primaryColor,
                                   decoration: task.state == 'Completed'
                                       ? TextDecoration.lineThrough
                                       : null,
@@ -455,11 +430,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               ),
                               if (task.description.isNotEmpty)
                                 Padding(
-                                  padding: const EdgeInsets.only(top: 4),
+                                  padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.005),
                                   child: Text(
                                     task.description,
                                     style: TextStyle(
-                                      fontSize: 13,
+                                      fontSize: CalendarStyles.taskDescriptionFontSize(context),
                                       color: Colors.grey[700],
                                     ),
                                     maxLines: 2,
@@ -469,13 +444,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             ],
                           ),
                         ),
-
-
                         Expanded(
                           flex: 3,
                           child: Stack(
                             children: [
-
                               Positioned(
                                 bottom: 0,
                                 right: 0,
@@ -486,7 +458,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                       Text(
                                         'До ${DateFormat('dd.MM').format(endPoint)}',
                                         style: TextStyle(
-                                          fontSize: 13,
+                                          fontSize: CalendarStyles.taskDescriptionFontSize(context),
                                           color: isOverdue
                                               ? Colors.red[400]
                                               : Colors.white,
@@ -497,7 +469,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                       Text(
                                         'С ${DateFormat('dd.MM').format(startPoint)}',
                                         style: TextStyle(
-                                          fontSize: 11,
+                                          fontSize: CalendarStyles.taskDescriptionFontSize(context) * 0.85,
                                           color: Colors.white.withOpacity(0.8),
                                         ),
                                       ),
@@ -511,13 +483,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   child: _buildRewardBadge(task.reward),
                                 ),
                               if (task.state == 'Completed')
-                                const Positioned(
-                                  bottom: 20,
+                                Positioned(
+                                  bottom: MediaQuery.of(context).size.height * 0.025,
                                   right: 0,
                                   child: Icon(
                                     Icons.verified,
                                     color: Colors.white,
-                                    size: 16,
+                                    size: MediaQuery.of(context).size.width * 0.04,
                                   ),
                                 ),
                             ],
@@ -537,20 +509,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Widget _buildRewardBadge(int reward) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width * 0.015,
+        vertical: MediaQuery.of(context).size.height * 0.002,
+      ),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.025),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.star, size: 16, color: Colors.amber),
-          const SizedBox(width: 2),
+          Icon(
+            Icons.star,
+            size: MediaQuery.of(context).size.width * 0.04,
+            color: Colors.amber,
+          ),
+          SizedBox(width: MediaQuery.of(context).size.width * 0.005),
           Text(
             reward.toStringAsFixed(reward.truncateToDouble() == reward ? 0 : 1),
-            style: const TextStyle(
-              fontSize: 12,
+            style: TextStyle(
+              fontSize: MediaQuery.of(context).size.width * 0.03,
               color: Colors.black87,
               fontWeight: FontWeight.bold,
             ),
@@ -575,28 +554,48 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.04),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(height: 50),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.06),
             Icon(
               auth.isAuthorized ? Icons.group : Icons.lock,
-              size: 64,
+              size: MediaQuery.of(context).size.width * 0.15,
               color: const Color(0xFF937DF3),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.01),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 18,
+              style: TextStyle(
+                fontSize: MediaQuery.of(context).size.width * 0.045,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.01),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildYearPickerOverlay() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        alignment: Alignment.topCenter,
+        child: _showYearPicker
+            ? Material(
+          elevation: 2,
+          borderRadius: BorderRadius.circular(6),
+          child: _buildYearPicker(),
+        )
+            : const SizedBox(),
       ),
     );
   }
@@ -627,16 +626,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 40),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.05),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.06),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     '$currentYear',
-                    style: const TextStyle(
-                      fontSize: CalendarStyles.yearFontSize,
+                    style: TextStyle(
+                      fontSize: CalendarStyles.yearFontSize(context),
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
@@ -645,7 +644,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     icon: Icon(
                       _showYearPicker ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                       color: Colors.white,
-                      size: 50,
+                      size: MediaQuery.of(context).size.width * 0.12,
                     ),
                     onPressed: () => setState(() {
                       _showYearPicker = !_showYearPicker;
@@ -656,14 +655,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.02),
                 child: GridView.count(
                   shrinkWrap: true,
                   physics: const ClampingScrollPhysics(),
                   crossAxisCount: 3,
                   childAspectRatio: 1.1,
-                  mainAxisSpacing: 4,
-                  crossAxisSpacing: 4,
+                  mainAxisSpacing: MediaQuery.of(context).size.width * 0.01,
+                  crossAxisSpacing: MediaQuery.of(context).size.width * 0.01,
                   children: List.generate(12, (index) {
                     final month = index + 1;
                     final monthName = toBeginningOfSentenceCase(
@@ -696,13 +695,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final isSelectedMonth = _selectedDate.month == month && _selectedDate.year == year;
 
     return Container(
-      padding: const EdgeInsets.all(5),
+      padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.01),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.02),
         color: isSelectedMonth ? CalendarStyles.secondaryColor.withOpacity(0.5) : null,
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.02),
         onTap: () {
           setState(() {
             _selectedDate = DateTime(year, month);
@@ -715,14 +714,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
             Text(
               monthName,
               style: TextStyle(
-                fontSize: CalendarStyles.titleMonthCalendarSize,
+                fontSize: CalendarStyles.titleMonthCalendarSize(context),
                 fontWeight: FontWeight.bold,
                 color: isCurrentMonth
                     ? CalendarStyles.todayMonthColor
                     : (isSelectedMonth ? Colors.white : Colors.white.withOpacity(0.8)),
               ),
             ),
-            const SizedBox(height: 5),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.005),
             Expanded(
               child: _buildMiniCalendar(year, month),
             ),
@@ -757,7 +756,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             child: Text(
               '$day',
               style: TextStyle(
-                fontSize: 9,
+                fontSize: MediaQuery.of(context).size.width * 0.025,
                 color: (month == currentMonth && year == currentYear)
                     ? CalendarStyles.todayMonthColor
                     : Colors.white,

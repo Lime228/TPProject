@@ -8,7 +8,6 @@ import 'package:zadachok/providers/auth_provider.dart';
 import 'package:zadachok/providers/settings_provider.dart';
 import 'package:zadachok/providers/group_provider.dart';
 import 'package:zadachok/routes/main_navigation.dart';
-
 import '../api/api_client.dart';
 import '../models/user/user_model.dart';
 import '../providers/shop_provider.dart';
@@ -22,40 +21,30 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  static const double BLOCK_WIDTH = 352.0;
-  static const double BLOCK_PADDING = 15.0;
-  static const double BLOCK_BORDER_RADIUS = 15.0;
-  static const double TITLE_FONT_SIZE = 25.0;
-  static const Color TITLE_COLOR = Color(0xFF6E44FF);
-  static const Color DECORATIVE_LINE_COLOR = Color(0xFFCCC1FF);
-  static const double DECORATIVE_LINE_WIDTH = 250.0;
-  static const double DECORATIVE_LINE_HEIGHT = 2.0;
-  static const double AVATAR_RADIUS = 50.0;
-  static const double SETTINGS_ICON_SIZE = 24.0;
-
   final _scrollController = ScrollController();
   final _searchController = TextEditingController();
   final _nameController = TextEditingController(text: 'Имя');
-  // final _surnameController = TextEditingController(text: 'Фамилия');
   final _birthDateController = TextEditingController(text: 'ДД.ММ.ГГГГ');
   final _picker = ImagePicker();
-
   String? _avatarBytes;
 
-  final Map<String, int> _taskStatistics = {
-    'Пн': 3, 'Вт': 7, 'Ср': 3,
-    'Чт': 8, 'Пт': 6, 'Сб': 4, 'Вс': 2,
-  };
+  // Адаптивные размеры
+  double get blockWidth => MediaQuery.of(context).size.width * 0.9;
+  double get blockPadding => MediaQuery.of(context).size.width * 0.04;
+  double get blockBorderRadius => MediaQuery.of(context).size.width * 0.035;
+  double get titleFontSize => MediaQuery.of(context).size.width * 0.065;
+  double get avatarRadius => MediaQuery.of(context).size.width * 0.12;
+  double get settingsIconSize => MediaQuery.of(context).size.width * 0.06;
+  double get decorativeLineWidth => MediaQuery.of(context).size.width * 0.7;
+  double get decorativeLineHeight => 2.0;
+
+  static const Color titleColor = Color(0xFF6E44FF);
+  static const Color decorativeLineColor = Color(0xFFCCC1FF);
 
   final Map<String, GlobalKey> _blockKeys = {
     'личные данные': GlobalKey(),
     'статистика': GlobalKey(),
     'уведомления': GlobalKey(),
-    'другие настройки': GlobalKey(),
-    'бонусные настройки': GlobalKey(),
-    'экспериментальные функции': GlobalKey(),
-    'обновления': GlobalKey(),
-    'геолокация': GlobalKey(),
     'аккаунт': GlobalKey(),
   };
 
@@ -78,7 +67,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         '${user.birthdayDate!.day}.${user.birthdayDate!.month}.${user.birthdayDate!.year}';
       }
 
-      // Загрузка аватарки
       await settingsProvider.loadSettings();
       if (settingsProvider.avatarBytes != null) {
         setState(() => _avatarBytes = settingsProvider.avatarBytes);
@@ -88,7 +76,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -103,31 +90,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SafeArea(
             child: SingleChildScrollView(
               controller: _scrollController,
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Настройки',
-                      style: TextStyle(
-                        fontSize: 35,
-                        fontWeight: FontWeight.bold,
-                        color: TITLE_COLOR,
-                      ),
+              padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.05),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Настройки',
+                    style: TextStyle(
+                      fontSize: titleFontSize * 1.4,
+                      fontWeight: FontWeight.bold,
+                      color: titleColor,
                     ),
-                    const SizedBox(height: 15),
-                    _buildSearchField(),
-                    const SizedBox(height: 15),
-                    _buildPersonalDataBlock(authProvider, isAuthorized),
-                    _buildDecorativeLine(),
-                    _buildStatisticsBlock(authProvider, isAuthorized),
-                    _buildDecorativeLine(),
-                    _buildNotificationsBlock(settings),
-                    _buildDecorativeLine(),
-                    _buildAccountBlock(authProvider, isAuthorized),
-                  ],
-                ),
+                  ),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+                  _buildSearchField(),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+                  _buildPersonalDataBlock(authProvider, isAuthorized),
+                  _buildDecorativeLine(),
+                  _buildStatisticsBlock(authProvider, isAuthorized),
+                  _buildDecorativeLine(),
+                  _buildNotificationsBlock(settings),
+                  _buildDecorativeLine(),
+                  _buildAccountBlock(authProvider, isAuthorized),
+                ],
               ),
             ),
           ),
@@ -136,31 +121,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-
-
   Widget _buildSearchField() {
     return GestureDetector(
       onTap: () => _scrollToBlock(_searchController.text),
       child: Container(
-        width: BLOCK_WIDTH,
-        height: 27,
+        width: blockWidth,
+        height: MediaQuery.of(context).size.height * 0.045,
         decoration: BoxDecoration(
           color: const Color(0xFFC1FFEB),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(blockBorderRadius),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        padding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width * 0.03,
+        ),
         child: Row(
           children: [
-            const Icon(Icons.search, color: TITLE_COLOR, size: 16),
-            const SizedBox(width: 10),
+            Icon(
+              Icons.search,
+              color: titleColor,
+              size: MediaQuery.of(context).size.width * 0.05,
+            ),
+            SizedBox(width: MediaQuery.of(context).size.width * 0.03),
             Expanded(
               child: TextField(
                 controller: _searchController,
-                style: const TextStyle(fontSize: 12, color: TITLE_COLOR),
-                decoration: const InputDecoration(
+                style: TextStyle(
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
+                  color: titleColor,
+                ),
+                decoration: InputDecoration(
                   hintText: 'Поиск',
                   border: InputBorder.none,
                   isDense: true,
+                  hintStyle: TextStyle(
+                    fontSize: MediaQuery.of(context).size.width * 0.04,
+                  ),
                 ),
               ),
             ),
@@ -179,7 +174,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildAvatar(),
-          const SizedBox(width: 30),
+          SizedBox(width: MediaQuery.of(context).size.width * 0.07),
           _buildNameFields(),
         ],
       )
@@ -199,15 +194,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Stack(
       children: [
         CircleAvatar(
-          radius: AVATAR_RADIUS,
-          backgroundColor: Colors.grey,
-          backgroundImage: authProvider.user?.photoBytes != null &&
-              authProvider.user!.photoBytes!.isNotEmpty
-              ? MemoryImage(base64Decode(authProvider.user!.photoBytes!))
+          radius: avatarRadius,
+          backgroundColor: Colors.grey[200],
+          backgroundImage: avatar != null
+              ? MemoryImage(base64Decode(avatar))
               : null,
-          child: authProvider.user?.photoBytes == null ||
-              authProvider.user!.photoBytes!.isEmpty
-              ? const Icon(Icons.person, size: 50, color: Colors.white)
+          child: avatar == null
+              ? Icon(
+            Icons.person,
+            size: avatarRadius * 0.8,
+            color: Colors.grey[600],
+          )
               : null,
         ),
         Positioned(
@@ -216,12 +213,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: GestureDetector(
             onTap: _pickImage,
             child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
+              padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.015),
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: TITLE_COLOR,
+                color: titleColor,
               ),
-              child: const Icon(Icons.add, color: Colors.white, size: 20),
+              child: Icon(
+                Icons.add,
+                color: Colors.white,
+                size: MediaQuery.of(context).size.width * 0.05,
+              ),
             ),
           ),
         ),
@@ -236,13 +237,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Поле для имени
-          const Text('Имя', style: TextStyle(fontSize: 12, color: Color(0xFF666666))),
-          const SizedBox(height: 8),
+          Text(
+            'Имя',
+            style: TextStyle(
+              fontSize: MediaQuery.of(context).size.width * 0.035,
+              color: const Color(0xFF666666),
+            ),
+          ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.01),
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(blockBorderRadius),
               boxShadow: const [
                 BoxShadow(
                   color: Colors.black12,
@@ -259,55 +265,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   await _updateUserProfile(updatedUser);
                 }
               },
-              decoration: const InputDecoration(
-                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: InputDecoration(
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width * 0.04,
+                  vertical: MediaQuery.of(context).size.height * 0.015,
+                ),
                 border: InputBorder.none,
                 hintText: 'Введите имя',
+                hintStyle: TextStyle(
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
+                ),
+              ),
+              style: TextStyle(
+                fontSize: MediaQuery.of(context).size.width * 0.04,
               ),
             ),
           ),
-          const SizedBox(height: 16),
-
-          // // Поле для фамилии
-          // const Text('Фамилия', style: TextStyle(fontSize: 12, color: Color(0xFF666666))),
-          // const SizedBox(height: 8),
-          // Container(
-          //   decoration: BoxDecoration(
-          //     color: Colors.white,
-          //     borderRadius: BorderRadius.circular(18),
-          //     boxShadow: const [
-          //       BoxShadow(
-          //         color: Colors.black12,
-          //         blurRadius: 8,
-          //         offset: Offset(0, 4),
-          //       ),
-          //     ],
-          //   ),
-          //   child: TextField(
-          //     controller: _surnameController,
-          //     onChanged: (value) async {
-          //       if (authProvider.isAuthorized && authProvider.user != null) {
-          //         final fullName = _nameController.text + (value.isNotEmpty ? ' $value' : '');
-          //         final updatedUser = authProvider.user!.copyWith(name: fullName);
-          //         await _updateUserProfile(updatedUser);
-          //       }
-          //     },
-          //     decoration: const InputDecoration(
-          //       contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          //       border: InputBorder.none,
-          //       hintText: 'Введите фамилию',
-          //     ),
-          //   ),
-          // ),
-          // const SizedBox(height: 16),
-
-          // Поле для даты рождения
-          const Text('Дата рождения', style: TextStyle(fontSize: 12, color: Color(0xFF666666))),
-          const SizedBox(height: 8),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+          Text(
+            'Дата рождения',
+            style: TextStyle(
+              fontSize: MediaQuery.of(context).size.width * 0.035,
+              color: const Color(0xFF666666),
+            ),
+          ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.01),
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(blockBorderRadius),
               boxShadow: const [
                 BoxShadow(
                   color: Colors.black12,
@@ -331,7 +317,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       final updatedUser = authProvider.user!.copyWith(birthdayDate: newDate);
                       await _updateUserProfile(updatedUser);
 
-                      // Обновляем в локальных настройках
                       final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
                       await settingsProvider.updateUserData(birthDate: value);
                     }
@@ -341,62 +326,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }
               },
               decoration: InputDecoration(
-                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width * 0.04,
+                  vertical: MediaQuery.of(context).size.height * 0.015,
+                ),
                 border: InputBorder.none,
                 hintText: 'ДД.ММ.ГГГГ',
                 hintStyle: TextStyle(
-                  color: Color(0x81_E4_E4_E4), // Чёрный, 50% прозрачности
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
+                  color: const Color(0x81E4E4E4),
                 ),
-                filled: true,
-                fillColor: Colors.white, // Светло-серый фон
+              ),
+              style: TextStyle(
+                fontSize: MediaQuery.of(context).size.width * 0.04,
               ),
               keyboardType: TextInputType.datetime,
-            )
+            ),
           ),
-
-          // Кнопка сохранения изменений (опционально)
           if (authProvider.isAuthorized) ...[
-            const SizedBox(height: 20),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.03),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6E44FF),
+                  backgroundColor: titleColor,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: BorderRadius.circular(blockBorderRadius),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: EdgeInsets.symmetric(
+                    vertical: MediaQuery.of(context).size.height * 0.015,
+                  ),
                 ),
-                onPressed: () async {
-                  // Дополнительное подтверждение сохранения
-                  final shouldSave = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Сохранить изменения?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Отмена'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Сохранить'),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (shouldSave == true) {
-                    await _updateAllFields();
-                  }
-                },
-                  child: const Padding(
-                    padding: EdgeInsets.only(left: 35, top: 0), // ← Настройте значения
-                    child: Text(
-                      'Сохранить изменения',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                  )
+                onPressed: _updateAllFields,
+                child: Text(
+                  'Сохранить изменения',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: MediaQuery.of(context).size.width * 0.04,
+                  ),
+                ),
               ),
             ),
           ],
@@ -405,60 +373,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _updateAllFields() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (!authProvider.isAuthorized || authProvider.user == null) return;
-
-    try {
-      // Формируем полное имя
-      final fullName = _nameController.text;
-
-      // Парсим дату рождения
-      DateTime? birthDate;
-      try {
-        final dateParts = _birthDateController.text.split('.');
-        if (dateParts.length == 3) {
-          birthDate = DateTime(
-            int.parse(dateParts[2]),
-            int.parse(dateParts[1]),
-            int.parse(dateParts[0]),
-          );
-        }
-      } catch (e) {
-        debugPrint('Ошибка парсинга даты: $e');
-      }
-
-      // Создаем обновленного пользователя
-      final updatedUser = authProvider.user!.copyWith(
-        name: fullName,
-        birthdayDate: birthDate,
-      );
-
-      // Обновляем на сервере
-      await _updateUserProfile(updatedUser);
-
-      // Обновляем локальные настройки
-      final settingsProvider = Provider.of<SettingsProvider>(
-          context, listen: false);
-      await settingsProvider.updateUserData(
-        name: _nameController.text,
-        // surname: _surnameController.text,
-        birthDate: _birthDateController.text,
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Данные успешно сохранены')),
-      );
-    } catch (e) {
-      debugPrint('Ошибка сохранения данных: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка сохранения: $e')),
-      );
-    }
-  }
-
   Widget _buildStatisticsBlock(AuthProvider authProvider, bool isAuthorized) {
-    // Создаем статистику на основе задач пользователя
     Map<String, int> _buildTaskStatistics() {
       final taskProvider = Provider.of<TaskProvider>(context, listen: false);
       final stats = <String, int>{
@@ -467,12 +382,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (authProvider.user == null) return stats;
 
-      // Фильтруем задачи: только выполненные (статус 2) и принадлежащие текущему пользователю
       final completedTasks = taskProvider.tasks.where((task) =>
-      task.state == 2 && task.customerId == authProvider.user!.id
-      ).toList();
+      task.state == 2 && task.customerId == authProvider.user!.id).toList();
 
-      // Группируем по дням недели
       for (final task in completedTasks) {
         final endPoint = task.deadline;
         if (endPoint != null) {
@@ -490,15 +402,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: isAuthorized
           ? Column(
         children: [
-          const Text(
+          Text(
             'Количество выполненных заданий по дням',
-            style: TextStyle(fontSize: 16, color: Color(0xFF666666)),
+            style: TextStyle(
+              fontSize: MediaQuery.of(context).size.width * 0.04,
+              color: const Color(0xFF666666),
+            ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.02),
           SizedBox(
-            height: 220,
+            height: MediaQuery.of(context).size.height * 0.2,
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 20),
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).size.height * 0.03,
+              ),
               child: Consumer<TaskProvider>(
                 builder: (context, taskProvider, child) {
                   final stats = _buildTaskStatistics();
@@ -510,21 +427,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           Container(
-                            width: 28,
-                            height: entry.value * 18.0,
+                            width: MediaQuery.of(context).size.width * 0.08,
+                            height: entry.value * MediaQuery.of(context).size.height * 0.02,
                             decoration: BoxDecoration(
-                              color: TITLE_COLOR,
-                              borderRadius: BorderRadius.circular(5),
+                              color: titleColor,
+                              borderRadius: BorderRadius.circular(blockBorderRadius),
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: MediaQuery.of(context).size.height * 0.01),
                           Text(
                             entry.key,
-                            style: const TextStyle(fontSize: 12),
+                            style: TextStyle(
+                              fontSize: MediaQuery.of(context).size.width * 0.035,
+                            ),
                           ),
                           Text(
                             entry.value.toString(),
-                            style: const TextStyle(fontSize: 12),
+                            style: TextStyle(
+                              fontSize: MediaQuery.of(context).size.width * 0.035,
+                            ),
                           ),
                         ],
                       );
@@ -540,56 +461,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-// Вспомогательная функция для получения названия дня недели
-  String _getDayOfWeekName(int weekday) {
-    switch (weekday) {
-      case 1: return 'Пн';
-      case 2: return 'Вт';
-      case 3: return 'Ср';
-      case 4: return 'Чт';
-      case 5: return 'Пт';
-      case 6: return 'Сб';
-      case 7: return 'Вс';
-      default: return '';
-    }
-  }
-
-
   Widget _buildNotificationsBlock(SettingsProvider settings) {
     return _buildBlock(
       key: _blockKeys['уведомления']!,
       title: 'Уведомления',
       child: SwitchListTile(
-        activeTrackColor: Color(0xFF6E44FF),
+        activeTrackColor: titleColor,
         value: settings.notificationsEnabled,
         onChanged: (val) => settings.update('notificationsEnabled', val),
-        title: const Text('Получать уведомления'),
-        secondary: const Icon(Icons.notifications, size: SETTINGS_ICON_SIZE),
+        title: Text(
+          'Получать уведомления',
+          style: TextStyle(
+            fontSize: MediaQuery.of(context).size.width * 0.04,
+          ),
+        ),
+        secondary: Icon(
+          Icons.notifications,
+          size: settingsIconSize,
+        ),
       ),
     );
   }
-
-
 
   Widget _buildAccountBlock(AuthProvider authProvider, bool isAuthorized) {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+
     return _buildBlock(
       key: _blockKeys['аккаунт']!,
       title: 'Аккаунт',
       child: isAuthorized
           ? Column(
         children: [
-          const SizedBox(height: 20),
-
-          // 🔄 Кнопка обновления данных
+          SizedBox(height: MediaQuery.of(context).size.height * 0.03),
           Container(
             width: double.infinity,
-            height: 50,
+            height: MediaQuery.of(context).size.height * 0.06,
             decoration: BoxDecoration(
               color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(blockBorderRadius),
               border: Border.all(color: Colors.blue.withOpacity(0.3)),
             ),
             child: TextButton(
@@ -605,25 +516,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   );
                 }
               },
-              child: const Text(
+              child: Text(
                 'Обновить данные',
                 style: TextStyle(
                   color: Colors.blue,
-                  fontSize: 16,
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           ),
-
-          const SizedBox(height: 10),
-
+          SizedBox(height: MediaQuery.of(context).size.height * 0.015),
           Container(
             width: double.infinity,
-            height: 50,
+            height: MediaQuery.of(context).size.height * 0.06,
             decoration: BoxDecoration(
               color: Colors.red[50],
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(blockBorderRadius),
               border: Border.all(color: Colors.red.withOpacity(0.3)),
             ),
             child: TextButton(
@@ -634,22 +543,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       (route) => false,
                 );
               },
-              child: const Text(
+              child: Text(
                 'Выйти из аккаунта',
                 style: TextStyle(
                   color: Colors.red,
-                  fontSize: 16,
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          const Text(
+          SizedBox(height: MediaQuery.of(context).size.height * 0.015),
+          Text(
             'После выхода потребуется повторная авторизация',
             style: TextStyle(
               color: Colors.grey,
-              fontSize: 12,
+              fontSize: MediaQuery.of(context).size.width * 0.03,
             ),
             textAlign: TextAlign.center,
           ),
@@ -657,38 +566,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
       )
           : Column(
         children: [
-          const SizedBox(height: 20),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.03),
           Container(
             width: double.infinity,
-            height: 50,
+            height: MediaQuery.of(context).size.height * 0.06,
             decoration: BoxDecoration(
               color: Colors.green[50],
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(blockBorderRadius),
               border: Border.all(color: Colors.green.withOpacity(0.3)),
             ),
             child: TextButton(
               onPressed: () {
-                authProvider.logout();
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
                 );
               },
-              child: const Text(
+              child: Text(
                 'Войти в аккаунт',
                 style: TextStyle(
                   color: Colors.green,
-                  fontSize: 16,
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          const Text(
+          SizedBox(height: MediaQuery.of(context).size.height * 0.015),
+          Text(
             'Авторизуйтесь для доступа ко всем функциям',
             style: TextStyle(
               color: Colors.grey,
-              fontSize: 12,
+              fontSize: MediaQuery.of(context).size.width * 0.03,
             ),
             textAlign: TextAlign.center,
           ),
@@ -697,16 +605,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-
   Widget _buildDecorativeLine() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 20),
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: MediaQuery.of(context).size.height * 0.03),
       child: Center(
         child: SizedBox(
-          width: DECORATIVE_LINE_WIDTH,
-          height: DECORATIVE_LINE_HEIGHT,
+          width: decorativeLineWidth,
+          height: decorativeLineHeight,
           child: DecoratedBox(
-            decoration: BoxDecoration(color: DECORATIVE_LINE_COLOR),
+            decoration: BoxDecoration(color: decorativeLineColor),
           ),
         ),
       ),
@@ -719,49 +626,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Key? key,
   }) {
     return Container(
-        key: key,
-        width: BLOCK_WIDTH,
-        padding: const EdgeInsets.all(BLOCK_PADDING),
-    decoration: BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(BLOCK_BORDER_RADIUS),
-    boxShadow: const [
-    BoxShadow(
-    color: Colors.black12,
-    blurRadius: 8,
-    offset: Offset(0, 4),
-    ),
-    ],
-    ),
-    child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-    Text(
-    title,
-    style: const TextStyle(
-    fontSize: TITLE_FONT_SIZE,
-    fontWeight: FontWeight.bold,
-    color: TITLE_COLOR,
-    ),
-    ),
-    const SizedBox(height: 15),
-    child,
-    ],
-    ),
+      key: key,
+      width: blockWidth,
+      padding: EdgeInsets.all(blockPadding),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(blockBorderRadius),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: titleFontSize,
+              fontWeight: FontWeight.bold,
+              color: titleColor,
+            ),
+          ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+          child,
+        ],
+      ),
     );
   }
 
   Widget _unauthorizedMessage(String text) {
     return Container(
-      width: BLOCK_WIDTH,
+      width: blockWidth,
       alignment: Alignment.center,
-      padding: const EdgeInsets.all(10),
+      padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.03),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 17, color: Color(0xFF666666)),
+        style: TextStyle(
+          fontSize: MediaQuery.of(context).size.width * 0.04,
+          color: const Color(0xFF666666),
+        ),
         textAlign: TextAlign.center,
       ),
     );
+  }
+
+  String _getDayOfWeekName(int weekday) {
+    switch (weekday) {
+      case 1: return 'Пн';
+      case 2: return 'Вт';
+      case 3: return 'Ср';
+      case 4: return 'Чт';
+      case 5: return 'Пт';
+      case 6: return 'Сб';
+      case 7: return 'Вс';
+      default: return '';
+    }
   }
 
   void _scrollToBlock(String query) {
@@ -781,7 +704,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // Обновим метод _pickImage:
   Future<void> _pickImage() async {
     try {
       final image = await _picker.pickImage(source: ImageSource.gallery);
@@ -794,10 +716,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
 
-        // Сохраняем локально
         await settingsProvider.updateUserData(avatarBytes: base64Image);
 
-        // Обновляем на сервере
         if (authProvider.isAuthorized && authProvider.user != null) {
           await authProvider.updateUserPhoto(base64Image);
         }
@@ -809,8 +729,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     }
   }
-
-
 
   Future<void> _updateUserProfile(UserModel updatedUser) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -831,9 +749,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _uploadAvatarToServer(File image) async {
-    debugPrint('Начало загрузки аватарки на сервер...');
-    await Future.delayed(const Duration(seconds: 1));
-    debugPrint('Аватар успешно загружен на сервер!');
+  Future<void> _updateAllFields() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (!authProvider.isAuthorized || authProvider.user == null) return;
+
+    try {
+      DateTime? birthDate;
+      try {
+        final dateParts = _birthDateController.text.split('.');
+        if (dateParts.length == 3) {
+          birthDate = DateTime(
+            int.parse(dateParts[2]),
+            int.parse(dateParts[1]),
+            int.parse(dateParts[0]),
+          );
+        }
+      } catch (e) {
+        debugPrint('Ошибка парсинга даты: $e');
+      }
+
+      final updatedUser = authProvider.user!.copyWith(
+        name: _nameController.text,
+        birthdayDate: birthDate,
+      );
+
+      await _updateUserProfile(updatedUser);
+
+      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+      await settingsProvider.updateUserData(
+        name: _nameController.text,
+        birthDate: _birthDateController.text,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Данные успешно сохранены')),
+      );
+    } catch (e) {
+      debugPrint('Ошибка сохранения данных: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка сохранения: $e')),
+      );
+    }
   }
 }

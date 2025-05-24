@@ -178,13 +178,6 @@ class _ShopScreenState extends State<ShopScreen> {
     final settingsProvider = Provider.of<SettingsProvider>(context);
     final theme = Theme.of(context);
 
-
-    final avatar = settingsProvider.avatarBytes ??
-        (authProvider.user?.photoBytes?.isNotEmpty ?? false
-            ? authProvider.user!.photoBytes
-            : null);
-
-
     return FutureBuilder<WalletModel>(
       future:
           authProvider.isAuthorized
@@ -251,7 +244,7 @@ class _ShopScreenState extends State<ShopScreen> {
               ),
               Row(
                 children: [
-                  if (authProvider.isAuthorized)
+                  if (authProvider.isAuthorized && !authProvider.isAdmin && authProvider.groupProvider.isInGroup)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -322,7 +315,6 @@ class _ShopScreenState extends State<ShopScreen> {
             const SizedBox(height: 16),
             const Text('Нет товаров', style: TextStyle(fontSize: 18)),
             const SizedBox(height: 8),
-            TextButton(onPressed: _loadData, child: const Text('Обновить')),
           ],
         ),
       );
@@ -331,9 +323,7 @@ class _ShopScreenState extends State<ShopScreen> {
     return FutureBuilder(
       future: shopProvider.isLoading ? null : Future.value(true),
       builder: (context, snapshot) {
-        if (shopProvider.isLoading && shopProvider.products.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
-        }
+
 
         if (shopProvider.error != null) {
           return Center(
@@ -440,7 +430,6 @@ class _ShopScreenState extends State<ShopScreen> {
     return GestureDetector(
       onTap: () {
         if (authProvider.isAdmin) {
-          _showProductDetails(product);
         } else {
           _showPurchaseDialog(product, shopProvider);
         }

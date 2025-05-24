@@ -16,20 +16,17 @@ class MainNavigationScreen extends StatefulWidget {
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
-class _MainNavigationScreenState extends State<MainNavigationScreen> with TickerProviderStateMixin {
+class _MainNavigationScreenState extends State<MainNavigationScreen>
+    with TickerProviderStateMixin {
   static const int DEFAULT_SELECTED_INDEX = 1;
   static const Color NAV_BAR_SHADOW_COLOR = Colors.black12;
   static const double NAV_BAR_SHADOW_BLUR = 8.0;
   static const Offset NAV_BAR_SHADOW_OFFSET = Offset(0, -2);
   static const Color UNSELECTED_ITEM_COLOR = Color(0xFF937DF3);
   static const Color SELECTED_ITEM_COLOR = Color(0xFF6E44FF);
-  static const double ICON_SIZE = 35.0;
-  static const double ACTIVE_ICON_SIZE = 50.0;
   static const String ICON_PATH = 'lib/assets/';
 
-
   int _selectedIndex = DEFAULT_SELECTED_INDEX;
-
   final PageController _pageController = PageController(initialPage: DEFAULT_SELECTED_INDEX);
   late AnimationController _animationController;
 
@@ -44,7 +41,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-
     _animationController.forward();
   }
 
@@ -117,7 +113,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
   Widget _buildSvgIcon(String iconName, bool isActive) {
     return SvgPicture.asset(
       '$ICON_PATH$iconName.svg',
-      width: isActive ? ACTIVE_ICON_SIZE : ICON_SIZE,
+      width: isActive
+          ? MediaQuery.of(context).size.width * 0.1
+          : MediaQuery.of(context).size.width * 0.07,
     );
   }
 
@@ -125,7 +123,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
     setState(() {
       _selectedIndex = index;
     });
-
     _pageController.animateToPage(
       index,
       duration: const Duration(milliseconds: 400),
@@ -185,6 +182,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
           type: BottomNavigationBarType.fixed,
           elevation: 0,
           items: navItems,
+          selectedFontSize: MediaQuery.of(context).size.width * 0.03,
+          unselectedFontSize: MediaQuery.of(context).size.width * 0.03,
         ),
       ),
     );

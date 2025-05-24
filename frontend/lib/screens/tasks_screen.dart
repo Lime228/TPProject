@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/cupertino.dart' as ui;
 import 'package:flutter/material.dart';
@@ -7,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:zadachok/models/lobby/lobby_model.dart';
 import 'package:zadachok/models/task/task_model.dart';
+import 'package:zadachok/providers/shop_provider.dart';
 import '../api/api_client.dart';
 import '../models/user/user_model.dart';
 import '../providers/auth_provider.dart';
@@ -16,23 +16,47 @@ import '../providers/group_provider.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
 
-
-class TaskScreenConstants {
-  static const double cardElevation = 2.0;
-  static const EdgeInsets cardMargin = EdgeInsets.only(left: 70, right: 20);
-  static const EdgeInsets cardPadding = EdgeInsets.all(12);
-  static const double taskNameFontSize = 18.0;
-  static const double dateFontSize = 14.0;
+class TaskScreenStyles {
+  // Responsive sizes based on screen dimensions
+  static double cardElevation(BuildContext context) => 2.0;
+  static EdgeInsets cardMargin(BuildContext context) => EdgeInsets.only(
+    left: MediaQuery.of(context).size.width * 0.18,
+    right: MediaQuery.of(context).size.width * 0.05,
+  );
+  static EdgeInsets cardPadding(BuildContext context) => EdgeInsets.all(MediaQuery.of(context).size.width * 0.03);
+  static double taskNameFontSize(BuildContext context) => MediaQuery.of(context).size.width * 0.045;
+  static double dateFontSize(BuildContext context) => MediaQuery.of(context).size.width * 0.035;
   static const Color primaryColor = Color(0xFF937DF3);
   static const Color secondaryColor = Color(0xFF6E44FF);
-  static const double avatarRadius = 25.0;
-  static const double headerHeight = 100.0;
-  static const double headerBottomRadius = 40.0;
-  static const EdgeInsets headerPadding = EdgeInsets.fromLTRB(24, 15, 24, 10);
-  static const double searchBarHeight = 50.0;
+  static double avatarRadius(BuildContext context) => MediaQuery.of(context).size.width * 0.07;
+  static double headerHeight(BuildContext context) => MediaQuery.of(context).size.height * 0.12;
+  static double headerBottomRadius(BuildContext context) => MediaQuery.of(context).size.width * 0.1;
+  static EdgeInsets headerPadding(BuildContext context) => EdgeInsets.fromLTRB(
+    MediaQuery.of(context).size.width * 0.06,
+    MediaQuery.of(context).size.height * 0.02,
+    MediaQuery.of(context).size.width * 0.06,
+    MediaQuery.of(context).size.height * 0.01,
+  );
+  static double searchBarHeight(BuildContext context) => MediaQuery.of(context).size.height * 0.06;
   static const Color searchBarColor = Color(0xFFF5F5F5);
   static const Color sortButtonColor = Color(0xFF937DF3);
-  static const double searchSortWidth = 352.0;
+  static double searchSortWidth(BuildContext context) => MediaQuery.of(context).size.width * 0.9;
+
+  // Shadows and borders
+  static BoxShadow cardShadow(BuildContext context) => BoxShadow(
+    color: Colors.black.withOpacity(0.1),
+    blurRadius: 6,
+    offset: const Offset(0, 3),
+  );
+
+  static BorderRadius cardBorderRadius(BuildContext context) => BorderRadius.circular(
+    MediaQuery.of(context).size.width * 0.03,
+  );
+
+  static BorderRadius headerBorderRadius(BuildContext context) => BorderRadius.only(
+    bottomLeft: Radius.circular(MediaQuery.of(context).size.width * 0.1),
+    bottomRight: Radius.circular(MediaQuery.of(context).size.width * 0.1),
+  );
 }
 
 class TasksScreen extends StatefulWidget {
@@ -43,9 +67,7 @@ class TasksScreen extends StatefulWidget {
 }
 
 class _TasksScreenState extends State<TasksScreen> {
-
   int? _selectedMemberId;
-
   late final _formKey = GlobalKey<FormState>();
   late final _titleController = TextEditingController();
   late final _descController = TextEditingController();
@@ -53,8 +75,6 @@ class _TasksScreenState extends State<TasksScreen> {
   late final _joinCodeController = TextEditingController();
   late final _rewardController = TextEditingController(text: '0');
   final _searchController = TextEditingController();
-
-
 
   bool _isLoading = false;
   DateTime? _deadline;
@@ -65,6 +85,7 @@ class _TasksScreenState extends State<TasksScreen> {
     super.initState();
     _loadTasks();
   }
+
 
   Future<void> _loadTasks() async {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
@@ -87,6 +108,17 @@ class _TasksScreenState extends State<TasksScreen> {
     if (authProvider.isAuthorized && groupProvider.isInGroup) {
       _loadTasks();
     }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _titleController.dispose();
+    _descController.dispose();
+    _groupNameController.dispose();
+    _joinCodeController.dispose();
+    _rewardController.dispose();
+    super.dispose();
   }
 
   Future<void> _selectDeadline(BuildContext context) async {
@@ -125,12 +157,12 @@ class _TasksScreenState extends State<TasksScreen> {
             // Стилизация TimePicker аналогично DatePicker
             timePickerTheme: TimePickerThemeData(
               backgroundColor: Colors.white,
-              hourMinuteTextColor: TaskScreenConstants.primaryColor,
-              hourMinuteColor: TaskScreenConstants.primaryColor.withOpacity(0.1),
-              dayPeriodTextColor: TaskScreenConstants.primaryColor,
-              dayPeriodColor: TaskScreenConstants.primaryColor.withOpacity(0.1),
-              dialHandColor: TaskScreenConstants.primaryColor,
-              dialBackgroundColor: TaskScreenConstants.primaryColor.withOpacity(0.1),
+              hourMinuteTextColor: TaskScreenStyles.primaryColor,
+              hourMinuteColor: TaskScreenStyles.primaryColor.withOpacity(0.1),
+              dayPeriodTextColor: TaskScreenStyles.primaryColor,
+              dayPeriodColor: TaskScreenStyles.primaryColor.withOpacity(0.1),
+              dialHandColor: TaskScreenStyles.primaryColor,
+              dialBackgroundColor: TaskScreenStyles.primaryColor.withOpacity(0.1),
               hourMinuteTextStyle: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -179,16 +211,6 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _titleController.dispose();
-    _descController.dispose();
-    _groupNameController.dispose();
-    _joinCodeController.dispose();
-    _rewardController.dispose();
-    super.dispose();
-  }
 
 
   @override
@@ -223,6 +245,7 @@ class _TasksScreenState extends State<TasksScreen> {
   Widget _buildMainContent() {
     final groupProvider = Provider.of<GroupProvider>(context);
 
+
     return Column(
       children: [
         if (_isFormVisible && groupProvider.isOwner)
@@ -250,13 +273,10 @@ class _TasksScreenState extends State<TasksScreen> {
 
     return Container(
       width: double.infinity,
-      height: TaskScreenConstants.headerHeight,
+      height: TaskScreenStyles.headerHeight(context),
       decoration: BoxDecoration(
-        color: TaskScreenConstants.primaryColor,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(TaskScreenConstants.headerBottomRadius),
-          bottomRight: Radius.circular(TaskScreenConstants.headerBottomRadius),
-        ),
+        color: TaskScreenStyles.primaryColor,
+        borderRadius: TaskScreenStyles.headerBorderRadius(context),
         boxShadow: [
           BoxShadow(
             color: Colors.black26,
@@ -265,7 +285,7 @@ class _TasksScreenState extends State<TasksScreen> {
           ),
         ],
       ),
-      padding: TaskScreenConstants.headerPadding,
+      padding: TaskScreenStyles.headerPadding(context),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -273,7 +293,7 @@ class _TasksScreenState extends State<TasksScreen> {
           Row(
             children: [
               CircleAvatar(
-                radius: TaskScreenConstants.avatarRadius,
+                radius: TaskScreenStyles.avatarRadius(context),
                 backgroundColor: Colors.white,
                 backgroundImage: authProvider.user?.photoBytes != null &&
                     authProvider.user!.photoBytes!.isNotEmpty
@@ -284,11 +304,11 @@ class _TasksScreenState extends State<TasksScreen> {
                     ? Icon(
                   Icons.person,
                   color: theme.colorScheme.secondary,
-                  size: TaskScreenConstants.avatarRadius,
+                  size: TaskScreenStyles.avatarRadius(context),
                 )
                     : null,
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: MediaQuery.of(context).size.width * 0.03),
               Text(
                 authProvider.user!.name ?? 'Гость',
                 style: theme.textTheme.titleLarge?.copyWith(
@@ -298,6 +318,9 @@ class _TasksScreenState extends State<TasksScreen> {
               ),
             ],
           ),
+
+          if (authProvider.groupProvider.isInGroup)
+
           Theme(
             data: Theme.of(context).copyWith(
               popupMenuTheme: const PopupMenuThemeData(
@@ -319,6 +342,7 @@ class _TasksScreenState extends State<TasksScreen> {
               ],
             ),
           )
+
         ],
       ),
     );
@@ -332,44 +356,63 @@ class _TasksScreenState extends State<TasksScreen> {
 
 
   Widget _buildUnauthorizedView() {
-    final theme = Theme.of(context);
-
     return Scaffold(
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.05),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.warning_amber_rounded,
-                  size: 64,
-                  color: theme.colorScheme.error),
-              const SizedBox(height: 20),
+              Icon(
+                Icons.warning_amber_rounded,
+                size: MediaQuery.of(context).size.width * 0.2,
+                color: Colors.orange,
+              ),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.03),
               Text(
                 'Доступ ограничен',
-                style: theme.textTheme.headlineSmall?.copyWith(
+                style: TextStyle(
+                  fontSize: MediaQuery.of(context).size.width * 0.06,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.02),
               Text(
                 'Для работы с задачами необходимо авторизоваться',
                 textAlign: TextAlign.center,
-                style: theme.textTheme.bodyLarge,
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton.icon(
-                onPressed: () => Navigator.pushNamed(context, '/login'),
-                icon: const Icon(Icons.login),
-                label: const Text('Войти в систему'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                style: TextStyle(
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
                 ),
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.04),
+              ElevatedButton.icon(
+                onPressed: () => Navigator.pushNamed(context, '/login'),
+                icon: Icon(
+                  Icons.login,
+                  size: MediaQuery.of(context).size.width * 0.05,
+                ),
+                label: Text(
+                  'Войти в систему',
+                  style: TextStyle(
+                    fontSize: MediaQuery.of(context).size.width * 0.04,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: MediaQuery.of(context).size.width * 0.06,
+                    vertical: MediaQuery.of(context).size.height * 0.015,
+                  ),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.02),
               TextButton(
                 onPressed: () => Navigator.pushNamed(context, '/register'),
-                child: const Text('Ещё нет аккаунта? Зарегистрируйтесь'),
+                child: Text(
+                  'Ещё нет аккаунта? Зарегистрируйтесь',
+                  style: TextStyle(
+                    fontSize: MediaQuery.of(context).size.width * 0.04,
+                  ),
+                ),
               ),
             ],
           ),
@@ -380,52 +423,65 @@ class _TasksScreenState extends State<TasksScreen> {
 
 
   Widget _buildNoGroupView() {
-    final theme = Theme.of(context);
-
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.05),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.group_add,
-              size: 64,
-              color: TaskScreenConstants.primaryColor,
+              size: MediaQuery.of(context).size.width * 0.2,
+              color: TaskScreenStyles.primaryColor,
             ),
-            const SizedBox(height: 20),
-            const Text(
+            SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+            Text(
               'Задачи доступны только для участников групп',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: MediaQuery.of(context).size.width * 0.05,
+                fontWeight: FontWeight.bold,
+              ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 10),
-            const Text(
+            SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+            Text(
               'Создайте новую группу или вступите в существующую, чтобы получить доступ к магазину',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              style: TextStyle(
+                fontSize: MediaQuery.of(context).size.width * 0.04,
+                color: Colors.grey,
+              ),
             ),
-            const SizedBox(height: 30),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.03),
             ElevatedButton(
               onPressed: _showCreateGroupDialog,
               style: ElevatedButton.styleFrom(
-                backgroundColor: TaskScreenConstants.primaryColor,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                backgroundColor: TaskScreenStyles.primaryColor,
+                padding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width * 0.06,
+                  vertical: MediaQuery.of(context).size.height * 0.015,
+                ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 'Создать группу',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
+                ),
               ),
             ),
-            const SizedBox(height: 15),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.02),
             TextButton(
               onPressed: _showJoinGroupDialog,
               child: Text(
                 'Вступить в существующую группу',
-                style: TextStyle(color: TaskScreenConstants.primaryColor),
+                style: TextStyle(
+                  color: TaskScreenStyles.primaryColor,
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
+                ),
               ),
             ),
           ],
@@ -436,17 +492,20 @@ class _TasksScreenState extends State<TasksScreen> {
 
   Widget _buildSearchAndSortBar() {
     return Container(
-      width: TaskScreenConstants.searchSortWidth,
-      height: 27,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      width: TaskScreenStyles.searchSortWidth(context),
+      height: MediaQuery.of(context).size.height * 0.04,
+      margin: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width * 0.04,
+        vertical: MediaQuery.of(context).size.height * 0.01,
+      ),
       child: Row(
         children: [
           Container(
-            width: 168,
-            height: 27,
+            width: MediaQuery.of(context).size.width * 0.4,
+            height: MediaQuery.of(context).size.height * 0.04,
             decoration: BoxDecoration(
-              color: TaskScreenConstants.sortButtonColor,
-              borderRadius: BorderRadius.circular(10),
+              color: TaskScreenStyles.sortButtonColor,
+              borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
             ),
             child: PopupMenuButton<String>(
               color: Colors.white,
@@ -475,39 +534,49 @@ class _TasksScreenState extends State<TasksScreen> {
               ],
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.sort, color: Colors.white, size: 16),
-                  SizedBox(width: 5),
-                  Text('Сортировка',
-                      style: TextStyle(color: Colors.white, fontSize: 12)),
+                children: [
+                  Icon(Icons.sort, color: Colors.white, size: MediaQuery.of(context).size.width * 0.04),
+                  SizedBox(width: MediaQuery.of(context).size.width * 0.01),
+                  Text(
+                    'Сортировка',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: MediaQuery.of(context).size.width * 0.035,
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: MediaQuery.of(context).size.width * 0.02),
           Expanded(
             child: Container(
-              height: 27,
+              height: MediaQuery.of(context).size.height * 0.04,
               decoration: BoxDecoration(
                 color: const Color(0xFFC1FFEB),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+              padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.03),
               child: Row(
                 children: [
-                  const Icon(Icons.search,
-                      color: TaskScreenConstants.primaryColor, size: 16),
-                  const SizedBox(width: 10),
+                  Icon(
+                    Icons.search,
+                    color: TaskScreenStyles.primaryColor,
+                    size: MediaQuery.of(context).size.width * 0.04,
+                  ),
+                  SizedBox(width: MediaQuery.of(context).size.width * 0.03),
                   Expanded(
                     child: TextField(
                       controller: _searchController,
-                      style: const TextStyle(
-                          fontSize: 12,
-                          color: TaskScreenConstants.primaryColor),
-                      decoration: const InputDecoration(
+                      style: TextStyle(
+                        fontSize: MediaQuery.of(context).size.width * 0.035,
+                        color: TaskScreenStyles.primaryColor,
+                      ),
+                      decoration: InputDecoration(
                         hintText: 'Поиск задач...',
                         border: InputBorder.none,
                         isDense: true,
+                        contentPadding: EdgeInsets.zero,
                       ),
                       onChanged: (value) {
                         Provider.of<TaskProvider>(context, listen: false)
@@ -516,8 +585,11 @@ class _TasksScreenState extends State<TasksScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.close,
-                        color: Colors.grey[600], size: 16),
+                    icon: Icon(
+                      Icons.close,
+                      color: Colors.grey[600],
+                      size: MediaQuery.of(context).size.width * 0.04,
+                    ),
                     onPressed: () {
                       _searchController.clear();
                       Provider.of<TaskProvider>(context, listen: false)
@@ -543,9 +615,6 @@ class _TasksScreenState extends State<TasksScreen> {
         Expanded(
           child: Consumer<TaskProvider>(
             builder: (context, taskProvider, child) {
-              if (taskProvider.isLoadingTasks) {
-                return const Center(child: CircularProgressIndicator());
-              }
 
               final authProvider = Provider.of<AuthProvider>(context);
               final isAdmin = authProvider.user?.role.isAdmin ?? false;
@@ -555,7 +624,7 @@ class _TasksScreenState extends State<TasksScreen> {
                   : taskProvider.filteredTasks.where((task) => task.customerId == authProvider.user?.id).toList();
 
               return ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: EdgeInsets.symmetric(vertical: MediaQuery.of(context).size.height * 0.01),
                 itemCount: tasksToShow.length,
                 itemBuilder: (ctx, i) => _buildTaskCard(tasksToShow[i]),
               );
@@ -597,49 +666,45 @@ class _TasksScreenState extends State<TasksScreen> {
       borderColor = Colors.orange;
       statusIcon = Icons.error_outline;
     } else {
-      borderColor = TaskScreenConstants.primaryColor;
+      borderColor = TaskScreenStyles.primaryColor;
     }
 
-
     return Container(
-      height: 96,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      height: MediaQuery.of(context).size.height * 0.12,
+      margin: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width * 0.04,
+        vertical: MediaQuery.of(context).size.height * 0.01,
+      ),
       child: Row(
         children: [
-          // Кнопка выполнения
+          // Complete task button
           InkWell(
             onTap: () => _completeTask(taskProvider, task.id),
             child: Container(
-              width: 32,
-              height: 32,
-              margin: const EdgeInsets.only(right: 12),
+              width: MediaQuery.of(context).size.width * 0.08,
+              height: MediaQuery.of(context).size.width * 0.08,
+              margin: EdgeInsets.only(right: MediaQuery.of(context).size.width * 0.03),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: borderColor, width: 2),
               ),
               child: statusIcon != null
-                  ? Icon(statusIcon, size: 20, color: borderColor)
+                  ? Icon(statusIcon, size: MediaQuery.of(context).size.width * 0.05, color: borderColor)
                   : null,
             ),
           ),
 
-          // Остальная часть карточки
+          // Task card content
           Expanded(
             child: InkWell(
               onTap: () => _showEditTaskDialog(task),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: TaskScreenStyles.cardBorderRadius(context),
               child: Stack(
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
+                      borderRadius: TaskScreenStyles.cardBorderRadius(context),
+                      boxShadow: [TaskScreenStyles.cardShadow(context)],
                       color: task.state == 2
                           ? const Color(0xFFD9FFF3)
                           : task.state == 1
@@ -648,18 +713,16 @@ class _TasksScreenState extends State<TasksScreen> {
                     ),
                   ),
 
-
-
                   Positioned(
                     right: 0,
                     top: 0,
                     bottom: 0,
-                    width: 100,
+                    width: MediaQuery.of(context).size.width * 0.25,
                     child: ClipPath(
                       clipper: _DiagonalClipper(),
                       child: Container(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: TaskScreenStyles.cardBorderRadius(context),
                           gradient: LinearGradient(
                             begin: Alignment.centerLeft,
                             end: Alignment.centerRight,
@@ -681,12 +744,10 @@ class _TasksScreenState extends State<TasksScreen> {
                     ),
                   ),
 
-
                   Padding(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.03),
                     child: Row(
                       children: [
-
                         Expanded(
                           flex: 7,
                           child: Column(
@@ -696,9 +757,9 @@ class _TasksScreenState extends State<TasksScreen> {
                               Text(
                                 task.name,
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: TaskScreenStyles.taskNameFontSize(context),
                                   fontWeight: FontWeight.bold,
-                                  color: TaskScreenConstants.primaryColor,
+                                  color: TaskScreenStyles.primaryColor,
                                   decoration: task.state == 'Completed'
                                       ? TextDecoration.lineThrough
                                       : null,
@@ -708,11 +769,11 @@ class _TasksScreenState extends State<TasksScreen> {
                               ),
                               if (task.description.isNotEmpty)
                                 Padding(
-                                  padding: const EdgeInsets.only(top: 4),
+                                  padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.005),
                                   child: Text(
                                     task.description,
                                     style: TextStyle(
-                                      fontSize: 13,
+                                      fontSize: TaskScreenStyles.dateFontSize(context),
                                       color: Colors.grey[700],
                                     ),
                                     maxLines: 2,
@@ -721,18 +782,21 @@ class _TasksScreenState extends State<TasksScreen> {
                                 ),
                               if (task.customerId != 0)
                                 Padding(
-                                  padding: const EdgeInsets.only(top: 4),
+                                  padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.005),
                                   child: Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: MediaQuery.of(context).size.width * 0.02,
+                                      vertical: MediaQuery.of(context).size.height * 0.003,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Colors.white.withOpacity(0.8),
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
                                     ),
                                     child: Text(
                                       'Для: ${groupProvider.members.firstWhere((m) => m.id == task.customerId, orElse: () => UserModel(id: 0, name: 'Неизвестно', email: '', login: '')).name}',
                                       style: TextStyle(
-                                        fontSize: 10,
-                                        color: TaskScreenConstants.primaryColor,
+                                        fontSize: TaskScreenStyles.dateFontSize(context) * 0.8,
+                                        color: TaskScreenStyles.primaryColor,
                                       ),
                                     ),
                                   ),
@@ -741,12 +805,10 @@ class _TasksScreenState extends State<TasksScreen> {
                           ),
                         ),
 
-
                         Expanded(
                           flex: 3,
                           child: Stack(
                             children: [
-
                               Positioned(
                                 bottom: 0,
                                 right: 0,
@@ -757,7 +819,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                       Text(
                                         'До ${DateFormat('dd.MM.yyyy HH:mm').format(endPoint)}',
                                         style: TextStyle(
-                                          fontSize: 13,
+                                          fontSize: TaskScreenStyles.dateFontSize(context),
                                           color: isOverdue
                                               ? Colors.red[400]
                                               : Colors.white,
@@ -768,7 +830,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                       Text(
                                         'С ${DateFormat('dd.MM.yyyy HH:mm').format(startPoint)}',
                                         style: TextStyle(
-                                          fontSize: 11,
+                                          fontSize: TaskScreenStyles.dateFontSize(context) * 0.8,
                                           color: Colors.white.withOpacity(0.8),
                                         ),
                                       ),
@@ -782,13 +844,13 @@ class _TasksScreenState extends State<TasksScreen> {
                                   child: _buildRewardBadge(task.reward),
                                 ),
                               if (task.state == 'Completed')
-                                const Positioned(
-                                  bottom: 20,
+                                Positioned(
+                                  bottom: MediaQuery.of(context).size.height * 0.025,
                                   right: 0,
                                   child: Icon(
                                     Icons.verified,
                                     color: Colors.white,
-                                    size: 16,
+                                    size: MediaQuery.of(context).size.width * 0.04,
                                   ),
                                 ),
                             ],
@@ -810,20 +872,27 @@ class _TasksScreenState extends State<TasksScreen> {
 
   Widget _buildRewardBadge(int reward) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width * 0.015,
+        vertical: MediaQuery.of(context).size.height * 0.002,
+      ),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.025),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.star, size: 14, color: Colors.amber),
-          const SizedBox(width: 2),
+          Icon(
+            Icons.star,
+            size: MediaQuery.of(context).size.width * 0.04,
+            color: Colors.amber,
+          ),
+          SizedBox(width: MediaQuery.of(context).size.width * 0.005),
           Text(
             reward.toStringAsFixed(reward.truncateToDouble() == reward ? 0 : 1),
-            style: const TextStyle(
-              fontSize: 12,
+            style: TextStyle(
+              fontSize: MediaQuery.of(context).size.width * 0.03,
               color: Colors.black87,
               fontWeight: FontWeight.bold,
             ),
@@ -869,7 +938,7 @@ class _TasksScreenState extends State<TasksScreen> {
                   const Text(
                     'Новая задача',
                     style: TextStyle(
-                      color: TaskScreenConstants.primaryColor,
+                      color: TaskScreenStyles.primaryColor,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -879,7 +948,7 @@ class _TasksScreenState extends State<TasksScreen> {
                     child: const Text(
                       'Готово',
                       style: TextStyle(
-                        color: TaskScreenConstants.primaryColor,
+                        color: TaskScreenStyles.primaryColor,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -980,7 +1049,7 @@ class _TasksScreenState extends State<TasksScreen> {
                       onPressed: () => _selectDeadline(context),
                       child: const Text(
                         'Выбрать',
-                        style: TextStyle(color: TaskScreenConstants.primaryColor),
+                        style: TextStyle(color: TaskScreenStyles.primaryColor),
                       ),
                     ),
                   ],
@@ -1045,27 +1114,20 @@ class _TasksScreenState extends State<TasksScreen> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final group = Provider.of<GroupProvider>(context, listen: false);
 
+
     if (!auth.isAuthorized || !group.isInGroup) return null;
-
-    if (!group.isOwner) {
-      return FloatingActionButton(
-        onPressed: _showNonOwnerSnackbar,
-        child: const Icon(Icons.add),
-        backgroundColor: Colors.grey,
-        tooltip: 'Доступно только администратору',
-      );
-    }
-
-    return FloatingActionButton(
-      onPressed: _showAddTaskDialog,
-      backgroundColor: TaskScreenConstants.primaryColor,
+    return group.isOwner
+        ? FloatingActionButton(
+      backgroundColor: TaskScreenStyles.primaryColor,
+      onPressed: () => _showAddTaskDialog(),
       child: const Icon(Icons.add, color: Colors.white),
-    );
+    )
+        : null;
   }
 
   final ThemeData _datePickerTheme = ThemeData.light().copyWith(
       colorScheme: const ColorScheme.light(
-        primary: TaskScreenConstants.primaryColor,
+        primary: TaskScreenStyles.primaryColor,
         onPrimary: Colors.white,
         surface: Colors.white,
         onSurface: Colors.black,
@@ -1238,7 +1300,6 @@ class _TasksScreenState extends State<TasksScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Название: ${groupProvider.groupName}'),
               Text('Код: ${groupProvider.groupCode}'),
               const SizedBox(height: 10),
               Text(
@@ -1263,6 +1324,14 @@ class _TasksScreenState extends State<TasksScreen> {
                   _showGroupManagementMenu(context);
                 },
                 child: const Text('Управление'),
+              ),
+            if (!groupProvider.isOwner)
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _showGroupMembersDialog(context);
+                },
+                child: const Text('Участники группы'),
               ),
           ],
         ),
@@ -1463,6 +1532,9 @@ class _TasksScreenState extends State<TasksScreen> {
 
   void _showCreateGroupDialog() {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+    groupProvider.refreshGroupData();
 
     if (groupProvider.isInGroup) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1486,6 +1558,7 @@ class _TasksScreenState extends State<TasksScreen> {
               Navigator.pop(ctx);
               try {
                 await groupProvider.createGroup();
+                await groupProvider.authProvider!.refreshAll(groupProvider, taskProvider, shopProvider);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Группа создана! Код: ${groupProvider.groupCode}')),
                 );

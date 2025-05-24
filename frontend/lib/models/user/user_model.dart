@@ -63,8 +63,6 @@ class UserModel {
     'password': password,
     'email': email,
     'name': name,
-    if (birthdayDate != null) 'birthdayDate': birthdayDate!.toIso8601String(),
-    if (photoBytes!.isNotEmpty) 'photo': photoBytes,
   };
 
   Map<String, dynamic> toLoginRequest() => {

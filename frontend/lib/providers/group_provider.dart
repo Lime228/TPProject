@@ -66,6 +66,7 @@ class GroupProvider with ChangeNotifier {
 
   // Основные методы
   Future<void> createGroup() async {
+
     try {
       final userId = _validateCurrentUser();
       final apiClient = _getAuthenticatedClient();

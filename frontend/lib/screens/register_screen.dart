@@ -1,10 +1,9 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:zadachok/api/api_client.dart';
 import 'package:zadachok/api/api_interface.dart';
 import 'package:zadachok/models/user/user_model.dart';
 import 'package:zadachok/routes/main_navigation.dart';
-import 'package:zadachok/screens/login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   final ApiInterface apiClient;
@@ -19,41 +18,22 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-
-  static const double borderRadius = 15.0;
-  static const Offset shadowOffset = Offset(0, 4);
-  static const double shadowBlur = 6.0;
-  static const EdgeInsets contentPadding =
-  EdgeInsets.symmetric(horizontal: 20, vertical: 15);
-  static const double buttonWidth = 200.0;
-  static const double buttonHeight = 44.0;
-  static const double inputWidth = 305.0;
-  static const double inputHeight = 41.0;
-  static const Color colorEnter = Color.fromARGB(100, 110, 68, 255);
-  static const Color colorEnterButton = Color(0xFF937DF3);
-
-
-  static const TextStyle textStyle = TextStyle(
-    fontSize: 15,
-    fontFamily: 'Inter',
-    fontWeight: FontWeight.w600,
-  );
-
-  static const TextStyle enterStyle = TextStyle(
-    fontSize: 15,
-    fontFamily: 'Inter',
-    fontWeight: FontWeight.w600,
-    color: Colors.white,
-  );
-
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _emailController = TextEditingController();
-
   bool _isLoading = false;
   bool _obscureText = true;
   String? _errorMessage;
+
+  // Адаптивные размеры
+  double get borderRadius => MediaQuery.of(context).size.width * 0.035;
+  double get buttonWidth => MediaQuery.of(context).size.width * 0.6;
+  double get buttonHeight => MediaQuery.of(context).size.height * 0.06;
+  double get inputWidth => MediaQuery.of(context).size.width * 0.8;
+  double get inputHeight => MediaQuery.of(context).size.height * 0.06;
+  static const colorEnter = Color.fromARGB(100, 110, 68, 255);
+  static const colorEnterButton = Color(0xFF937DF3);
 
   @override
   void dispose() {
@@ -66,6 +46,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _togglePasswordVisibility() => setState(() => _obscureText = !_obscureText);
 
   Future<void> _register() async {
+    final apiClient = ApiClient();
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -73,24 +54,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _errorMessage = null;
     });
 
+    widget.apiClient.register(UserModel(
+      password: _passwordController.text,
+      email: _emailController.text,
+      name: _usernameController.text,
+      login: _usernameController.text,
+      birthdayDate: DateTime.tryParse('1990-01-01')
+    ));
+
     try {
-      final user = await widget.apiClient.register(
+      await apiClient.register(
         UserModel(
           password: _passwordController.text,
           email: _emailController.text,
           name: '',
           login: _usernameController.text,
-          birthdayDate: DateTime.parse('1990-01-01'),
+
         ),
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Успешная регистрация! ID: ${user.id}'),
-          duration: const Duration(seconds: 3),
-        ),
-      );
 
       Navigator.pushReplacement(
         context,
@@ -99,18 +82,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       );
     } catch (e) {
-      String errorMessage = 'Ошибка регистрации';
+
       if (e.toString().contains('email') || e.toString().contains('почт')) {
-        errorMessage = 'Некорректный email';
+        return;
       } else if (e.toString().contains('парол')) {
-        errorMessage = 'Пароль должен содержать минимум 6 символов';
+        return;
       } else if (e.toString().contains('поля')) {
-        errorMessage = 'Заполните все поля';
+        return;
       }
 
-      if (mounted) {
-        setState(() => _errorMessage = errorMessage);
-      }
+
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -124,7 +105,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
+          padding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.of(context).size.width * 0.08,
+          ),
           child: ConstrainedBox(
             constraints: BoxConstraints(
               minHeight: MediaQuery.of(context).size.height -
@@ -135,18 +118,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 40),
-                  Image.asset('lib/assets/logo.png', width: 150),
-                  const SizedBox(height: 30),
-                  const Text(
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+                  SvgPicture.asset(
+                    'lib/assets/logo.svg',
+                    width: MediaQuery.of(context).size.width * 0.4,
+                  ),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.04),
+                  Text(
                     "Регистрация",
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: MediaQuery.of(context).size.width * 0.08,
                       fontWeight: FontWeight.bold,
                       color: colorEnter,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.03),
                   _buildInputField(
                     hintText: 'Логин',
                     controller: _usernameController,
@@ -157,7 +143,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.015),
                   _buildInputField(
                     hintText: 'Почта',
                     controller: _emailController,
@@ -165,13 +151,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Введите email';
                       }
-                      if (!value.contains('@')) {
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
                         return 'Некорректный email';
                       }
                       return null;
                     },
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.015),
                   _buildInputField(
                     hintText: 'Пароль',
                     controller: _passwordController,
@@ -189,23 +175,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       icon: Icon(
                         _obscureText ? Icons.visibility_off : Icons.visibility,
                         color: Colors.grey,
+                        size: MediaQuery.of(context).size.width * 0.06,
                       ),
                       onPressed: _togglePasswordVisibility,
                     ),
                   ),
                   if (_errorMessage != null)
                     Padding(
-                      padding: const EdgeInsets.only(top: 10),
+                      padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.015),
                       child: Text(
                         _errorMessage!,
-                        style: const TextStyle(color: Colors.red),
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontSize: MediaQuery.of(context).size.width * 0.035,
+                        ),
                       ),
                     ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.03),
                   _buildRegisterButton(),
-                  const SizedBox(height: 20),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.03),
                   _buildLoginPrompt(),
-                  const SizedBox(height: 40),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.05),
                 ],
               ),
             ),
@@ -229,11 +219,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(borderRadius),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
               color: Colors.black26,
-              blurRadius: shadowBlur,
-              offset: shadowOffset,
+              blurRadius: 6,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -242,16 +232,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
           obscureText: isPassword ? _obscureText : false,
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: textStyle,
             filled: true,
             fillColor: Colors.white,
-            border: const OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(borderRadius),
               borderSide: BorderSide.none,
             ),
-            contentPadding: contentPadding,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.of(context).size.width * 0.05,
+              vertical: MediaQuery.of(context).size.height * 0.02,
+            ),
             suffixIcon: suffixIcon,
             errorStyle: const TextStyle(height: 0),
+            hintStyle: TextStyle(
+              fontSize: MediaQuery.of(context).size.width * 0.04,
+            ),
+          ),
+          style: TextStyle(
+            fontSize: MediaQuery.of(context).size.width * 0.04,
           ),
           validator: validator,
         ),
@@ -264,12 +262,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       width: buttonWidth,
       height: buttonHeight,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(borderRadius),
+        boxShadow: [
           BoxShadow(
             color: Colors.black26,
             blurRadius: 6,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -278,13 +276,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: colorEnterButton,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(25),
+            borderRadius: BorderRadius.circular(borderRadius),
           ),
           shadowColor: Colors.transparent,
         ),
         child: _isLoading
-            ? const CircularProgressIndicator(color: Colors.white)
-            : const Text("Зарегистрироваться", style: enterStyle),
+            ? SizedBox(
+          width: MediaQuery.of(context).size.width * 0.06,
+          height: MediaQuery.of(context).size.width * 0.06,
+          child: const CircularProgressIndicator(color: Colors.white),
+        )
+            : Text(
+          "Зарегистрироваться",
+          style: TextStyle(
+            fontSize: MediaQuery.of(context).size.width * 0.04,
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }
@@ -293,12 +302,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text("Уже есть аккаунт? "),
+        Text(
+          "Уже есть аккаунт? ",
+          style: TextStyle(
+            fontSize: MediaQuery.of(context).size.width * 0.035,
+          ),
+        ),
         GestureDetector(
           onTap: () => Navigator.pop(context),
-          child: const Text(
+          child: Text(
             "Войти",
-            style: TextStyle(color: colorEnterButton),
+            style: TextStyle(
+              color: colorEnterButton,
+              fontSize: MediaQuery.of(context).size.width * 0.035,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],
