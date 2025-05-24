@@ -264,12 +264,9 @@ class _TasksScreenState extends State<TasksScreen> {
   Widget _buildProfileHeader(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final settingsProvider = Provider.of<SettingsProvider>(context);
+    final groupProvider = Provider.of<GroupProvider>(context);
     final theme = Theme.of(context);
 
-    final avatarBytes = settingsProvider.avatarBytes ??
-        (authProvider.user?.photoBytes?.isNotEmpty ?? false
-            ? authProvider.user!.photoBytes
-            : null);
 
     return Container(
       width: double.infinity,
@@ -319,7 +316,7 @@ class _TasksScreenState extends State<TasksScreen> {
             ],
           ),
 
-          if (authProvider.groupProvider.isInGroup)
+          if(groupProvider.isInGroup)
 
           Theme(
             data: Theme.of(context).copyWith(
@@ -1534,6 +1531,7 @@ class _TasksScreenState extends State<TasksScreen> {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     groupProvider.refreshGroupData();
 
     if (groupProvider.isInGroup) {
@@ -1558,7 +1556,10 @@ class _TasksScreenState extends State<TasksScreen> {
               Navigator.pop(ctx);
               try {
                 await groupProvider.createGroup();
+                await groupProvider.isInGroup;
                 await groupProvider.authProvider!.refreshAll(groupProvider, taskProvider, shopProvider);
+                await groupProvider.authProvider!.refreshUserData();
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Группа создана! Код: ${groupProvider.groupCode}')),
                 );
