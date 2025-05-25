@@ -262,7 +262,7 @@ void main() {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
 
-        expect(responseData['name'], equals('TEST TASK'),
+        expect(responseData['name'], equals('тест TASK'),
             reason: 'Название задания не соответствует');
 
 
