@@ -210,23 +210,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
       child: Column(
         children: [
+          // Фиксированные дни недели
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: _buildDayLabels(),
           ),
+          const SizedBox(height: 8), // Можно регулировать отступ между днями недели и числами
+          // Скроллимые даты
           Expanded(
             child: GridView.count(
               shrinkWrap: true,
               crossAxisCount: 7,
               mainAxisSpacing: MediaQuery.of(context).size.width * 0.02,
               crossAxisSpacing: MediaQuery.of(context).size.width * 0.02,
-              children: _buildCalendarDays(_selectedDate, tasks),
+              children: _buildCalendarDays(_selectedDate, tasks), // только числа месяца + пустые ячейки
             ),
           ),
         ],
       ),
     );
   }
+
 
   List<Widget> _buildDayLabels() {
     const days = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
@@ -357,24 +361,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
         children: [
           Expanded(
             child: InkWell(
-              borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
+              borderRadius: TaskScreenStyles.cardBorderRadius(context),
               child: Stack(
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                      color: task.state == 'Completed'
+                      borderRadius: TaskScreenStyles.cardBorderRadius(context),
+                      boxShadow: [TaskScreenStyles.cardShadow(context)],
+                      color:
+                      task.state == 2
                           ? const Color(0xFFD9FFF3)
+                          : task.state == 1
+                          ? const Color(0xFFFFF3E0)
                           : Colors.white,
                     ),
                   ),
+
                   Positioned(
                     right: 0,
                     top: 0,
@@ -384,7 +386,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       clipper: _DiagonalClipper(),
                       child: Container(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
+                          borderRadius: TaskScreenStyles.cardBorderRadius(
+                            context,
+                          ),
                           gradient: LinearGradient(
                             begin: Alignment.centerLeft,
                             end: Alignment.centerRight,
@@ -405,8 +409,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       ),
                     ),
                   ),
+
                   Padding(
-                    padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.03),
+                    padding: EdgeInsets.all(
+                      MediaQuery.of(context).size.width * 0.03,
+                    ),
                     child: Row(
                       children: [
                         Expanded(
@@ -418,10 +425,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               Text(
                                 task.name,
                                 style: TextStyle(
-                                  fontSize: CalendarStyles.taskTitleFontSize(context),
+                                  fontSize: TaskScreenStyles.taskNameFontSize(
+                                    context,
+                                  ),
                                   fontWeight: FontWeight.bold,
                                   color: TaskScreenStyles.primaryColor,
-                                  decoration: task.state == 'Completed'
+                                  decoration:
+                                  task.state == 'Completed'
                                       ? TextDecoration.lineThrough
                                       : null,
                                 ),
@@ -430,20 +440,46 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               ),
                               if (task.description.isNotEmpty)
                                 Padding(
-                                  padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.005),
+                                  padding: EdgeInsets.only(
+                                    top:
+                                    MediaQuery.of(context).size.height *
+                                        0.005,
+                                  ),
                                   child: Text(
                                     task.description,
                                     style: TextStyle(
-                                      fontSize: CalendarStyles.taskDescriptionFontSize(context),
+                                      fontSize: TaskScreenStyles.dateFontSize(
+                                        context,
+                                      ),
                                       color: Colors.grey[700],
                                     ),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
+                              if (task.customerId != 0)
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    top:
+                                    MediaQuery.of(context).size.height *
+                                        0.005,
+                                  ),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal:
+                                      MediaQuery.of(context).size.width *
+                                          0.02,
+                                      vertical:
+                                      MediaQuery.of(context).size.height *
+                                          0.003,
+                                    ),
+
+                                  ),
+                                ),
                             ],
                           ),
                         ),
+
                         Expanded(
                           flex: 3,
                           child: Stack(
@@ -454,25 +490,40 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
+                                    if (startPoint != null)
+                                      Text(
+                                        'С ${DateFormat('dd.MM').format(startPoint)}',
+                                        style: TextStyle(
+                                          fontSize: TaskScreenStyles.dateFontSize(context) * 0.9,
+                                          color: Colors.white.withOpacity(0.8),
+                                        ),
+                                      ),
                                     if (endPoint != null)
                                       Text(
-                                        'До ${DateFormat('dd.MM').format(endPoint)}',
+                                        'До ${DateFormat('dd.MM').format(
+                                            endPoint)}',
                                         style: TextStyle(
-                                          fontSize: CalendarStyles.taskDescriptionFontSize(context),
+                                          fontSize: TaskScreenStyles
+                                              .dateFontSize(context) * 0.9,
                                           color: isOverdue
                                               ? Colors.red[400]
                                               : Colors.white,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                    if (startPoint != null)
-                                      Text(
-                                        'С ${DateFormat('dd.MM').format(startPoint)}',
-                                        style: TextStyle(
-                                          fontSize: CalendarStyles.taskDescriptionFontSize(context) * 0.85,
-                                          color: Colors.white.withOpacity(0.8),
-                                        ),
+                                    Text(
+                                      DateFormat('HH:mm').format(
+                                          endPoint!),
+                                      style: TextStyle(
+                                        fontSize: TaskScreenStyles
+                                            .dateFontSize(context) * 0.9,
+                                        color: isOverdue
+                                            ? Colors.red[400]
+                                            : Colors.white,
+                                        fontWeight: FontWeight.bold,
                                       ),
+                                    ),
+
                                   ],
                                 ),
                               ),
@@ -484,12 +535,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 ),
                               if (task.state == 'Completed')
                                 Positioned(
-                                  bottom: MediaQuery.of(context).size.height * 0.025,
+                                  bottom:
+                                  MediaQuery.of(context).size.height *
+                                      0.025,
                                   right: 0,
                                   child: Icon(
                                     Icons.verified,
                                     color: Colors.white,
-                                    size: MediaQuery.of(context).size.width * 0.04,
+                                    size:
+                                    MediaQuery.of(context).size.width *
+                                        0.04,
                                   ),
                                 ),
                             ],

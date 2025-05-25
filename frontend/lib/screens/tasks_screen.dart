@@ -16,31 +16,59 @@ import '../providers/group_provider.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
 
+const TextStyle _textStyleSemiBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w600, // SemiBold
+);
+
+const TextStyle _textStyleBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w700, // Bold
+);
+
 class TaskScreenStyles {
   // Responsive sizes based on screen dimensions
   static double cardElevation(BuildContext context) => 2.0;
+
   static EdgeInsets cardMargin(BuildContext context) => EdgeInsets.only(
     left: MediaQuery.of(context).size.width * 0.18,
     right: MediaQuery.of(context).size.width * 0.05,
   );
-  static EdgeInsets cardPadding(BuildContext context) => EdgeInsets.all(MediaQuery.of(context).size.width * 0.03);
-  static double taskNameFontSize(BuildContext context) => MediaQuery.of(context).size.width * 0.045;
-  static double dateFontSize(BuildContext context) => MediaQuery.of(context).size.width * 0.035;
+
+  static EdgeInsets cardPadding(BuildContext context) =>
+      EdgeInsets.all(MediaQuery.of(context).size.width * 0.03);
+
+  static double taskNameFontSize(BuildContext context) =>
+      MediaQuery.of(context).size.width * 0.045;
+
+  static double dateFontSize(BuildContext context) =>
+      MediaQuery.of(context).size.width * 0.035;
   static const Color primaryColor = Color(0xFF937DF3);
   static const Color secondaryColor = Color(0xFF6E44FF);
-  static double avatarRadius(BuildContext context) => MediaQuery.of(context).size.width * 0.07;
-  static double headerHeight(BuildContext context) => MediaQuery.of(context).size.height * 0.12;
-  static double headerBottomRadius(BuildContext context) => MediaQuery.of(context).size.width * 0.1;
+
+  static double avatarRadius(BuildContext context) =>
+      MediaQuery.of(context).size.width * 0.07;
+
+  static double headerHeight(BuildContext context) =>
+      MediaQuery.of(context).size.height * 0.12;
+
+  static double headerBottomRadius(BuildContext context) =>
+      MediaQuery.of(context).size.width * 0.1;
+
   static EdgeInsets headerPadding(BuildContext context) => EdgeInsets.fromLTRB(
     MediaQuery.of(context).size.width * 0.06,
     MediaQuery.of(context).size.height * 0.02,
     MediaQuery.of(context).size.width * 0.06,
     MediaQuery.of(context).size.height * 0.01,
   );
-  static double searchBarHeight(BuildContext context) => MediaQuery.of(context).size.height * 0.06;
+
+  static double searchBarHeight(BuildContext context) =>
+      MediaQuery.of(context).size.height * 0.06;
   static const Color searchBarColor = Color(0xFFF5F5F5);
   static const Color sortButtonColor = Color(0xFF937DF3);
-  static double searchSortWidth(BuildContext context) => MediaQuery.of(context).size.width * 0.9;
+
+  static double searchSortWidth(BuildContext context) =>
+      MediaQuery.of(context).size.width * 0.9;
 
   // Shadows and borders
   static BoxShadow cardShadow(BuildContext context) => BoxShadow(
@@ -49,14 +77,14 @@ class TaskScreenStyles {
     offset: const Offset(0, 3),
   );
 
-  static BorderRadius cardBorderRadius(BuildContext context) => BorderRadius.circular(
-    MediaQuery.of(context).size.width * 0.03,
-  );
+  static BorderRadius cardBorderRadius(BuildContext context) =>
+      BorderRadius.circular(MediaQuery.of(context).size.width * 0.03);
 
-  static BorderRadius headerBorderRadius(BuildContext context) => BorderRadius.only(
-    bottomLeft: Radius.circular(MediaQuery.of(context).size.width * 0.1),
-    bottomRight: Radius.circular(MediaQuery.of(context).size.width * 0.1),
-  );
+  static BorderRadius headerBorderRadius(BuildContext context) =>
+      BorderRadius.only(
+        bottomLeft: Radius.circular(MediaQuery.of(context).size.width * 0.1),
+        bottomRight: Radius.circular(MediaQuery.of(context).size.width * 0.1),
+      );
 }
 
 class TasksScreen extends StatefulWidget {
@@ -76,6 +104,8 @@ class _TasksScreenState extends State<TasksScreen> {
   late final _rewardController = TextEditingController(text: '0');
   final _searchController = TextEditingController();
 
+  DateTime? _editDeadline;
+
   bool _isLoading = false;
   DateTime? _deadline;
   bool _isFormVisible = false;
@@ -86,6 +116,15 @@ class _TasksScreenState extends State<TasksScreen> {
     _loadTasks();
   }
 
+  Future<void> _refreshData() async {
+    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    if (groupProvider.isInGroup && authProvider.isAuthorized) {
+      await taskProvider.refreshTasks();
+    }
+  }
 
   Future<void> _loadTasks() async {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
@@ -121,14 +160,15 @@ class _TasksScreenState extends State<TasksScreen> {
     super.dispose();
   }
 
-  Future<void> _selectDeadline(BuildContext context) async {
+  Future<DateTime?> _selectDeadline(BuildContext context) async {
     if (!_formKey.currentState!.validate()) {
       _showError("Проверьте заполнение полей");
-      return;
+      return null;
     }
 
     // Получаем текущую дату и время
-    DateTime initialDateTime = _deadline ?? DateTime.now().add(const Duration(days: 1));
+    DateTime initialDateTime =
+        _deadline ?? DateTime.now().add(const Duration(days: 1));
     TimeOfDay initialTime = TimeOfDay.fromDateTime(initialDateTime);
 
     // Сначала выбираем дату
@@ -138,14 +178,11 @@ class _TasksScreenState extends State<TasksScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime(2100),
       builder: (context, child) {
-        return Theme(
-          data: _datePickerTheme,
-          child: child!,
-        );
+        return Theme(data: _datePickerTheme, child: child!);
       },
     );
 
-    if (pickedDate == null) return; // Пользователь отменил выбор даты
+    if (pickedDate == null) return null; // Пользователь отменил выбор даты
 
     // Затем выбираем время
     final TimeOfDay? pickedTime = await showTimePicker(
@@ -154,7 +191,6 @@ class _TasksScreenState extends State<TasksScreen> {
       builder: (context, child) {
         return Theme(
           data: _datePickerTheme.copyWith(
-            // Стилизация TimePicker аналогично DatePicker
             timePickerTheme: TimePickerThemeData(
               backgroundColor: Colors.white,
               hourMinuteTextColor: TaskScreenStyles.primaryColor,
@@ -162,18 +198,17 @@ class _TasksScreenState extends State<TasksScreen> {
               dayPeriodTextColor: TaskScreenStyles.primaryColor,
               dayPeriodColor: TaskScreenStyles.primaryColor.withOpacity(0.1),
               dialHandColor: TaskScreenStyles.primaryColor,
-              dialBackgroundColor: TaskScreenStyles.primaryColor.withOpacity(0.1),
-              hourMinuteTextStyle: const TextStyle(
+              dialBackgroundColor: TaskScreenStyles.primaryColor.withOpacity(
+                0.1,
+              ),
+              hourMinuteTextStyle: _textStyleSemiBold.copyWith(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
           child: MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              // Фиксируем ориентацию для TimePicker
-              alwaysUse24HourFormat: true,
-            ),
+            data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
             child: child!,
           ),
         );
@@ -181,17 +216,16 @@ class _TasksScreenState extends State<TasksScreen> {
     );
 
     if (pickedTime != null && mounted) {
-      // Комбинируем выбранную дату и время
-      setState(() {
-        _deadline = DateTime(
-          pickedDate.year,
-          pickedDate.month,
-          pickedDate.day,
-          pickedTime.hour,
-          pickedTime.minute,
-        );
-      });
+      // Комбинируем выбранную дату и время и возвращаем
+      return DateTime(
+        pickedDate.year,
+        pickedDate.month,
+        pickedDate.day,
+        pickedTime.hour,
+        pickedTime.minute,
+      );
     }
+    return null;
   }
 
   Future<void> _initData() async {
@@ -199,7 +233,6 @@ class _TasksScreenState extends State<TasksScreen> {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
 
     if (authProvider.isAuthorized) {
-
       if (!groupProvider.isInGroup) {
         await groupProvider.loadGroupData();
       }
@@ -210,9 +243,6 @@ class _TasksScreenState extends State<TasksScreen> {
     }
   }
 
-
-
-
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
@@ -222,54 +252,36 @@ class _TasksScreenState extends State<TasksScreen> {
       return _buildUnauthorizedView();
     }
 
-
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
         children: [
           _buildProfileHeader(context),
-          Expanded(
-            child: _buildMainContent(),
-          ),
+          Expanded(child: _buildMainContent()),
         ],
       ),
       floatingActionButton: _buildAddTaskButton(),
     );
   }
 
-
-
-
-
   Widget _buildMainContent() {
     final groupProvider = Provider.of<GroupProvider>(context);
 
-
     return Column(
       children: [
-        if (_isFormVisible && groupProvider.isOwner)
-          _buildTaskForm(),
         Expanded(
-          child: groupProvider.isInGroup
-              ? _buildTasksList()
-              : _buildNoGroupView(),
+          child:
+              groupProvider.isInGroup ? _buildTasksList() : _buildNoGroupView(),
         ),
       ],
     );
   }
 
-
-
   Widget _buildProfileHeader(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final settingsProvider = Provider.of<SettingsProvider>(context);
     final theme = Theme.of(context);
-
-    final avatarBytes = settingsProvider.avatarBytes ??
-        (authProvider.user?.photoBytes?.isNotEmpty ?? false
-            ? authProvider.user!.photoBytes
-            : null);
+    final groupProvider = Provider.of<GroupProvider>(context);
 
     return Container(
       width: double.infinity,
@@ -295,54 +307,94 @@ class _TasksScreenState extends State<TasksScreen> {
               CircleAvatar(
                 radius: TaskScreenStyles.avatarRadius(context),
                 backgroundColor: Colors.white,
-                backgroundImage: authProvider.user?.photoBytes != null &&
-                    authProvider.user!.photoBytes!.isNotEmpty
-                    ? MemoryImage(base64Decode(authProvider.user!.photoBytes!))
-                    : null,
-                child: authProvider.user?.photoBytes == null ||
-                    authProvider.user!.photoBytes!.isEmpty
-                    ? Icon(
-                  Icons.person,
-                  color: theme.colorScheme.secondary,
-                  size: TaskScreenStyles.avatarRadius(context),
-                )
-                    : null,
+                backgroundImage:
+                    authProvider.user?.photoBytes != null &&
+                            authProvider.user!.photoBytes!.isNotEmpty
+                        ? MemoryImage(
+                          base64Decode(authProvider.user!.photoBytes!),
+                        )
+                        : null,
+                child:
+                    authProvider.user?.photoBytes == null ||
+                            authProvider.user!.photoBytes!.isEmpty
+                        ? Icon(
+                          Icons.person,
+                          color: theme.colorScheme.secondary,
+                          size: TaskScreenStyles.avatarRadius(context),
+                        )
+                        : null,
               ),
               SizedBox(width: MediaQuery.of(context).size.width * 0.03),
               Text(
                 authProvider.user!.name ?? 'Гость',
-                style: theme.textTheme.titleLarge?.copyWith(
+                style: _textStyleBold.copyWith(
                   color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                  fontSize: theme.textTheme.titleLarge?.fontSize,
                 ),
               ),
             ],
           ),
 
-          if (authProvider.groupProvider.isInGroup)
-
-          Theme(
-            data: Theme.of(context).copyWith(
-              popupMenuTheme: const PopupMenuThemeData(
-                color: Colors.white,
-                textStyle: TextStyle(color: Colors.black),
-              ),
-              splashColor: Colors.transparent,
-              highlightColor: Colors.transparent,
-              hoverColor: Colors.transparent,
-            ),
-            child: PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: Colors.white),
-              onSelected: (value) => _handlePopupSelection(value, context),
-              itemBuilder: (context) => [
-                const PopupMenuItem<String>(
-                  value: 'info',
-                  child: Text('Информация о группе'),
+          if (groupProvider.isInGroup)
+            Theme(
+              data: Theme.of(context).copyWith(
+                popupMenuTheme: PopupMenuThemeData(
+                  color: Colors.white,
+                  textStyle: _textStyleBold.copyWith(color: Colors.black),
                 ),
-              ],
+                splashColor: Colors.transparent,
+                highlightColor: Colors.transparent,
+                hoverColor: Colors.transparent,
+              ),
+              child: PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, color: Colors.white),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0), // Скругление углов
+                ),
+                elevation: 4,
+                // Тень
+                color: Colors.white,
+                // Фон меню
+                onSelected: (value) => _handlePopupSelection(value, context),
+                itemBuilder:
+                    (context) => [
+                      PopupMenuItem<String>(
+                        value: 'info',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              color: TaskScreenStyles.primaryColor,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Информация о группе',
+                              style: _textStyleSemiBold.copyWith(fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (groupProvider
+                          .isOwner) // Дополнительные пункты для админа
+                        PopupMenuItem<String>(
+                          value: 'manage',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.settings,
+                                color: TaskScreenStyles.secondaryColor,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Управление группой',
+                                style: _textStyleSemiBold.copyWith(fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+              ),
             ),
-          )
-
         ],
       ),
     );
@@ -352,8 +404,10 @@ class _TasksScreenState extends State<TasksScreen> {
     if (value == 'info') {
       _showGroupInfoDialog(context);
     }
+    if (value == 'manage') {
+      _showGroupManagementMenu(context);
+    }
   }
-
 
   Widget _buildUnauthorizedView() {
     return Scaffold(
@@ -371,16 +425,14 @@ class _TasksScreenState extends State<TasksScreen> {
               SizedBox(height: MediaQuery.of(context).size.height * 0.03),
               Text(
                 'Доступ ограничен',
-                style: TextStyle(
+                style: _textStyleBold.copyWith(
                   fontSize: MediaQuery.of(context).size.width * 0.06,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
               SizedBox(height: MediaQuery.of(context).size.height * 0.02),
               Text(
                 'Для работы с задачами необходимо авторизоваться',
-                textAlign: TextAlign.center,
-                style: TextStyle(
+                style: _textStyleSemiBold.copyWith(
                   fontSize: MediaQuery.of(context).size.width * 0.04,
                 ),
               ),
@@ -393,7 +445,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 ),
                 label: Text(
                   'Войти в систему',
-                  style: TextStyle(
+                  style: _textStyleBold.copyWith(
                     fontSize: MediaQuery.of(context).size.width * 0.04,
                   ),
                 ),
@@ -409,7 +461,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 onPressed: () => Navigator.pushNamed(context, '/register'),
                 child: Text(
                   'Ещё нет аккаунта? Зарегистрируйтесь',
-                  style: TextStyle(
+                  style: _textStyleSemiBold.copyWith(
                     fontSize: MediaQuery.of(context).size.width * 0.04,
                   ),
                 ),
@@ -420,7 +472,6 @@ class _TasksScreenState extends State<TasksScreen> {
       ),
     );
   }
-
 
   Widget _buildNoGroupView() {
     return Center(
@@ -437,20 +488,19 @@ class _TasksScreenState extends State<TasksScreen> {
             SizedBox(height: MediaQuery.of(context).size.height * 0.02),
             Text(
               'Задачи доступны только для участников групп',
-              style: TextStyle(
+              style: _textStyleBold.copyWith(
                 fontSize: MediaQuery.of(context).size.width * 0.05,
-                fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: MediaQuery.of(context).size.height * 0.01),
             Text(
               'Создайте новую группу или вступите в существующую, чтобы получить доступ к магазину',
-              textAlign: TextAlign.center,
-              style: TextStyle(
+              style: _textStyleSemiBold.copyWith(
                 fontSize: MediaQuery.of(context).size.width * 0.04,
                 color: Colors.grey,
               ),
+              textAlign: TextAlign.center,
             ),
             SizedBox(height: MediaQuery.of(context).size.height * 0.03),
             ElevatedButton(
@@ -462,12 +512,14 @@ class _TasksScreenState extends State<TasksScreen> {
                   vertical: MediaQuery.of(context).size.height * 0.015,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
+                  borderRadius: BorderRadius.circular(
+                    MediaQuery.of(context).size.width * 0.03,
+                  ),
                 ),
               ),
               child: Text(
                 'Создать группу',
-                style: TextStyle(
+                style: _textStyleBold.copyWith(
                   color: Colors.white,
                   fontSize: MediaQuery.of(context).size.width * 0.04,
                 ),
@@ -478,7 +530,7 @@ class _TasksScreenState extends State<TasksScreen> {
               onPressed: _showJoinGroupDialog,
               child: Text(
                 'Вступить в существующую группу',
-                style: TextStyle(
+                style: _textStyleBold.copyWith(
                   color: TaskScreenStyles.primaryColor,
                   fontSize: MediaQuery.of(context).size.width * 0.04,
                 ),
@@ -505,41 +557,50 @@ class _TasksScreenState extends State<TasksScreen> {
             height: MediaQuery.of(context).size.height * 0.04,
             decoration: BoxDecoration(
               color: TaskScreenStyles.sortButtonColor,
-              borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
+              borderRadius: BorderRadius.circular(
+                MediaQuery.of(context).size.width * 0.03,
+              ),
             ),
             child: PopupMenuButton<String>(
               color: Colors.white,
               offset: const Offset(0, 30),
               onSelected: (value) {
-                Provider.of<TaskProvider>(context, listen: false)
-                    .sortTasks(option: value);
+                Provider.of<TaskProvider>(
+                  context,
+                  listen: false,
+                ).sortTasks(option: value);
               },
-              itemBuilder: (context) => [
-                const PopupMenuItem<String>(
-                  value: 'date',
-                  child: Text('По дате окончания'),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'completed',
-                  child: Text('Только выполненные'),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'pending',
-                  child: Text('Только невыполненные'),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'default',
-                  child: Text('Обычная сортировка'),
-                ),
-              ],
+              itemBuilder:
+                  (context) => [
+                     PopupMenuItem<String>(
+                      value: 'date',
+                      child: Text('По дате окончания', style: _textStyleSemiBold),
+                    ),
+                     PopupMenuItem<String>(
+                      value: 'completed',
+                      child: Text('Только выполненные', style: _textStyleSemiBold),
+                    ),
+                     PopupMenuItem<String>(
+                      value: 'pending',
+                      child: Text('Только невыполненные', style: _textStyleSemiBold),
+                    ),
+                     PopupMenuItem<String>(
+                      value: 'default',
+                      child: Text('Обычная сортировка', style: _textStyleSemiBold),
+                    ),
+                  ],
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.sort, color: Colors.white, size: MediaQuery.of(context).size.width * 0.04),
+                  Icon(
+                    Icons.sort,
+                    color: Colors.white,
+                    size: MediaQuery.of(context).size.width * 0.04,
+                  ),
                   SizedBox(width: MediaQuery.of(context).size.width * 0.01),
                   Text(
                     'Сортировка',
-                    style: TextStyle(
+                    style: _textStyleSemiBold.copyWith(
                       color: Colors.white,
                       fontSize: MediaQuery.of(context).size.width * 0.035,
                     ),
@@ -554,9 +615,13 @@ class _TasksScreenState extends State<TasksScreen> {
               height: MediaQuery.of(context).size.height * 0.04,
               decoration: BoxDecoration(
                 color: const Color(0xFFC1FFEB),
-                borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
+                borderRadius: BorderRadius.circular(
+                  MediaQuery.of(context).size.width * 0.03,
+                ),
               ),
-              padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.03),
+              padding: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width * 0.03,
+              ),
               child: Row(
                 children: [
                   Icon(
@@ -568,7 +633,7 @@ class _TasksScreenState extends State<TasksScreen> {
                   Expanded(
                     child: TextField(
                       controller: _searchController,
-                      style: TextStyle(
+                      style: _textStyleSemiBold.copyWith(
                         fontSize: MediaQuery.of(context).size.width * 0.035,
                         color: TaskScreenStyles.primaryColor,
                       ),
@@ -579,8 +644,10 @@ class _TasksScreenState extends State<TasksScreen> {
                         contentPadding: EdgeInsets.zero,
                       ),
                       onChanged: (value) {
-                        Provider.of<TaskProvider>(context, listen: false)
-                            .searchTasks(value);
+                        Provider.of<TaskProvider>(
+                          context,
+                          listen: false,
+                        ).searchTasks(value);
                       },
                     ),
                   ),
@@ -592,8 +659,10 @@ class _TasksScreenState extends State<TasksScreen> {
                     ),
                     onPressed: () {
                       _searchController.clear();
-                      Provider.of<TaskProvider>(context, listen: false)
-                          .resetFilters();
+                      Provider.of<TaskProvider>(
+                        context,
+                        listen: false,
+                      ).resetFilters();
                       FocusScope.of(context).unfocus();
                     },
                   ),
@@ -606,36 +675,72 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
-
-
   Widget _buildTasksList() {
     return Column(
       children: [
-        _buildSearchAndSortBar(),
+        Consumer<TaskProvider>(
+          builder: (context, taskProvider, child) {
+            return taskProvider.filteredTasks.isNotEmpty
+                ? _buildSearchAndSortBar()
+                : const SizedBox.shrink();
+          },
+        ),
         Expanded(
-          child: Consumer<TaskProvider>(
-            builder: (context, taskProvider, child) {
+          child: RefreshIndicator(
+            onRefresh: _refreshData,
+            child: Consumer<TaskProvider>(
+              builder: (context, taskProvider, child) {
+                final authProvider = Provider.of<AuthProvider>(context);
+                final isAdmin = authProvider.user?.role.isAdmin ?? false;
 
-              final authProvider = Provider.of<AuthProvider>(context);
-              final isAdmin = authProvider.user?.role.isAdmin ?? false;
+                final tasksToShow =
+                    isAdmin
+                        ? taskProvider.filteredTasks
+                        : taskProvider.filteredTasks
+                            .where(
+                              (task) =>
+                                  task.customerId == authProvider.user?.id,
+                            )
+                            .toList();
 
-              final tasksToShow = isAdmin
-                  ? taskProvider.filteredTasks
-                  : taskProvider.filteredTasks.where((task) => task.customerId == authProvider.user?.id).toList();
+                if (tasksToShow.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.task_outlined,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Нет задач',
+                          style: _textStyleSemiBold.copyWith(fontSize: 18, color: Colors.grey),
+                        ),
+                        TextButton(
+                          onPressed: _refreshData,
+                          child: const Text('Обновить', style: _textStyleBold),
+                        ),
+                      ],
+                    ),
+                  );
+                }
 
-              return ListView.builder(
-                padding: EdgeInsets.symmetric(vertical: MediaQuery.of(context).size.height * 0.01),
-                itemCount: tasksToShow.length,
-                itemBuilder: (ctx, i) => _buildTaskCard(tasksToShow[i]),
-              );
-            },
+                return ListView.builder(
+                  padding: EdgeInsets.symmetric(
+                    vertical: MediaQuery.of(context).size.height * 0.01,
+                  ),
+                  itemCount: tasksToShow.length,
+                  itemBuilder: (ctx, i) => _buildTaskCard(tasksToShow[i]),
+                );
+              },
+            ),
           ),
         ),
       ],
     );
   }
-
-
 
   Widget _buildTaskCard(TaskModel task) {
     final theme = Theme.of(context);
@@ -647,13 +752,9 @@ class _TasksScreenState extends State<TasksScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
 
     final assignedUser = groupProvider.members.firstWhere(
-          (user) => user.id == task.customerId,
-      orElse: () => UserModel(
-        id: 0,
-        name: 'Не назначено',
-        email: '',
-        login: '',
-      ),
+      (user) => user.id == task.customerId,
+      orElse:
+          () => UserModel(id: 0, name: 'Не назначено', email: '', login: ''),
     );
 
     Color borderColor;
@@ -683,17 +784,23 @@ class _TasksScreenState extends State<TasksScreen> {
             child: Container(
               width: MediaQuery.of(context).size.width * 0.08,
               height: MediaQuery.of(context).size.width * 0.08,
-              margin: EdgeInsets.only(right: MediaQuery.of(context).size.width * 0.03),
+              margin: EdgeInsets.only(
+                right: MediaQuery.of(context).size.width * 0.03,
+              ),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: borderColor, width: 2),
               ),
-              child: statusIcon != null
-                  ? Icon(statusIcon, size: MediaQuery.of(context).size.width * 0.05, color: borderColor)
-                  : null,
+              child:
+                  statusIcon != null
+                      ? Icon(
+                        statusIcon,
+                        size: MediaQuery.of(context).size.width * 0.05,
+                        color: borderColor,
+                      )
+                      : null,
             ),
           ),
-
           // Task card content
           Expanded(
             child: InkWell(
@@ -705,11 +812,12 @@ class _TasksScreenState extends State<TasksScreen> {
                     decoration: BoxDecoration(
                       borderRadius: TaskScreenStyles.cardBorderRadius(context),
                       boxShadow: [TaskScreenStyles.cardShadow(context)],
-                      color: task.state == 2
-                          ? const Color(0xFFD9FFF3)
-                          : task.state == 1
-                          ? const Color(0xFFFFF3E0)
-                          : Colors.white,
+                      color:
+                          task.state == 2
+                              ? const Color(0xFFD9FFF3)
+                              : task.state == 1
+                              ? const Color(0xFFFFF3E0)
+                              : Colors.white,
                     ),
                   ),
 
@@ -722,7 +830,9 @@ class _TasksScreenState extends State<TasksScreen> {
                       clipper: _DiagonalClipper(),
                       child: Container(
                         decoration: BoxDecoration(
-                          borderRadius: TaskScreenStyles.cardBorderRadius(context),
+                          borderRadius: TaskScreenStyles.cardBorderRadius(
+                            context,
+                          ),
                           gradient: LinearGradient(
                             begin: Alignment.centerLeft,
                             end: Alignment.centerRight,
@@ -745,7 +855,9 @@ class _TasksScreenState extends State<TasksScreen> {
                   ),
 
                   Padding(
-                    padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.03),
+                    padding: EdgeInsets.all(
+                      MediaQuery.of(context).size.width * 0.03,
+                    ),
                     child: Row(
                       children: [
                         Expanded(
@@ -756,24 +868,30 @@ class _TasksScreenState extends State<TasksScreen> {
                             children: [
                               Text(
                                 task.name,
-                                style: TextStyle(
-                                  fontSize: TaskScreenStyles.taskNameFontSize(context),
-                                  fontWeight: FontWeight.bold,
+                                style: _textStyleBold.copyWith(
+                                  fontSize: TaskScreenStyles.taskNameFontSize(
+                                    context,
+                                  ),
                                   color: TaskScreenStyles.primaryColor,
-                                  decoration: task.state == 'Completed'
-                                      ? TextDecoration.lineThrough
-                                      : null,
+                                  decoration:
+                                      task.state == 'Completed'
+                                          ? TextDecoration.lineThrough
+                                          : null,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                               if (task.description.isNotEmpty)
                                 Padding(
-                                  padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.005),
+                                  padding: EdgeInsets.only(
+                                    top:
+                                        MediaQuery.of(context).size.height *
+                                        0.005,
+                                  ),
                                   child: Text(
                                     task.description,
-                                    style: TextStyle(
-                                      fontSize: TaskScreenStyles.dateFontSize(context),
+                                    style: _textStyleSemiBold.copyWith(
+                                      fontSize: TaskScreenStyles.dateFontSize(
+                                        context,
+                                      ),
                                       color: Colors.grey[700],
                                     ),
                                     maxLines: 2,
@@ -782,20 +900,35 @@ class _TasksScreenState extends State<TasksScreen> {
                                 ),
                               if (task.customerId != 0)
                                 Padding(
-                                  padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.005),
+                                  padding: EdgeInsets.only(
+                                    top:
+                                        MediaQuery.of(context).size.height *
+                                        0.005,
+                                  ),
                                   child: Container(
                                     padding: EdgeInsets.symmetric(
-                                      horizontal: MediaQuery.of(context).size.width * 0.02,
-                                      vertical: MediaQuery.of(context).size.height * 0.003,
+                                      horizontal:
+                                          MediaQuery.of(context).size.width *
+                                          0.02,
+                                      vertical:
+                                          MediaQuery.of(context).size.height *
+                                          0.003,
                                     ),
                                     decoration: BoxDecoration(
                                       color: Colors.white.withOpacity(0.8),
-                                      borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
+                                      borderRadius: BorderRadius.circular(
+                                        MediaQuery.of(context).size.width *
+                                            0.03,
+                                      ),
                                     ),
                                     child: Text(
                                       'Для: ${groupProvider.members.firstWhere((m) => m.id == task.customerId, orElse: () => UserModel(id: 0, name: 'Неизвестно', email: '', login: '')).name}',
-                                      style: TextStyle(
-                                        fontSize: TaskScreenStyles.dateFontSize(context) * 0.8,
+                                      style: _textStyleBold.copyWith(
+                                        fontSize:
+                                            TaskScreenStyles.dateFontSize(
+                                              context,
+                                            ) *
+                                            0.8,
                                         color: TaskScreenStyles.primaryColor,
                                       ),
                                     ),
@@ -815,25 +948,45 @@ class _TasksScreenState extends State<TasksScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
+                                    if (startPoint != null)
+                                      Text(
+                                        'С ${DateFormat('dd.MM').format(startPoint)}',
+                                        style: _textStyleSemiBold.copyWith(
+                                          fontSize: TaskScreenStyles.dateFontSize(context) * 0.9,
+                                          color: Colors.white,
+                                        ),
+                                      ),
                                     if (endPoint != null)
                                       Text(
-                                        'До ${DateFormat('dd.MM.yyyy HH:mm').format(endPoint)}',
-                                        style: TextStyle(
-                                          fontSize: TaskScreenStyles.dateFontSize(context),
-                                          color: isOverdue
-                                              ? Colors.red[400]
-                                              : Colors.white,
+                                        'До ${DateFormat('dd.MM').format(endPoint)}',
+                                        style: _textStyleBold.copyWith(
+                                          fontSize:
+                                              TaskScreenStyles.dateFontSize(
+                                                context,
+                                              ) *
+                                              0.9,
+                                          color:
+                                              isOverdue
+                                                  ? Colors.red[400]
+                                                  : Colors.white,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                    if (startPoint != null)
-                                      Text(
-                                        'С ${DateFormat('dd.MM.yyyy HH:mm').format(startPoint)}',
-                                        style: TextStyle(
-                                          fontSize: TaskScreenStyles.dateFontSize(context) * 0.8,
-                                          color: Colors.white.withOpacity(0.8),
-                                        ),
+                                    Text(
+                                      DateFormat('HH:mm').format(endPoint!),
+                                      style: _textStyleBold.copyWith(
+                                        fontSize:
+                                            TaskScreenStyles.dateFontSize(
+                                              context,
+                                            ) *
+                                            0.9,
+                                        color:
+                                            isOverdue
+                                                ? Colors.red[400]
+                                                : Colors.white,
+                                        fontWeight: FontWeight.bold,
                                       ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -845,12 +998,16 @@ class _TasksScreenState extends State<TasksScreen> {
                                 ),
                               if (task.state == 'Completed')
                                 Positioned(
-                                  bottom: MediaQuery.of(context).size.height * 0.025,
+                                  bottom:
+                                      MediaQuery.of(context).size.height *
+                                      0.025,
                                   right: 0,
                                   child: Icon(
                                     Icons.verified,
                                     color: Colors.white,
-                                    size: MediaQuery.of(context).size.width * 0.04,
+                                    size:
+                                        MediaQuery.of(context).size.width *
+                                        0.04,
                                   ),
                                 ),
                             ],
@@ -868,8 +1025,6 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
-
-
   Widget _buildRewardBadge(int reward) {
     return Container(
       padding: EdgeInsets.symmetric(
@@ -878,7 +1033,9 @@ class _TasksScreenState extends State<TasksScreen> {
       ),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.025),
+        borderRadius: BorderRadius.circular(
+          MediaQuery.of(context).size.width * 0.025,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -891,10 +1048,9 @@ class _TasksScreenState extends State<TasksScreen> {
           SizedBox(width: MediaQuery.of(context).size.width * 0.005),
           Text(
             reward.toStringAsFixed(reward.truncateToDouble() == reward ? 0 : 1),
-            style: TextStyle(
+            style: _textStyleBold.copyWith(
               fontSize: MediaQuery.of(context).size.width * 0.03,
               color: Colors.black87,
-              fontWeight: FontWeight.bold,
             ),
           ),
         ],
@@ -914,18 +1070,19 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   Widget _buildTaskForm() {
-    final theme = Theme.of(context);
-    final group = Provider.of<GroupProvider>(context, listen: false);
-    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isAdmin = authProvider.user?.role.isAdmin ?? false;
 
-    if (_selectedMemberId == null) {
-      _selectedMemberId = auth.user?.id;
+    // Для обычных пользователей всегда устанавливаем их ID
+    if (!isAdmin) {
+      _selectedMemberId = authProvider.user?.id;
     }
 
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
-      child: SingleChildScrollView( // Добавляем возможность скролла
+      child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Form(
@@ -934,69 +1091,92 @@ class _TasksScreenState extends State<TasksScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Остальной код формы остается без изменений
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text(
+                      child: Text(
                         'Отмена',
-                        style: TextStyle(color: Colors.grey),
+                        style: _textStyleBold.copyWith(color: Colors.grey),
                       ),
                     ),
-                    const Text(
+                    Text(
                       'Новая задача',
-                      style: TextStyle(
+                      style: _textStyleBold.copyWith(
                         color: TaskScreenStyles.primaryColor,
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     TextButton(
                       onPressed: _isLoading ? null : _validateAndAddTask,
-                      child: const Text(
+                      child: Text(
                         'Готово',
-                        style: TextStyle(
+                        style: _textStyleSemiBold.copyWith(
                           color: TaskScreenStyles.primaryColor,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ],
                 ),
-                    const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-                    _buildRoundedTextField(
-                      controller: _titleController,
-                      labelText: 'Название задачи',
-                      validator: (value) =>
-                      value?.isEmpty ?? true ? 'Введите название задачи' : null,
+                _buildRoundedTextField(
+                  controller: _titleController,
+                  labelText: 'Название задачи',
+                  validator:
+                      (value) =>
+                          value?.isEmpty ?? true
+                              ? 'Введите название задачи'
+                              : null,
+                ),
+                const SizedBox(height: 16),
+
+                _buildRoundedTextField(
+                  controller: _descController,
+                  labelText: 'Описание',
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 16),
+
+                // Показываем выбор участника только для админов
+                if (isAdmin) ...[
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-
-                    _buildRoundedTextField(
-                      controller: _descController,
-                      labelText: 'Описание',
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 16),
-
-                    DropdownButtonFormField<int>(
+                    child: DropdownButtonFormField<int>(
                       value: _selectedMemberId,
-                      decoration: _buildInputDecoration(
-                          'Назначить участнику',
-                          hintText: 'Оставить для всех'
+                      decoration: InputDecoration(
+                        labelText: 'Назначить участнику',
+                        hintText: 'Оставить для всех',
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
                       ),
                       items: [
                         DropdownMenuItem<int>(
                           value: null,
-                          child: Text('Для всех участников'),
+                          child: Text('Для всех участников', style: _textStyleSemiBold),
                         ),
-                        ...group.members.map((member) {
+                        ...groupProvider.members.map((member) {
                           return DropdownMenuItem<int>(
                             value: member.id,
-                            child: Text(member.name),
+                            child: Text(member.name, style: _textStyleSemiBold),
                           );
                         }).toList(),
                       ],
@@ -1006,64 +1186,80 @@ class _TasksScreenState extends State<TasksScreen> {
                         });
                       },
                     ),
-                    const SizedBox(height: 16),
+                  ),
+                  const SizedBox(height: 16),
 
-                    _buildRoundedTextField(
-                      controller: _rewardController,
-                      labelText: 'Количество звёзд',
-                      validator: (value) {
-                        if (value == null || value.isEmpty) return 'Введите количество';
-                        final num = double.tryParse(value);
-                        if (num == null) return 'Введите число';
-                        if (num < 0) return 'Число должно быть положительным';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
+                  _buildRoundedTextField(
+                    controller: _rewardController,
+                    labelText: 'Количество звёзд',
+                    validator: (value) {
+                      if (value == null || value.isEmpty)
+                        return 'Введите количество';
+                      final num = double.tryParse(value);
+                      if (num == null) return 'Введите число';
+                      if (num < 0) return 'Число должно быть положительным';
+                      return null;
+                    },
+                  ),
+                ],
+                const SizedBox(height: 16),
 
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              _deadline == null
-                                  ? 'Выберите дедлайн'
-                                  : 'Дедлайн: ${DateFormat('dd.MM.yyyy HH:mm').format(_deadline!)}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: _deadline == null
+                    ],
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _deadline == null
+                              ? 'Выберите дедлайн'
+                              : 'Дедлайн: ${DateFormat('dd.MM.yyyy HH:mm').format(_deadline!)}',
+                          style: _textStyleBold.copyWith(
+                            fontSize: 14,
+                            color:
+                                _deadline == null
                                     ? Colors.grey[600]
                                     : Colors.black,
-                              ),
-                            ),
                           ),
-                          TextButton(
-                            onPressed: () => _selectDeadline(context),
-                            child: const Text(
-                              'Выбрать',
-                              style: TextStyle(color: TaskScreenStyles.primaryColor),
-                            ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          final newDeadline = await _selectDeadline(context);
+                          if (newDeadline != null) {
+                            setState(() {
+                              _deadline = newDeadline;
+                            });
+                          }
+                        },
+                        child: Text(
+                          'Выбрать',
+                          style: _textStyleBold.copyWith(
+                            color: TaskScreenStyles.primaryColor,
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                    if (_isLoading)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 16),
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
+                    ],
+                  ),
+                ),
+                if (_isLoading)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 16),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
               ],
             ),
           ),
@@ -1071,7 +1267,6 @@ class _TasksScreenState extends State<TasksScreen> {
       ),
     );
   }
-
 
   Widget _buildRoundedTextField({
     required TextEditingController controller,
@@ -1113,45 +1308,39 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
-
-
   Widget? _buildAddTaskButton() {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final group = Provider.of<GroupProvider>(context, listen: false);
 
-
     if (!auth.isAuthorized || !group.isInGroup) return null;
-    return group.isOwner
-        ? FloatingActionButton(
+
+    return FloatingActionButton(
       backgroundColor: TaskScreenStyles.primaryColor,
       onPressed: () => _showAddTaskDialog(),
       child: const Icon(Icons.add, color: Colors.white),
-    )
-        : null;
+    );
   }
 
   final ThemeData _datePickerTheme = ThemeData.light().copyWith(
-      colorScheme: const ColorScheme.light(
-        primary: TaskScreenStyles.primaryColor,
-        onPrimary: Colors.white,
-        surface: Colors.white,
-        onSurface: Colors.black,
+    colorScheme: const ColorScheme.light(
+      primary: TaskScreenStyles.primaryColor,
+      onPrimary: Colors.white,
+      surface: Colors.white,
+      onSurface: Colors.black,
+    ),
+    dialogBackgroundColor: Colors.white,
+    dialogTheme: const DialogTheme(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(16.0)),
       ),
-      dialogBackgroundColor: Colors.white,
-      dialogTheme: const DialogTheme(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16.0)),
-        ),
-      ),
-      );
-
+    ),
+  );
 
   void _validateAndAddTask() {
     if (_formKey.currentState!.validate()) {
       _addTask();
     }
   }
-
 
   Future<void> _addTask() async {
     if (_formKey.currentState!.validate()) {
@@ -1163,11 +1352,11 @@ class _TasksScreenState extends State<TasksScreen> {
       // Получаем текущую дату и время с учетом часового пояса
       final now = DateTime.now();
       final currentDateTime = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          now.hour,
-          now.minute
+        now.year,
+        now.month,
+        now.day,
+        now.hour,
+        now.minute,
       );
 
       // Проверяем, что дедлайн установлен
@@ -1179,8 +1368,10 @@ class _TasksScreenState extends State<TasksScreen> {
       final newTask = TaskModel(
         name: _titleController.text.trim(),
         description: _descController.text.trim(),
-        endPoint: _deadline!.toUtc().toIso8601String(), // Сохраняем дедлайн как UTC
-        startPoint: currentDateTime.toUtc().toIso8601String(), // Текущее время как UTC
+        endPoint: _deadline!.toIso8601String(),
+        // Сохраняем дедлайн как UTC
+        startPoint: currentDateTime.toIso8601String(),
+        // Текущее время как UTC
         reward: int.tryParse(_rewardController.text) ?? 0,
         customerId: customerId,
         state: 0,
@@ -1188,8 +1379,10 @@ class _TasksScreenState extends State<TasksScreen> {
 
       try {
         setState(() => _isLoading = true);
-        final success = await Provider.of<TaskProvider>(context, listen: false)
-            .addTask(task: newTask, lobbyId: groupProvider.lobbyId);
+        final success = await Provider.of<TaskProvider>(
+          context,
+          listen: false,
+        ).addTask(task: newTask, lobbyId: groupProvider.lobbyId);
 
         if (success && mounted) {
           _resetForm();
@@ -1202,7 +1395,6 @@ class _TasksScreenState extends State<TasksScreen> {
       }
     }
   }
-
 
   void _resetForm() {
     _titleController.clear();
@@ -1220,12 +1412,16 @@ class _TasksScreenState extends State<TasksScreen> {
       context: context,
       isScrollControlled: true, // важно для правильного отображения
       backgroundColor: Colors.transparent, // прозрачный фон
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom, // Учитываем клавиатуру
-        ),
-        child: _buildTaskForm(),
-      ),
+      builder:
+          (context) => Padding(
+            padding: EdgeInsets.only(
+              bottom:
+                  MediaQuery.of(
+                    context,
+                  ).viewInsets.bottom, // Учитываем клавиатуру
+            ),
+            child: _buildTaskForm(),
+          ),
     );
   }
 
@@ -1243,18 +1439,23 @@ class _TasksScreenState extends State<TasksScreen> {
         return;
       }
 
-
-      final newState = authProvider.isAdmin ? 2 : 1; // Админ сразу подтверждает (2), пользователь - отмечает выполнение (1)
+      final newState =
+          authProvider.isAdmin
+              ? 2
+              : 1; // Админ сразу подтверждает (2), пользователь - отмечает выполнение (1)
       final updatedTask = task.copyWith(state: newState);
       await taskProvider.updateTask(updatedTask);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(
+          SnackBar(
+            content: Text(
               authProvider.isAdmin
                   ? 'Задача подтверждена'
-                  : 'Задача выполнена (ожидает подтверждения)'
-          )),
+                  : 'Задача выполнена (ожидает подтверждения)',
+              style: _textStyleBold,
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -1275,16 +1476,9 @@ class _TasksScreenState extends State<TasksScreen> {
     }
   }
 
-  void _showNonOwnerSnackbar() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Только администратор может добавлять задачи')),
-    );
-  }
-
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
-
 
   void _showGroupInfoDialog(BuildContext context) {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
@@ -1294,82 +1488,137 @@ class _TasksScreenState extends State<TasksScreen> {
       return;
     }
 
-    showDialog(
+    showGeneralDialog(
       context: context,
-      builder: (ctx) => Theme(
-        data: Theme.of(context).copyWith(
-          dialogTheme: DialogTheme(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16.0),
-            ),
-          ),
-        ),
-        child: AlertDialog(
-
-          title: const Text('Информация о группе'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Код: ${groupProvider.groupCode}'),
-              const SizedBox(height: 10),
-              Text(
-                groupProvider.isOwner
-                    ? 'Вы администратор группы'
-                    : 'Вы участник группы',
-                style: TextStyle(
-                  color: groupProvider.isOwner ? Colors.green : Colors.blue,
+      barrierDismissible: true,
+      barrierLabel: 'Закрыть информацию о группе',
+      // Добавлено обязательное поле
+      barrierColor: Colors.black.withOpacity(0.5),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (ctx, anim1, anim2) {
+        return Align(
+          alignment: Alignment.topCenter,
+          child: Material(
+            color: Colors.transparent,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 50),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: Text(
+                        'Информация о группе',
+                        style: _textStyleBold.copyWith(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Код: ${groupProvider.groupCode}', style: _textStyleSemiBold),
+                          const SizedBox(height: 10),
+                          Text(
+                            groupProvider.isOwner
+                                ? 'Вы администратор группы'
+                                : 'Вы участник группы',
+                            style: _textStyleBold.copyWith(
+                              color:
+                                  groupProvider.isOwner
+                                      ? Colors.green
+                                      : Colors.blue,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed:
+                                () => _handleLeaveGroup(ctx, groupProvider),
+                            child: const Text('Выйти из группы', style: _textStyleSemiBold),
+                          ),
+                          if (groupProvider.isOwner) ...[
+                            const SizedBox(width: 8),
+                          ],
+                          if (!groupProvider.isOwner) ...[
+                            const SizedBox(width: 8),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                                _showGroupMembersDialog(context);
+                              },
+                              child: const Text('Участники группы', style: _textStyleBold),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => _handleLeaveGroup(ctx, groupProvider),
-              child: const Text('Выйти из группы'),
             ),
-            if (groupProvider.isOwner)
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _showGroupManagementMenu(context);
-                },
-                child: const Text('Управление'),
-              ),
-            if (!groupProvider.isOwner)
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _showGroupMembersDialog(context);
-                },
-                child: const Text('Участники группы'),
-              ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
+      transitionBuilder: (ctx, anim1, anim2, child) {
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, -1.0),
+            end: const Offset(0, 0),
+          ).animate(CurvedAnimation(parent: anim1, curve: Curves.easeOut)),
+          child: child,
+        );
+      },
     );
   }
 
   Future<void> _handleLeaveGroup(
-      BuildContext ctx, GroupProvider groupProvider) async {
+    BuildContext ctx,
+    GroupProvider groupProvider,
+  ) async {
     final shouldLeave = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text('Подтверждение'),
-        content: const Text('Вы уверены, что хотите выйти из группы?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Отмена'),
+      builder:
+          (ctx) => AlertDialog(
+            backgroundColor: Colors.white,
+            title: const Text('Подтверждение', style: _textStyleBold,),
+            content: const Text('Вы уверены, что хотите выйти из группы?', style: _textStyleSemiBold),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Отмена', style: _textStyleBold,),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child:  Text('Выйти', style: _textStyleBold.copyWith(color: Colors.red)),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Выйти', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
     );
 
     if (shouldLeave == true) {
@@ -1382,37 +1631,109 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   void _showGroupManagementMenu(BuildContext context) {
-    showModalBottomSheet(
+    showGeneralDialog(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              tileColor: Colors.white,
-              leading: const Icon(Icons.people),
-              title: const Text('Управление участниками'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showGroupMembersDialog(context);
-              },
+      barrierDismissible: true,
+      barrierLabel: 'Закрыть меню управления группой',
+      barrierColor: Colors.black.withOpacity(0.5),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (ctx, anim1, anim2) {
+        return Align(
+          alignment: Alignment.topCenter,
+          child: Material(
+            color: Colors.transparent,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 50),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: Text(
+                        'Управление группой',
+                        style: _textStyleBold.copyWith(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(
+                              Icons.people,
+                              color: TaskScreenStyles.primaryColor,
+                            ),
+                            title: const Text('Управление участниками', style: _textStyleSemiBold),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              _showGroupMembersDialog(context);
+                            },
+                          ),
+                          const Divider(height: 1),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(
+                              Icons.delete,
+                              color: Colors.red,
+                            ),
+                            title: const Text('Распустить группу', style: _textStyleSemiBold),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              _confirmGroupDisband(context);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Закрыть', style: _textStyleSemiBold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            ListTile(
-              tileColor: Colors.white,
-              leading: const Icon(Icons.exit_to_app),
-              title: const Text('Распустить группу'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _confirmGroupDisband(context);
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
+      transitionBuilder: (ctx, anim1, anim2, child) {
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, -1.0),
+            end: const Offset(0, 0),
+          ).animate(CurvedAnimation(parent: anim1, curve: Curves.easeOut)),
+          child: child,
+        );
+      },
     );
   }
-
-
 
   Future<void> _showGroupMembersDialog(BuildContext context) async {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
@@ -1426,72 +1747,159 @@ class _TasksScreenState extends State<TasksScreen> {
     );
 
     try {
-      // 1. Обновляем данные группы с сервера
       await groupProvider.refreshGroupData();
-
-      // 2. Получаем свежий список участников
       final currentMembers = groupProvider.members;
-
-      // Закрываем индикатор загрузки
       Navigator.of(context).pop();
 
-      // 3. Показываем диалог с участниками
-      showDialog(
+      showGeneralDialog(
         context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: Colors.white,
-          title: const Text('Участники группы'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: currentMembers.length,
-              itemBuilder: (context, index) {
-                final member = currentMembers[index];
-                return ListTile(
-                  leading: CircleAvatar(
-                    child: Text(member.name[0]),
+        barrierDismissible: true,
+        barrierLabel: 'Закрыть список участников',
+        barrierColor: Colors.black.withOpacity(0.5),
+        transitionDuration: const Duration(milliseconds: 300),
+        pageBuilder: (ctx, anim1, anim2) {
+          return Align(
+            alignment: Alignment.topCenter,
+            child: Material(
+              color: Colors.transparent,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 50),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  title: Text(member.name),
-                  subtitle: Text(member.role.isAdmin ? 'Администратор' : 'Участник'),
-                  trailing: groupProvider.isOwner &&
-                      !member.role.isAdmin &&
-                      member.id != authProvider.user?.id
-                      ? IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => _removeMember(ctx, groupProvider, member),
-                  )
-                      : null,
-                );
-              },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child:  Text(
+                          'Участники группы',
+                          style: _textStyleSemiBold.copyWith(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: MediaQuery.of(context).size.height * 0.4,
+                        ),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.all(16),
+                          itemCount: currentMembers.length,
+                          itemBuilder: (context, index) {
+                            final member = currentMembers[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: CircleAvatar(
+                                  radius: 20,
+                                  child: Text(member.name[0], style: _textStyleSemiBold,),
+                                ),
+                                title: Text(
+                                  member.name,
+                                  style:  _textStyleBold.copyWith(fontSize: 14),
+                                ),
+                                subtitle: Text(
+                                  member.role.isAdmin
+                                      ? 'Администратор'
+                                      : 'Участник',
+                                  style: _textStyleSemiBold.copyWith(
+                                    fontSize: 12,
+                                    color:
+                                        member.role.isAdmin
+                                            ? Colors.green
+                                            : Colors.grey[600],
+                                  ),
+                                ),
+                                trailing:
+                                    groupProvider.isOwner &&
+                                            !member.role.isAdmin &&
+                                            member.id != authProvider.user?.id
+                                        ? IconButton(
+                                          icon: const Icon(
+                                            Icons.delete,
+
+                                            color: Colors.red,
+                                            size: 20,
+                                          ),
+                                          onPressed:
+                                              () => _removeMember(
+                                                ctx,
+                                                groupProvider,
+                                                member,
+                                              ),
+                                        )
+                                        : null,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: const Text('Закрыть', style: _textStyleSemiBold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Закрыть'),
-            ),
-          ],
-        ),
+          );
+        },
+        transitionBuilder: (ctx, anim1, anim2, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, -1.0),
+              end: const Offset(0, 0),
+            ).animate(CurvedAnimation(parent: anim1, curve: Curves.easeOut)),
+            child: child,
+          );
+        },
       );
     } catch (e) {
-      // Закрываем индикатор загрузки в случае ошибки
       Navigator.of(context).pop();
       _showError('Ошибка загрузки участников: ${e.toString()}');
     }
   }
 
   Future<void> _removeMember(
-      BuildContext ctx, GroupProvider groupProvider, UserModel member) async {
+    BuildContext ctx,
+    GroupProvider groupProvider,
+    UserModel member,
+  ) async {
     try {
       // Используем API клиент через GroupProvider
       final apiClient = ApiClient();
-      apiClient.setAuthToken(Provider.of<AuthProvider>(context, listen: false).token!);
+      apiClient.setAuthToken(
+        Provider.of<AuthProvider>(context, listen: false).token!,
+      );
 
       await apiClient.lobbyRemoveUser(groupProvider.lobbyId, member.id);
 
       // Обновляем локальное состояние через публичные методы
-      final updatedMembers = groupProvider.members.where((m) => m.id != member.id).toList();
+      final updatedMembers =
+          groupProvider.members.where((m) => m.id != member.id).toList();
       // Нужно добавить метод setMembers в GroupProvider или обновить другим способом
       // Например, через загрузку обновленных данных:
       await groupProvider.loadGroupData();
@@ -1513,32 +1921,37 @@ class _TasksScreenState extends State<TasksScreen> {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text('Распустить группу?'),
-        content: const Text(
-            'Все участники будут удалены из группы. Это действие нельзя отменить.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена'),
-          ),
-          TextButton(
-            onPressed: () async {
-              try {
-                // Используем метод disbandGroup, который уже содержит всю логику
-                await groupProvider.disbandGroup();
+      builder:
+          (ctx) => AlertDialog(
+            backgroundColor: Colors.white,
+            title: const Text('Распустить группу?', style: _textStyleBold),
+            content: const Text(
+              'Все участники будут удалены из группы. Это действие нельзя отменить.', style: _textStyleSemiBold
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Отмена', style: _textStyleSemiBold),
+              ),
+              TextButton(
+                onPressed: () async {
+                  try {
+                    // Используем метод disbandGroup, который уже содержит всю логику
+                    await groupProvider.disbandGroup();
 
-                Navigator.pop(ctx);
-                _showError('Группа распущена');
-              } catch (e) {
-                _showError('Ошибка распускания группы: ${e.toString()}');
-              }
-            },
-            child: const Text('Распустить', style: TextStyle(color: Colors.red)),
+                    Navigator.pop(ctx);
+                    _showError('Группа распущена');
+                  } catch (e) {
+                    _showError('Ошибка распускания группы: ${e.toString()}');
+                  }
+                },
+                child: Text(
+                  'Распустить',
+                  style: _textStyleSemiBold.copyWith(color: Colors.red),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -1546,154 +1959,670 @@ class _TasksScreenState extends State<TasksScreen> {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     groupProvider.refreshGroupData();
 
     if (groupProvider.isInGroup) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Вы уже в группе')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Вы уже в группе', style: _textStyleSemiBold,)));
       return;
     }
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Создать новую группу"),
-        content: const Text("Нажмите 'Создать' для генерации группы с уникальным кодом"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Отмена"),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text("Создать новую группу", style: _textStyleBold),
+            content: const Text(
+              "Нажмите 'Создать' для генерации группы с уникальным кодом",
+                style: _textStyleSemiBold
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Отмена", style: _textStyleSemiBold),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  try {
+                    await groupProvider.createGroup();
+                    await groupProvider.isInGroup;
+                    await groupProvider.authProvider!.refreshAll(
+                      groupProvider,
+                      taskProvider,
+                      shopProvider,
+                    );
+                    await groupProvider.authProvider!.refreshUserData();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Группа создана! Код: ${groupProvider.groupCode}',
+                            style: _textStyleSemiBold
+                        ),
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Ошибка: ${e.toString()}')),
+                    );
+                  }
+                },
+                child: const Text("Создать", style: _textStyleBold),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              try {
-                await groupProvider.createGroup();
-                await groupProvider.authProvider!.refreshAll(groupProvider, taskProvider, shopProvider);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Группа создана! Код: ${groupProvider.groupCode}')),
-                );
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Ошибка: ${e.toString()}')),
-                );
-              }
-            },
-            child: const Text("Создать"),
-          ),
-        ],
-      ),
     );
   }
 
   void _showJoinGroupDialog() {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Вступить в группу"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _joinCodeController,
-              decoration: const InputDecoration(
-                labelText: "Код группы",
-                hintText: "Введите 6-значный код",
-              ),
-              maxLength: 6,
-              textCapitalization: TextCapitalization.characters,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text("Вступить в группу", style: _textStyleBold),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _joinCodeController,
+                  decoration: const InputDecoration(
+                    labelText: "Код группы",
+                    hintText: "Введите 6-значный код",
+                  ),
+                  maxLength: 6,
+                  textCapitalization: TextCapitalization.characters,
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Отмена"),
-          ),
-          TextButton(
-            onPressed: () async {
-              final code = _joinCodeController.text.trim();
-              if (code.length != 6) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text("Код должен содержать 6 символов")),
-                );
-                return;
-              }
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Отмена", style: _textStyleBold),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final code = _joinCodeController.text.trim();
+                  if (code.length != 6) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(
+                        content: Text("Код должен содержать 6 символов", style: _textStyleSemiBold),
+                      ),
+                    );
+                    return;
+                  }
 
-              final success = await Provider.of<GroupProvider>(context, listen: false)
-                  .joinGroup(code);
+                  final success = await Provider.of<GroupProvider>(
+                    context,
+                    listen: false,
+                  ).joinGroup(code);
 
-              if (success && mounted) {
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Вы успешно присоединились!")),
-                );
-              } else {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text("Ошибка присоединения")),
-                );
-              }
-            },
-            child: const Text("Присоединиться"),
+                  if (success && mounted) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Вы успешно присоединились!", style: _textStyleSemiBold),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text("Ошибка присоединения", style: _textStyleSemiBold)),
+                    );
+                  }
+                },
+                child: const Text("Присоединиться", style: _textStyleBold),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _showEditTaskDialog(TaskModel task) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isAdmin = authProvider.user?.role.isAdmin ?? false;
+
+    if (!isAdmin) {
+      // Для обычного пользователя показываем только информацию о задаче
+      _showTaskInfoDialog(task);
+      return;
+    }
+
+    // Оригинальный код для админа
     final _editTitleController = TextEditingController(text: task.name);
     final _editDescController = TextEditingController(text: task.description);
-    final _editRewardController = TextEditingController(text: task.reward.toString());
-    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    final _editRewardController = TextEditingController(
+      text: task.reward.toString(),
+    );
+    DateTime? deadline = _safeParseDate(task.endPoint);
+    int? selectedMemberId = task.customerId;
+    final _editFormKey = GlobalKey<FormState>();
+    bool isEditing = false;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text('Редактировать задачу'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _editTitleController,
-              decoration: const InputDecoration(labelText: 'Название'),
-            ),
-            TextField(
-              controller: _editDescController,
-              decoration: const InputDecoration(labelText: 'Описание'),
-            ),
-            TextField(
-              controller: _editRewardController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Количество звёзд'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена'),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Material(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Form(
+                      key: _editFormKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                child: Text(
+                                  'Отмена',
+                                  style: _textStyleBold.copyWith(color: Colors.grey),
+                                ),
+                              ),
+                               Text(
+                                'Редактировать задачу',
+                                style: _textStyleBold.copyWith(
+                                  color: TaskScreenStyles.primaryColor,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              TextButton(
+                                onPressed:
+                                    isEditing
+                                        ? null
+                                        : () async {
+                                          if (_editFormKey.currentState!
+                                              .validate()) {
+                                            setModalState(
+                                              () => isEditing = true,
+                                            );
+                                            try {
+                                              final updatedTask = task.copyWith(
+                                                name:
+                                                    _editTitleController.text
+                                                        .trim(),
+                                                description:
+                                                    _editDescController.text
+                                                        .trim(),
+                                                reward:
+                                                    int.tryParse(
+                                                      _editRewardController
+                                                          .text,
+                                                    ) ??
+                                                    task.reward,
+                                                customerId: selectedMemberId,
+                                                endPoint:
+                                                    deadline
+                                                        ?.toUtc()
+                                                        .toIso8601String() ??
+                                                    task.endPoint,
+                                              );
+
+                                              await Provider.of<TaskProvider>(
+                                                context,
+                                                listen: false,
+                                              ).updateTask(updatedTask);
+
+                                              if (mounted) {
+                                                Navigator.of(context).pop();
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Задача обновлена', style: _textStyleBold,
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            } catch (e) {
+                                              if (mounted) {
+                                                _showError(
+                                                  'Ошибка обновления: ${e.toString()}',
+                                                );
+                                              }
+                                            } finally {
+                                              if (mounted) {
+                                                setModalState(
+                                                  () => isEditing = false,
+                                                );
+                                              }
+                                            }
+                                          }
+                                        },
+                                child: Text(
+                                  'Сохранить',
+                                  style: _textStyleBold.copyWith(
+                                    color: TaskScreenStyles.primaryColor,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          _buildRoundedTextField(
+                            controller: _editTitleController,
+                            labelText: 'Название задачи',
+                            validator:
+                                (value) =>
+                                    value?.isEmpty ?? true
+                                        ? 'Введите название задачи'
+                                        : null,
+                          ),
+                          const SizedBox(height: 16),
+
+                          _buildRoundedTextField(
+                            controller: _editDescController,
+                            labelText: 'Описание',
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 16),
+
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: DropdownButtonFormField<int>(
+                              value: selectedMemberId,
+                              decoration: InputDecoration(
+                                labelText: 'Назначить участнику',
+                                hintText: 'Оставить для всех',
+                                filled: true,
+                                fillColor: Colors.white,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Color(0xFF937DF3),
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                              dropdownColor: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              menuMaxHeight: 300,
+                              icon: Icon(
+                                Icons.arrow_drop_down,
+                                color: Color(0xFF937DF3),
+                              ),
+                              style: _textStyleBold.copyWith(
+                                color: Colors.black,
+                                fontSize: 16,
+                              ),
+                              items: [
+                                DropdownMenuItem<int>(
+                                  value: 0,
+                                  child: Text(
+                                    'Для всех участников',
+                                    style: _textStyleSemiBold.copyWith(color: Colors.black),
+                                  ),
+                                ),
+                                ...Provider.of<GroupProvider>(
+                                  context,
+                                  listen: false,
+                                ).members.map((member) {
+                                  return DropdownMenuItem<int>(
+                                    value: member.id,
+                                    child: Text(
+                                      member.name,
+                                      style: _textStyleSemiBold.copyWith(color: Colors.black),
+                                    ),
+                                  );
+                                }).toList(),
+                              ],
+                              onChanged: (value) {
+                                setModalState(() {
+                                  selectedMemberId = value;
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          _buildRoundedTextField(
+                            controller: _editRewardController,
+                            labelText: 'Количество звёзд',
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Введите количество';
+                              }
+                              final num = double.tryParse(value);
+                              if (num == null) return 'Введите число';
+                              if (num < 0) {
+                                return 'Число должно быть положительным';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    deadline == null
+                                        ? 'Выберите дедлайн'
+                                        : 'Дедлайн: ${DateFormat('dd.MM.yyyy HH:mm').format(deadline!)}',
+                                    style: _textStyleSemiBold.copyWith(
+                                      fontSize: 14,
+                                      color:
+                                          deadline == null
+                                              ? Colors.grey[600]
+                                              : Colors.black,
+                                    ),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () async {
+                                    final newDeadline = await _selectDeadline(
+                                      context,
+                                    );
+                                    if (newDeadline != null) {
+                                      setModalState(() {
+                                        deadline = newDeadline;
+                                      });
+                                    }
+                                  },
+                                  child: Text(
+                                    'Выбрать',
+                                    style: _textStyleBold.copyWith(
+                                      color: TaskScreenStyles.primaryColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isEditing)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 16),
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showTaskInfoDialog(TaskModel task) {
+    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+    final theme = Theme.of(context);
+    final assignedUser = groupProvider.members.firstWhere(
+      (user) => user.id == task.customerId,
+      orElse:
+          () => UserModel(id: 0, name: 'Не назначено', email: '', login: ''),
+    );
+
+    final startPoint = _safeParseDate(task.startPoint);
+    final endPoint = _safeParseDate(task.endPoint);
+    final isOverdue = endPoint != null && endPoint.isBefore(DateTime.now());
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          TextButton(
-            onPressed: () async {
-              final updatedTask = task.copyWith(
-                name: _editTitleController.text,
-                description: _editDescController.text,
-                reward: int.tryParse(_editRewardController.text) ?? task.reward,
-              );
-              await taskProvider.updateTask(updatedTask);
-              if (mounted) Navigator.pop(ctx);
-            },
-            child: const Text('Сохранить'),
+          child: Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(
+                            'Закрыть',
+                            style: _textStyleSemiBold.copyWith(color: Colors.grey),
+                          ),
+                        ),
+                        Text(
+                          'Информация о задаче',
+                          style: _textStyleBold.copyWith(
+                            color: TaskScreenStyles.primaryColor,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 60), // Для выравнивания
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Название задачи
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.grey[100],
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        task.name,
+                        style: _textStyleBold.copyWith(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: theme.primaryColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Описание
+                    if (task.description.isNotEmpty) ...[
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.grey[100],
+                        ),
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          task.description,
+                          style: _textStyleSemiBold.copyWith(fontSize: 14),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // Назначено
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.grey[100],
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.person_outline,
+                            size: 20,
+                            color: Colors.grey[600],
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Назначено: ${assignedUser.name}',
+                            style: _textStyleSemiBold.copyWith(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Дедлайн
+                    if (endPoint != null) ...[
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: isOverdue ? Colors.red[50] : Colors.grey[100],
+                        ),
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.timer_outlined,
+                              size: 20,
+                              color: isOverdue ? Colors.red : Colors.grey[600],
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Дедлайн: ${DateFormat('dd.MM.yyyy HH:mm').format(endPoint)}',
+                              style: _textStyleSemiBold.copyWith(
+                                fontSize: 14,
+                                color: isOverdue ? Colors.red : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // Награда
+                    if (task.reward > 0) ...[
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.amber[50],
+                        ),
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Icon(Icons.star, size: 20, color: Colors.amber),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Награда: ${task.reward} звёзд',
+                              style: _textStyleSemiBold.copyWith(fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // Статус
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color:
+                            task.state == 2
+                                ? Colors.green[50]
+                                : task.state == 1
+                                ? Colors.orange[50]
+                                : Colors.blue[50],
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Icon(
+                            task.state == 2
+                                ? Icons.check_circle_outline
+                                : task.state == 1
+                                ? Icons.hourglass_top
+                                : Icons.access_time,
+                            size: 20,
+                            color:
+                                task.state == 2
+                                    ? Colors.green
+                                    : task.state == 1
+                                    ? Colors.orange
+                                    : Colors.blue,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Статус: ${task.state == 2
+                                ? 'Выполнено'
+                                : task.state == 1
+                                ? 'Ожидает подтверждения'
+                                : 'В процессе'}',
+                            style: _textStyleBold.copyWith(
+                              fontSize: 14,
+                              color:
+                                  task.state == 2
+                                      ? Colors.green
+                                      : task.state == 1
+                                      ? Colors.orange
+                                      : Colors.blue,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
-
 
 class _DiagonalClipper extends CustomClipper<Path> {
   @override

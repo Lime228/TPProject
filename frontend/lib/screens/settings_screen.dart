@@ -334,8 +334,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 hintText: 'ДД.ММ.ГГГГ',
                 hintStyle: TextStyle(
                   fontSize: MediaQuery.of(context).size.width * 0.04,
-                  color: const Color(0x81E4E4E4),
+                  color: Color.fromARGB(50, 0, 0, 0), // полупрозрачный чёрный
                 ),
+
               ),
               style: TextStyle(
                 fontSize: MediaQuery.of(context).size.width * 0.04,
