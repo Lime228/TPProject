@@ -12,6 +12,17 @@ import 'dart:typed_data';
 
 import '../models/wallet/wallet_model.dart';
 
+
+const TextStyle _textStyleSemiBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w600, // SemiBold
+);
+
+const TextStyle _textStyleBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w700, // Bold
+);
+
 class ShopScreenConstants {
   static const double headerHeight = 100.0;
 
@@ -105,7 +116,7 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg, style: _textStyleSemiBold,)));
   }
 
   void _sortProducts({String? option}) {
@@ -139,7 +150,7 @@ class _ShopScreenState extends State<ShopScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка загрузки: ${e.toString()}')),
+          SnackBar(content: Text('Ошибка загрузки: ${e.toString()}', style: _textStyleSemiBold)),
         );
       }
     }
@@ -231,7 +242,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   const SizedBox(width: 12),
                   Text(
                     authProvider.user?.name ?? 'Гость',
-                    style: theme.textTheme.titleLarge?.copyWith(
+                    style: _textStyleBold.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
@@ -256,9 +267,8 @@ class _ShopScreenState extends State<ShopScreen> {
                           const SizedBox(width: 4),
                           Text(
                             balance.toString(),
-                            style: const TextStyle(
+                            style: _textStyleBold.copyWith(
                               color: Colors.white,
-                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
@@ -288,9 +298,9 @@ class _ShopScreenState extends State<ShopScreen> {
                               children: [
                                 Icon(Icons.edit, color: ShopScreenConstants.adminColor, size: 22),
                                 const SizedBox(width: 3),
-                                const Text(
+                                Text(
                                   'Управление товарами',
-                                  style: TextStyle(
+                                  style: _textStyleBold.copyWith(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                     color: Colors.black87,
@@ -332,7 +342,7 @@ class _ShopScreenState extends State<ShopScreen> {
               color: Colors.grey,
             ),
             const SizedBox(height: 16),
-            const Text('Нет товаров', style: TextStyle(fontSize: 18, color: Colors.grey)),
+            Text('Нет товаров', style: _textStyleSemiBold.copyWith(fontSize: 18, color: Colors.grey)),
             const SizedBox(height: 8),
           ],
         ),
@@ -349,10 +359,10 @@ class _ShopScreenState extends State<ShopScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(shopProvider.error!),
+                Text(shopProvider.error!, style: _textStyleBold),
                 ElevatedButton(
                   onPressed: _loadData,
-                  child: const Text('Повторить попытку'),
+                  child: Text('Повторить попытку', style: _textStyleSemiBold),
                 ),
               ],
             ),
@@ -377,11 +387,11 @@ class _ShopScreenState extends State<ShopScreen> {
                                 color: Colors.grey,
                               ),
                               const SizedBox(height: 16),
-                              const Text('Ничего не найдено'),
+                              Text('Ничего не найдено', style: _textStyleBold),
                               const SizedBox(height: 8),
                               TextButton(
                                 onPressed: _resetFilters,
-                                child: const Text('Сбросить фильтры'),
+                                child: const Text('Сбросить фильтры', style: _textStyleSemiBold),
                               ),
                             ],
                           ),
@@ -515,10 +525,9 @@ class _ShopScreenState extends State<ShopScreen> {
                     children: [
                       Text(
                         product.name,
-                        style: const TextStyle(
+                        style: _textStyleBold.copyWith(
                           color: Colors.white,
                           fontSize: 15,
-                          fontWeight: FontWeight.bold,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -549,10 +558,10 @@ class _ShopScreenState extends State<ShopScreen> {
                                     ? 0
                                     : 1,
                               ),
-                              style: const TextStyle(
+                              style: _textStyleBold.copyWith(
                                 fontSize: 12,
                                 color: Colors.black87,
-                                fontWeight: FontWeight.bold,
+
                               ),
                             ),
                           ],
@@ -587,12 +596,12 @@ class _ShopScreenState extends State<ShopScreen> {
       context: context,
       builder:
           (ctx) => AlertDialog(
-            title: Text('Купить ${product.name}?'),
-            content: Text('Цена: ${product.price} звёзд'),
+            title: Text('Купить ${product.name}?', style: _textStyleBold),
+            content: Text('Цена: ${product.price} звёзд', style: _textStyleBold),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Отмена'),
+                child: Text('Отмена', style: _textStyleBold),
               ),
               TextButton(
                 onPressed: () async {
@@ -600,15 +609,15 @@ class _ShopScreenState extends State<ShopScreen> {
                   final success = await shopProvider.buyProduct(product.id);
                   if (success && mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Товар успешно куплен!')),
+                      const SnackBar(content: Text('Товар успешно куплен!', style: _textStyleSemiBold)),
                     );
                   } else if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Ошибка: ${shopProvider.error}')),
+                      SnackBar(content: Text('Ошибка: ${shopProvider.error}', style: _textStyleSemiBold)),
                     );
                   }
                 },
-                child: const Text('Купить'),
+                child: const Text('Купить', style: _textStyleBold),
               ),
             ],
           ),
@@ -633,16 +642,16 @@ class _ShopScreenState extends State<ShopScreen> {
           children: [
             const Icon(Icons.group_add, size: 64, color: Color(0xFF937DF3)),
             const SizedBox(height: 20),
-            const Text(
+             Text(
               'Магазин доступен только для участников групп',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style:  _textStyleBold.copyWith(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 10),
-            const Text(
+             Text(
               'Создайте новую группу или вступите в существующую, чтобы получить доступ к магазину',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              style: _textStyleSemiBold.copyWith(fontSize: 16, color: Colors.grey),
             ),
             const SizedBox(height: 30),
             ElevatedButton(
@@ -657,17 +666,17 @@ class _ShopScreenState extends State<ShopScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
+              child:  Text(
                 'Создать группу',
-                style: TextStyle(color: Colors.white),
+                style: _textStyleBold.copyWith(color: Colors.white),
               ),
             ),
             const SizedBox(height: 15),
             TextButton(
               onPressed: _showJoinGroupDialog,
-              child: const Text(
+              child:  Text(
                 'Вступить в существующую группу',
-                style: TextStyle(color: Color(0xFF937DF3)),
+                style: _textStyleBold.copyWith(color: Color(0xFF937DF3)),
               ),
             ),
           ],
@@ -707,9 +716,8 @@ class _ShopScreenState extends State<ShopScreen> {
                   const SizedBox(width: 40), // Для выравнивания
                   Text(
                     product.name,
-                    style: const TextStyle(
+                    style: _textStyleBold.copyWith(
                       fontSize: 18,
-                      fontWeight: FontWeight.bold,
                       color: ShopScreenConstants.primaryColor,
                     ),
                   ),
@@ -717,9 +725,9 @@ class _ShopScreenState extends State<ShopScreen> {
                     onPressed: () {
                       Navigator.pop(ctx);
                     },
-                    child: const Text(
+                    child: Text(
                       'Закрыть',
-                      style: TextStyle(color: Colors.grey),
+                      style: _textStyleSemiBold.copyWith(color: Colors.grey),
                     ),
                   ),
                 ],
@@ -744,9 +752,9 @@ class _ShopScreenState extends State<ShopScreen> {
                     : Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Icon(Icons.shopping_bag, size: 50, color: Colors.grey),
-                      Text('Нет изображения', style: TextStyle(color: Colors.grey)),
+                      Text('Нет изображения', style: _textStyleSemiBold.copyWith(color: Colors.grey)),
                     ],
                   ),
                 ),
@@ -766,9 +774,8 @@ class _ShopScreenState extends State<ShopScreen> {
                     const SizedBox(width: 8),
                     Text(
                       '${product.price} звёзд',
-                      style: const TextStyle(
+                      style: _textStyleBold.copyWith(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
                         color: Colors.amber,
                       ),
                     ),
@@ -779,11 +786,10 @@ class _ShopScreenState extends State<ShopScreen> {
 
               // Описание товара
               if (product.description.isNotEmpty) ...[
-                const Text(
+                Text(
                   'Описание:',
-                  style: TextStyle(
+                  style: _textStyleBold.copyWith(
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -795,7 +801,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   ),
                   child: Text(
                     product.description,
-                    style: const TextStyle(fontSize: 14),
+                    style: _textStyleSemiBold.copyWith(fontSize: 14),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -803,11 +809,10 @@ class _ShopScreenState extends State<ShopScreen> {
 
               // Ссылка на товар
               if (product.link?.isNotEmpty ?? false) ...[
-                const Text(
+                Text(
                   'Ссылка:',
-                  style: TextStyle(
+                  style: _textStyleBold.copyWith(
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -821,7 +826,7 @@ class _ShopScreenState extends State<ShopScreen> {
                     ),
                     child: Text(
                       product.link!,
-                      style: const TextStyle(
+                      style: _textStyleSemiBold.copyWith(
                         color: Colors.blue,
                         decoration: TextDecoration.underline,
                       ),
@@ -846,19 +851,18 @@ class _ShopScreenState extends State<ShopScreen> {
                     final success = await shopProvider.buyProduct(product.id);
                     if (success && mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Товар успешно куплен!')),
+                        const SnackBar(content: Text('Товар успешно куплен!', style: _textStyleSemiBold), ),
                       );
                     } else if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Ошибка: ${shopProvider.error}')),
+                        SnackBar(content: Text('Ошибка: ${shopProvider.error}', style: _textStyleSemiBold)),
                       );
                     }
                   },
-                  child: const Text(
+                  child: Text(
                     'Купить',
-                    style: TextStyle(
+                    style: _textStyleBold.copyWith(
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
@@ -912,26 +916,24 @@ class _ShopScreenState extends State<ShopScreen> {
                                   _tempProductImage = null;
                                   Navigator.pop(ctx);
                                 },
-                                child: const Text(
+                                child:  Text(
                                   'Отмена',
-                                  style: TextStyle(color: Colors.grey),
+                                  style: _textStyleSemiBold.copyWith(color: Colors.grey),
                                 ),
                               ),
-                              const Text(
+                               Text(
                                 'Новый товар',
-                                style: TextStyle(
+                                 style: _textStyleBold.copyWith(
                                   color: ShopScreenConstants.primaryColor,
                                   fontSize: 18,
-                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                               TextButton(
                                 onPressed: () => _handleAddProduct(ctx),
-                                child: const Text(
+                                child:  Text(
                                   'Готово',
-                                  style: TextStyle(
+                                  style: _textStyleBold.copyWith(
                                     color: ShopScreenConstants.primaryColor,
-                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ),
@@ -975,7 +977,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                     ),
                                     Text(
                                       'Добавить фото',
-                                      style: TextStyle(
+                                      style: _textStyleSemiBold.copyWith(
                                         color: Colors.grey,
                                       ),
                                     ),
@@ -1105,7 +1107,7 @@ class _ShopScreenState extends State<ShopScreen> {
       if (success && mounted) {
         Navigator.pop(dialogContext);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Товар успешно добавлен!')),
+          const SnackBar(content: Text('Товар успешно добавлен!', style: _textStyleSemiBold)),
         );
         await shopProvider.refreshProducts();
       }
@@ -1113,7 +1115,7 @@ class _ShopScreenState extends State<ShopScreen> {
       debugPrint('Ошибка при добавлении товара: $e');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка: ${e.toString()}')));
+      ).showSnackBar(SnackBar(content: Text('Ошибка: ${e.toString()}', style: _textStyleSemiBold)));
     }
   }
 
@@ -1153,11 +1155,10 @@ class _ShopScreenState extends State<ShopScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                   Text(
                     'Управление товарами',
-                    style: TextStyle(
+                    style: _textStyleBold.copyWith(
                       fontSize: 18,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   IconButton(
@@ -1172,15 +1173,15 @@ class _ShopScreenState extends State<ShopScreen> {
               child: shopProvider.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : shopProvider.products.isEmpty
-                  ? const Center(child: Text('Нет товаров для отображения'))
+                  ? const Center(child: Text('Нет товаров для отображения', style: _textStyleSemiBold))
                   : ListView.builder(
                 padding: const EdgeInsets.only(bottom: 16),
                 itemCount: shopProvider.products.length,
                 itemBuilder: (context, index) {
                   final product = shopProvider.products[index];
                   return ListTile(
-                    title: Text(product.name),
-                    subtitle: Text('${product.price} звёзд'),
+                    title: Text(product.name, style: _textStyleSemiBold),
+                    subtitle: Text('${product.price} звёзд', style: _textStyleSemiBold),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1208,11 +1209,10 @@ class _ShopScreenState extends State<ShopScreen> {
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Text(
+                                       Text(
                                         'Удалить этот товар?',
-                                        style: TextStyle(
+                                        style: _textStyleBold.copyWith(
                                           fontSize: 18,
-                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                       const SizedBox(height: 24),
@@ -1222,7 +1222,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                           Expanded(
                                             child: OutlinedButton(
                                               onPressed: () => Navigator.pop(ctx, false),
-                                              child: const Text('Отмена'),
+                                              child: const Text('Отмена', style: _textStyleSemiBold),
                                             ),
                                           ),
                                           const SizedBox(width: 16),
@@ -1232,7 +1232,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                                 backgroundColor: Colors.red,
                                               ),
                                               onPressed: () => Navigator.pop(ctx, true),
-                                              child: const Text('Удалить'),
+                                              child: const Text('Удалить', style: _textStyleSemiBold),
                                             ),
                                           ),
                                         ],
@@ -1251,7 +1251,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                   await shopProvider.refreshProducts();
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('Товар удалён'),
+                                      content: Text('Товар удалён', style: _textStyleSemiBold),
                                     ),
                                   );
                                 } else {
@@ -1259,6 +1259,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                     SnackBar(
                                       content: Text(
                                         'Ошибка: ${shopProvider.error}',
+                                          style: _textStyleSemiBold
                                       ),
                                     ),
                                   );
@@ -1301,29 +1302,29 @@ class _ShopScreenState extends State<ShopScreen> {
                   (context) => [
                     const PopupMenuItem<String>(
                       value: 'price_asc',
-                      child: Text('По возрастанию цены'),
+                      child: Text('По возрастанию цены', style: _textStyleSemiBold),
                     ),
                     const PopupMenuItem<String>(
                       value: 'price_desc',
-                      child: Text('По убыванию цены'),
+                      child: Text('По убыванию цены', style: _textStyleSemiBold),
                     ),
                     const PopupMenuItem<String>(
                       value: 'name',
-                      child: Text('По названию'),
+                      child: Text('По названию', style: _textStyleSemiBold),
                     ),
                     const PopupMenuItem<String>(
                       value: 'all',
-                      child: Text('Обычная сортировка'),
+                      child: Text('Обычная сортировка', style: _textStyleSemiBold),
                     ),
                   ],
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
+                children: [
                   Icon(Icons.sort, color: Colors.white, size: 16),
                   SizedBox(width: 5),
                   Text(
                     'Сортировка',
-                    style: TextStyle(color: Colors.white, fontSize: 12),
+                    style: _textStyleSemiBold.copyWith(color: Colors.white, fontSize: 12),
                   ),
                 ],
               ),
@@ -1410,24 +1411,23 @@ class _ShopScreenState extends State<ShopScreen> {
                               _tempProductImage = null;
                               Navigator.pop(ctx);
                             },
-                            child: const Text(
+                            child: Text(
                               'Отмена',
-                              style: TextStyle(color: Colors.grey),
+                              style: _textStyleSemiBold.copyWith(color: Colors.grey),
                             ),
                           ),
-                          const Text(
+                           Text(
                             'Редактировать товар',
-                            style: TextStyle(
+                               style: _textStyleBold.copyWith(
                               fontSize: 18,
-                              fontWeight: FontWeight.bold,
                               color: ShopScreenConstants.primaryColor
                             ),
                           ),
                           TextButton(
                             onPressed: () => _handleEditProduct(ctx, product),
-                            child: const Text(
+                            child:  Text(
                               'Сохранить',
-                              style: TextStyle(fontWeight: FontWeight.bold, color: ShopScreenConstants.primaryColor),
+                              style: _textStyleBold.copyWith( color: ShopScreenConstants.primaryColor),
                             ),
                           ),
                         ],
@@ -1468,7 +1468,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                 ),
                                 Text(
                                   'Добавить фото',
-                                  style: TextStyle(color: Colors.grey),
+                                  style: _textStyleSemiBold.copyWith(color: Colors.grey),
                                 ),
                               ],
                             ),
@@ -1554,11 +1554,11 @@ class _ShopScreenState extends State<ShopScreen> {
           _tempProductImage = null;
           Navigator.pop(dialogContext);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Товар успешно обновлен')),
+            const SnackBar(content: Text('Товар успешно обновлен', style: _textStyleSemiBold)),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Ошибка: ${shopProvider.error}')),
+            SnackBar(content: Text('Ошибка: ${shopProvider.error}', style: _textStyleSemiBold)),
           );
         }
       }
@@ -1566,7 +1566,7 @@ class _ShopScreenState extends State<ShopScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка: ${e.toString()}')));
+        ).showSnackBar(SnackBar(content: Text('Ошибка: ${e.toString()}', style: _textStyleSemiBold)));
       }
     }
   }
@@ -1576,7 +1576,7 @@ class _ShopScreenState extends State<ShopScreen> {
       context: context,
       builder:
           (ctx) => AlertDialog(
-            title: const Text("Вступить в группу"),
+            title: const Text("Вступить в группу", style: _textStyleBold),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -1594,7 +1594,7 @@ class _ShopScreenState extends State<ShopScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text("Отмена"),
+                child: const Text("Отмена", style: _textStyleSemiBold),
               ),
               TextButton(
                 onPressed: () async {
@@ -1602,7 +1602,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   if (code.length != 6) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
                       const SnackBar(
-                        content: Text("Код должен содержать 6 символов"),
+                        content: Text("Код должен содержать 6 символов", style: _textStyleSemiBold),
                       ),
                     );
                     return;
@@ -1617,16 +1617,16 @@ class _ShopScreenState extends State<ShopScreen> {
                     Navigator.pop(ctx);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text("Вы успешно присоединились!"),
+                        content: Text("Вы успешно присоединились!", style: _textStyleSemiBold),
                       ),
                     );
                   } else {
                     ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(content: Text("Ошибка присоединения")),
+                      const SnackBar(content: Text("Ошибка присоединения", style: _textStyleSemiBold)),
                     );
                   }
                 },
-                child: const Text("Присоединиться"),
+                child: const Text("Присоединиться", style: _textStyleBold),
               ),
             ],
           ),
@@ -1639,7 +1639,7 @@ class _ShopScreenState extends State<ShopScreen> {
     if (groupProvider.isInGroup) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Вы уже в группе')));
+      ).showSnackBar(const SnackBar(content: Text('Вы уже в группе', style: _textStyleSemiBold)));
       return;
     }
 
@@ -1647,14 +1647,15 @@ class _ShopScreenState extends State<ShopScreen> {
       context: context,
       builder:
           (ctx) => AlertDialog(
-            title: const Text("Создать новую группу"),
+            title: const Text("Создать новую группу", style: _textStyleBold),
             content: const Text(
               "Нажмите 'Создать' для генерации группы с уникальным кодом",
+                style: _textStyleSemiBold
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text("Отмена"),
+                child: const Text("Отмена", style: _textStyleSemiBold),
               ),
               TextButton(
                 onPressed: () async {
@@ -1665,16 +1666,17 @@ class _ShopScreenState extends State<ShopScreen> {
                       SnackBar(
                         content: Text(
                           'Группа создана! Код: ${groupProvider.groupCode}',
+                            style: _textStyleSemiBold
                         ),
                       ),
                     );
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Ошибка: ${e.toString()}')),
+                      SnackBar(content: Text('Ошибка: ${e.toString()}', style: _textStyleSemiBold)),
                     );
                   }
                 },
-                child: const Text("Создать"),
+                child: const Text("Создать",style: _textStyleBold),
               ),
             ],
           ),

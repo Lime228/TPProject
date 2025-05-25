@@ -15,6 +15,16 @@ import '../providers/group_provider.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
+const TextStyle _textStyleSemiBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w600, // SemiBold
+);
+
+const TextStyle _textStyleBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w700, // Bold
+);
+
 class LoginScreen extends StatefulWidget {
   final ApiInterface apiClient;
 
@@ -141,9 +151,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   SizedBox(height: MediaQuery.of(context).size.height * 0.04),
                   Text(
                     "Вход",
-                    style: TextStyle(
+                    style: _textStyleBold.copyWith(
                       fontSize: MediaQuery.of(context).size.width * 0.08,
-                      fontWeight: FontWeight.bold,
                       color: _colorEnter,
                     ),
                   ),
@@ -192,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       child: Text(
                         'Не помню пароль',
-                        style: TextStyle(
+                        style: _textStyleSemiBold.copyWith(
                           color: Colors.grey,
                           fontSize: MediaQuery.of(context).size.width * 0.035,
                         ),
@@ -206,7 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       child: Text(
                         _errorMessage!,
-                        style: TextStyle(
+                        style: _textStyleSemiBold.copyWith(
                           color: Colors.red,
                           fontSize: MediaQuery.of(context).size.width * 0.035,
                         ),
@@ -252,7 +261,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       Text(
                         "Ещё нет аккаунта? ",
-                        style: TextStyle(
+                        style: _textStyleSemiBold.copyWith(
                           fontSize: MediaQuery.of(context).size.width * 0.035,
                         ),
                       ),
@@ -267,7 +276,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: Text(
                           "Зарегистрироваться",
-                          style: TextStyle(
+                          style: _textStyleBold.copyWith(
                             color: _colorEnterButton,
                             fontSize: MediaQuery.of(context).size.width * 0.035,
                           ),

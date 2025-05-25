@@ -5,6 +5,16 @@ import 'package:zadachok/api/api_interface.dart';
 import 'package:zadachok/models/user/user_model.dart';
 import 'package:zadachok/routes/main_navigation.dart';
 
+const TextStyle _textStyleSemiBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w600, // SemiBold
+);
+
+const TextStyle _textStyleBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w700, // Bold
+);
+
 class RegisterScreen extends StatefulWidget {
   final ApiInterface apiClient;
 
@@ -126,9 +136,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   SizedBox(height: MediaQuery.of(context).size.height * 0.04),
                   Text(
                     "Регистрация",
-                    style: TextStyle(
+                    style: _textStyleBold.copyWith(
                       fontSize: MediaQuery.of(context).size.width * 0.08,
-                      fontWeight: FontWeight.bold,
                       color: colorEnter,
                     ),
                   ),
@@ -185,7 +194,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.015),
                       child: Text(
                         _errorMessage!,
-                        style: TextStyle(
+                        style: _textStyleBold.copyWith(
                           color: Colors.red,
                           fontSize: MediaQuery.of(context).size.width * 0.035,
                         ),
@@ -288,10 +297,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         )
             : Text(
           "Зарегистрироваться",
-          style: TextStyle(
+          style: _textStyleBold.copyWith(
             fontSize: MediaQuery.of(context).size.width * 0.04,
             color: Colors.white,
-            fontWeight: FontWeight.w600,
           ),
         ),
       ),
@@ -304,7 +312,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       children: [
         Text(
           "Уже есть аккаунт? ",
-          style: TextStyle(
+          style: _textStyleSemiBold.copyWith(
             fontSize: MediaQuery.of(context).size.width * 0.035,
           ),
         ),
@@ -312,10 +320,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           onTap: () => Navigator.pop(context),
           child: Text(
             "Войти",
-            style: TextStyle(
+            style: _textStyleSemiBold.copyWith(
               color: colorEnterButton,
               fontSize: MediaQuery.of(context).size.width * 0.035,
-              fontWeight: FontWeight.w600,
             ),
           ),
         ),

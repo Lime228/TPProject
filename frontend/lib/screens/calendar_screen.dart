@@ -7,6 +7,16 @@ import '../providers/auth_provider.dart';
 import '../providers/group_provider.dart';
 import '../providers/task_provider.dart';
 
+const TextStyle _textStyleSemiBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w600, // SemiBold
+);
+
+const TextStyle _textStyleBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w700, // Bold
+);
+
 class CalendarStyles {
   // Изменяем фиксированные размеры на функции, которые учитывают размер экрана
   static double headerHeight(BuildContext context) => MediaQuery.of(context).size.height * 0.12;
@@ -144,10 +154,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
         children: [
           Text(
             '${_selectedDate.year}',
-            style: TextStyle(
+            style: _textStyleBold.copyWith(
               fontSize: CalendarStyles.yearFontSize(context),
               color: Colors.white,
-              fontWeight: FontWeight.bold,
             ),
           ),
           IconButton(
@@ -184,10 +193,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
           children: [
             Text(
               currentMonth!,
-              style: TextStyle(
+              style: _textStyleBold.copyWith(
                 color: CalendarStyles.secondaryColor,
                 fontSize: CalendarStyles.monthNameFontSize(context),
-                fontWeight: FontWeight.bold,
               ),
             ),
           ],
@@ -237,9 +245,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return days.map((day) => Center(
       child: Text(
         day,
-        style: TextStyle(
+        style: _textStyleBold.copyWith(
           color: CalendarStyles.dayLabelColor,
-          fontWeight: FontWeight.bold,
           fontSize: CalendarStyles.dayLabelFontSize(context),
         ),
       ),
@@ -292,7 +299,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           children: [
             Text(
               '$day',
-              style: TextStyle(
+              style: _textStyleBold.copyWith(
                 color: isSelected ? CalendarStyles.selectedDayColor : CalendarStyles.dayNumberColor,
                 fontSize: CalendarStyles.dayNumberFontSize(context),
                 fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
@@ -327,7 +334,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     if (filteredTasks.isEmpty) {
       return Padding(
         padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.04),
-        child: Text('Нет задач на выбранную дату'),
+        child: Text('Нет задач на выбранную дату', style: _textStyleSemiBold),
       );
     }
 
@@ -424,11 +431,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             children: [
                               Text(
                                 task.name,
-                                style: TextStyle(
+                                style: _textStyleBold.copyWith(
                                   fontSize: TaskScreenStyles.taskNameFontSize(
                                     context,
                                   ),
-                                  fontWeight: FontWeight.bold,
                                   color: TaskScreenStyles.primaryColor,
                                   decoration:
                                   task.state == 'Completed'
@@ -447,7 +453,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   ),
                                   child: Text(
                                     task.description,
-                                    style: TextStyle(
+                                    style: _textStyleSemiBold.copyWith(
                                       fontSize: TaskScreenStyles.dateFontSize(
                                         context,
                                       ),
@@ -493,7 +499,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     if (startPoint != null)
                                       Text(
                                         'С ${DateFormat('dd.MM').format(startPoint)}',
-                                        style: TextStyle(
+                                        style: _textStyleSemiBold.copyWith(
                                           fontSize: TaskScreenStyles.dateFontSize(context) * 0.9,
                                           color: Colors.white.withOpacity(0.8),
                                         ),
@@ -502,25 +508,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                       Text(
                                         'До ${DateFormat('dd.MM').format(
                                             endPoint)}',
-                                        style: TextStyle(
+                                        style: _textStyleBold.copyWith(
                                           fontSize: TaskScreenStyles
                                               .dateFontSize(context) * 0.9,
                                           color: isOverdue
                                               ? Colors.red[400]
                                               : Colors.white,
-                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     Text(
                                       DateFormat('HH:mm').format(
                                           endPoint!),
-                                      style: TextStyle(
+                                      style: _textStyleBold.copyWith(
                                         fontSize: TaskScreenStyles
                                             .dateFontSize(context) * 0.9,
                                         color: isOverdue
                                             ? Colors.red[400]
                                             : Colors.white,
-                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
 
@@ -583,10 +587,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
           SizedBox(width: MediaQuery.of(context).size.width * 0.005),
           Text(
             reward.toStringAsFixed(reward.truncateToDouble() == reward ? 0 : 1),
-            style: TextStyle(
+            style: _textStyleBold.copyWith(
               fontSize: MediaQuery.of(context).size.width * 0.03,
               color: Colors.black87,
-              fontWeight: FontWeight.bold,
             ),
           ),
         ],
@@ -623,9 +626,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: _textStyleBold.copyWith(
                 fontSize: MediaQuery.of(context).size.width * 0.045,
-                fontWeight: FontWeight.bold,
               ),
             ),
             SizedBox(height: MediaQuery.of(context).size.height * 0.01),
@@ -689,10 +691,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 children: [
                   Text(
                     '$currentYear',
-                    style: TextStyle(
+                    style: _textStyleBold.copyWith(
                       fontSize: CalendarStyles.yearFontSize(context),
                       color: Colors.white,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   IconButton(
@@ -768,9 +769,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
           children: [
             Text(
               monthName,
-              style: TextStyle(
+              style: _textStyleBold.copyWith(
                 fontSize: CalendarStyles.titleMonthCalendarSize(context),
-                fontWeight: FontWeight.bold,
                 color: isCurrentMonth
                     ? CalendarStyles.todayMonthColor
                     : (isSelectedMonth ? Colors.white : Colors.white.withOpacity(0.8)),
@@ -810,7 +810,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           Center(
             child: Text(
               '$day',
-              style: TextStyle(
+              style: _textStyleSemiBold.copyWith(
                 fontSize: MediaQuery.of(context).size.width * 0.025,
                 color: (month == currentMonth && year == currentYear)
                     ? CalendarStyles.todayMonthColor

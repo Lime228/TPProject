@@ -3,6 +3,16 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zadachok/api/api_interface.dart';
 import 'package:zadachok/models/user/user_model.dart';
 
+const TextStyle _textStyleSemiBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w600, // SemiBold
+);
+
+const TextStyle _textStyleBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w700, // Bold
+);
+
 class PasswordRecoveryScreen extends StatefulWidget {
   final ApiInterface apiClient;
 
@@ -42,7 +52,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
       builder: (context) => AlertDialog(
         title: Text(
           'Сброс пароля',
-          style: TextStyle(
+          style: _textStyleBold.copyWith(
             fontSize: MediaQuery.of(context).size.width * 0.05,
           ),
         ),
@@ -53,7 +63,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
               children: [
                 Text(
                   'Код отправлен на ${_emailController.text}',
-                  style: TextStyle(
+                  style: _textStyleBold.copyWith(
                     fontSize: MediaQuery.of(context).size.width * 0.035,
                   ),
                 ),
@@ -96,7 +106,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                     padding: const EdgeInsets.only(top: 10),
                     child: Text(
                       _dialogErrorMessage!,
-                      style: const TextStyle(color: Colors.red),
+                      style: _textStyleSemiBold.copyWith(color: Colors.red),
                     ),
                   ),
               ],
@@ -106,7 +116,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Отмена'),
+            child: const Text('Отмена', style: _textStyleSemiBold),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -139,7 +149,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Пароль успешно изменен'),
+                      content: Text('Пароль успешно изменен', style: _textStyleSemiBold),
                     ),
                   );
                   Navigator.pop(context);
@@ -154,7 +164,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
             },
             child: _isDialogLoading
                 ? const CircularProgressIndicator()
-                : const Text('Сохранить'),
+                : const Text('Сохранить', style: _textStyleSemiBold),
           ),
         ],
       ),
@@ -230,9 +240,8 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                 const SizedBox(height: 30),
                 Text(
                   "Восстановление пароля",
-                  style: TextStyle(
+                  style: _textStyleBold.copyWith(
                     fontSize: MediaQuery.of(context).size.width * 0.07,
-                    fontWeight: FontWeight.bold,
                     color: const Color.fromARGB(100, 110, 68, 255),
                   ),
                 ),
@@ -303,7 +312,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                     padding: const EdgeInsets.only(top: 10),
                     child: Text(
                       _errorMessage!,
-                      style: const TextStyle(color: Colors.red),
+                      style: _textStyleSemiBold.copyWith(color: Colors.red),
                     ),
                   ),
                 const SizedBox(height: 20),
@@ -330,11 +339,10 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                     ),
                     child: _isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
+                        :  Text(
                       "Восстановить пароль",
-                      style: TextStyle(
+                      style: _textStyleSemiBold.copyWith(
                         color: Colors.white,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -342,11 +350,10 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                 const SizedBox(height: 20),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: const Text(
+                  child:  Text(
                     "Вернуться к входу",
-                    style: TextStyle(
+                    style: _textStyleSemiBold.copyWith(
                       color: Color(0xFF937DF3),
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),

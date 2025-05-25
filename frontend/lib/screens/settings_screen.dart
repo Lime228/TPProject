@@ -13,6 +13,16 @@ import '../models/user/user_model.dart';
 import '../providers/shop_provider.dart';
 import '../providers/task_provider.dart';
 
+const TextStyle _textStyleSemiBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w600, // SemiBold
+);
+
+const TextStyle _textStyleBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w700, // Bold
+);
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -96,9 +106,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Text(
                     'Настройки',
-                    style: TextStyle(
+                style: _textStyleBold.copyWith(
                       fontSize: titleFontSize * 1.4,
-                      fontWeight: FontWeight.bold,
+
                       color: titleColor,
                     ),
                   ),
@@ -239,7 +249,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           Text(
             'Имя',
-            style: TextStyle(
+            style: _textStyleSemiBold.copyWith(
               fontSize: MediaQuery.of(context).size.width * 0.035,
               color: const Color(0xFF666666),
             ),
@@ -284,7 +294,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SizedBox(height: MediaQuery.of(context).size.height * 0.02),
           Text(
             'Дата рождения',
-            style: TextStyle(
+            style: _textStyleSemiBold.copyWith(
               fontSize: MediaQuery.of(context).size.width * 0.035,
               color: const Color(0xFF666666),
             ),
@@ -361,7 +371,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onPressed: _updateAllFields,
                 child: Text(
                   'Сохранить изменения',
-                  style: TextStyle(
+                  style: _textStyleSemiBold.copyWith(
                     color: Colors.white,
                     fontSize: MediaQuery.of(context).size.width * 0.04,
                   ),
@@ -405,7 +415,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           Text(
             'Количество выполненных заданий по дням',
-            style: TextStyle(
+            style: _textStyleSemiBold.copyWith(
               fontSize: MediaQuery.of(context).size.width * 0.04,
               color: const Color(0xFF666666),
             ),
@@ -438,13 +448,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           SizedBox(height: MediaQuery.of(context).size.height * 0.01),
                           Text(
                             entry.key,
-                            style: TextStyle(
+                            style: _textStyleSemiBold.copyWith(
                               fontSize: MediaQuery.of(context).size.width * 0.035,
                             ),
                           ),
                           Text(
                             entry.value.toString(),
-                            style: TextStyle(
+                            style: _textStyleSemiBold.copyWith(
                               fontSize: MediaQuery.of(context).size.width * 0.035,
                             ),
                           ),
@@ -472,7 +482,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         onChanged: (val) => settings.update('notificationsEnabled', val),
         title: Text(
           'Получать уведомления',
-          style: TextStyle(
+          style: _textStyleSemiBold.copyWith(
             fontSize: MediaQuery.of(context).size.width * 0.04,
           ),
         ),
@@ -509,20 +519,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 try {
                   await authProvider.refreshAll(groupProvider, taskProvider, shopProvider);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Данные успешно обновлены')),
+                    const SnackBar(content: Text('Данные успешно обновлены', style: _textStyleSemiBold)),
                   );
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Ошибка обновления: $e')),
+                    SnackBar(content: Text('Ошибка обновления: $e', style: _textStyleSemiBold)),
                   );
                 }
               },
               child: Text(
                 'Обновить данные',
-                style: TextStyle(
+                style: _textStyleBold.copyWith(
                   color: Colors.blue,
                   fontSize: MediaQuery.of(context).size.width * 0.04,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -546,10 +555,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
               child: Text(
                 'Выйти из аккаунта',
-                style: TextStyle(
+                style: _textStyleBold.copyWith(
                   color: Colors.red,
                   fontSize: MediaQuery.of(context).size.width * 0.04,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -557,7 +565,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SizedBox(height: MediaQuery.of(context).size.height * 0.015),
           Text(
             'После выхода потребуется повторная авторизация',
-            style: TextStyle(
+            style: _textStyleSemiBold.copyWith(
               color: Colors.grey,
               fontSize: MediaQuery.of(context).size.width * 0.03,
             ),
@@ -584,10 +592,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
               child: Text(
                 'Войти в аккаунт',
-                style: TextStyle(
+                style: _textStyleBold.copyWith(
                   color: Colors.green,
                   fontSize: MediaQuery.of(context).size.width * 0.04,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -595,7 +602,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SizedBox(height: MediaQuery.of(context).size.height * 0.015),
           Text(
             'Авторизуйтесь для доступа ко всем функциям',
-            style: TextStyle(
+            style: _textStyleSemiBold.copyWith(
               color: Colors.grey,
               fontSize: MediaQuery.of(context).size.width * 0.03,
             ),
@@ -646,9 +653,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           Text(
             title,
-            style: TextStyle(
+            style: _textStyleBold.copyWith(
               fontSize: titleFontSize,
-              fontWeight: FontWeight.bold,
               color: titleColor,
             ),
           ),
@@ -666,7 +672,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.03),
       child: Text(
         text,
-        style: TextStyle(
+        style: _textStyleSemiBold.copyWith(
           fontSize: MediaQuery.of(context).size.width * 0.04,
           color: const Color(0xFF666666),
         ),
@@ -726,7 +732,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       debugPrint('Ошибка при выборе изображения: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка при загрузке изображения: $e')),
+        SnackBar(content: Text('Ошибка при загрузке изображения: $e', style: _textStyleSemiBold)),
       );
     }
   }
@@ -745,7 +751,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       debugPrint('Ошибка обновления профиля: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка обновления профиля: $e')),
+        SnackBar(content: Text('Ошибка обновления профиля: $e', style: _textStyleSemiBold)),
       );
     }
   }
@@ -783,12 +789,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Данные успешно сохранены')),
+        const SnackBar(content: Text('Данные успешно сохранены', style: _textStyleSemiBold)),
       );
     } catch (e) {
       debugPrint('Ошибка сохранения данных: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка сохранения: $e')),
+        SnackBar(content: Text('Ошибка сохранения: $e', style: _textStyleSemiBold)),
       );
     }
   }

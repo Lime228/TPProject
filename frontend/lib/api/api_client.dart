@@ -27,7 +27,7 @@ class ApiClient implements ApiInterface {
 
   Map<String, String> _getHeaders({bool includeAuth = true}) {
     final headers = {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json; charset=utf-8',
     };
 
     if (includeAuth && _authToken != null) {
@@ -108,7 +108,7 @@ class ApiClient implements ApiInterface {
 
       final userResponse = await _client.get(
         userDataUrl,
-        headers: {'Content-Type': 'application/json',
+        headers: {'Content-Type': 'application/json; charset=utf-8',
           'Authorization': 'Bearer $_authToken'},
       ).timeout(requestTimeout);
 
@@ -211,7 +211,7 @@ class ApiClient implements ApiInterface {
 
       final userResponse = await _client.get(
         getURL,
-        headers: {'Content-Type': 'application/json',
+        headers: {'Content-Type': 'application/json; charset=utf-8',
           'Authorization': 'Bearer $_authToken'},
       ).timeout(requestTimeout);
 
@@ -235,7 +235,7 @@ class ApiClient implements ApiInterface {
     try {
       final userResponse = await _client.get(
         userDataUrl,
-        headers: {'Content-Type': 'application/json',
+        headers: {'Content-Type': 'application/json; charset=utf-8',
           'Authorization': 'Bearer $_authToken'},
       ).timeout(requestTimeout);
 
