@@ -242,7 +242,7 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<void> deleteShopItem(int itemId) async {
+  Future<void> deleteShopItem(int shopId, int productId) async {
     await Future.delayed(const Duration(seconds: 1));
   }
 
