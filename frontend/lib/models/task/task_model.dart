@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class TaskModel{
   int id;
   String name;
@@ -101,9 +103,9 @@ class TaskModel{
   factory TaskModel.fromResponse(Map<String, dynamic> json) {
     return TaskModel(
       id: json['id'] ?? 0,
-      name: json['name'],
+      name: utf8.decode(json['name'].toString().codeUnits), // Декодируем имя
       reward: json['reward']?.toInt() ?? 0,
-      description: json['description'],
+      description: utf8.decode(json['description'].toString().codeUnits), // Декодируем описание
       startPoint: json['startDate'],
       endPoint: json['endDate'],
       customerId: json['customerId'],
