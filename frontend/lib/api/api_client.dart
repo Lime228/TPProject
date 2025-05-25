@@ -684,16 +684,18 @@ class ApiClient implements ApiInterface {
   }
 
   WalletModel _handleWalletResponse(http.Response response) {
+    final responseData = json.decode(utf8.decode(response.bodyBytes));
+
     switch (response.statusCode) {
       case 200:
       case 201:
-        return WalletModel.fromJson(json.decode(response.body));
+        return WalletModel.fromJson(responseData);
       case 400:
-        throw Exception('Invalid request: ${response.body}');
+        throw Exception('Invalid request: ${utf8.decode(response.bodyBytes)}');
       case 401:
         throw Exception('Authorization error');
       case 500:
-        throw Exception('Server error: ${response.body}');
+        throw Exception('Server error: ${utf8.decode(response.bodyBytes)}');
       default:
         throw Exception('Error: ${response.statusCode}');
     }
@@ -722,70 +724,78 @@ class ApiClient implements ApiInterface {
   }
 
   UserModel _handleUserResponse(http.Response response) {
-    final responseData = json.decode(response.body);
+    final responseData = json.decode(utf8.decode(response.bodyBytes));
     debugPrint('User response data: $responseData');
 
     switch (response.statusCode) {
       case 200:
       case 201:
-        return UserModel.fromResponse(json.decode(response.body));
+        return UserModel.fromResponse(responseData);
       case 400:
-        throw Exception('Неверный запрос: ${response.body}');
+        throw Exception('Неверный запрос: ${utf8.decode(response.bodyBytes)}');
       case 401:
         throw Exception('Ошибка авторизации');
       case 500:
-        throw Exception('Ошибка сервера: ${response.body}');
+        throw Exception('Ошибка сервера: ${utf8.decode(response.bodyBytes)}');
       default:
         throw Exception('Ошибка: ${response.statusCode}');
     }
   }
 
   TaskModel _handleTaskResponse(http.Response response) {
+    final responseData = json.decode(utf8.decode(response.bodyBytes));
+
     switch (response.statusCode) {
       case 200:
       case 201:
-        return TaskModel.fromResponse(json.decode(response.body));
+        return TaskModel.fromResponse(responseData);
       case 400:
-        throw Exception('Неверный запрос: ${response.body}');
+        throw Exception('Неверный запрос: ${utf8.decode(response.bodyBytes)}');
       case 401:
         throw Exception('Ошибка авторизации');
       case 500:
-        throw Exception('Ошибка сервера: ${response.body}');
+        throw Exception('Ошибка сервера: ${utf8.decode(response.bodyBytes)}');
       default:
         throw Exception('Ошибка: ${response.statusCode}');
     }
   }
 
   LobbyModel _handleLobbyResponse(http.Response response) {
+    final responseData = json.decode(utf8.decode(response.bodyBytes));
+
     switch (response.statusCode) {
       case 200:
       case 201:
-        return LobbyModel.fromResponse(json.decode(response.body));
+        return LobbyModel.fromResponse(responseData);
       case 400:
-        throw Exception('Неверный запрос: ${response.body}');
+        throw Exception('Неверный запрос: ${utf8.decode(response.bodyBytes)}');
       case 401:
         throw Exception('Ошибка авторизации');
       case 500:
-        throw Exception('Ошибка сервера: ${response.body}');
+        throw Exception('Ошибка сервера: ${utf8.decode(response.bodyBytes)}');
       default:
         throw Exception('Ошибка: ${response.statusCode}');
     }
   }
 
   ProductModel _handleProductResponse(http.Response response) {
+    final responseData = json.decode(utf8.decode(response.bodyBytes));
+
     switch (response.statusCode) {
       case 200:
       case 201:
-        return ProductModel.fromJson(json.decode(response.body));
+        return ProductModel.fromJson(responseData);
       case 400:
-        throw Exception('Неверный запрос: ${response.body}');
+        throw Exception('Неверный запрос: ${utf8.decode(response.bodyBytes)}');
       case 401:
         throw Exception('Ошибка авторизации');
       case 500:
-        throw Exception('Ошибка сервера: ${response.body}');
+        throw Exception('Ошибка сервера: ${utf8.decode(response.bodyBytes)}');
       default:
         throw Exception('Ошибка: ${response.statusCode}');
     }
   }
+
+
 
 }

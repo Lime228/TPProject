@@ -92,7 +92,6 @@ class _LoginScreenState extends State<LoginScreen> {
       await authProvider.setAuthData(user: user, token: token);
 
       groupProvider.setCurrentUser(user);
-      await groupProvider.loadGroupData();
       if (groupProvider.isInGroup) {
         await groupProvider.refreshGroupData();
       }
@@ -100,7 +99,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       await authProvider.refreshAll(groupProvider, taskProvider, shopProvider);
-      await groupProvider.refreshGroupData();
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
@@ -130,7 +128,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         child: Form(
           key: _formKey,
-          child: SingleChildScrollView(
             child: SizedBox(
               height: MediaQuery.of(context).size.height,
               child: Column(
@@ -282,7 +279,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
             ),
-          ),
+
         ),
       ),
     );
