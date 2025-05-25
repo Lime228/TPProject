@@ -201,11 +201,7 @@ class _TasksScreenState extends State<TasksScreen> {
               dialBackgroundColor: TaskScreenStyles.primaryColor.withOpacity(
                 0.1,
               ),
-<<<<<<< HEAD
               hourMinuteTextStyle: _textStyleSemiBold.copyWith(
-=======
-              hourMinuteTextStyle: const TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -342,15 +338,9 @@ class _TasksScreenState extends State<TasksScreen> {
           if (groupProvider.isInGroup)
             Theme(
               data: Theme.of(context).copyWith(
-<<<<<<< HEAD
                 popupMenuTheme: PopupMenuThemeData(
                   color: Colors.white,
                   textStyle: _textStyleBold.copyWith(color: Colors.black),
-=======
-                popupMenuTheme: const PopupMenuThemeData(
-                  color: Colors.white,
-                  textStyle: TextStyle(color: Colors.black),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                 ),
                 splashColor: Colors.transparent,
                 highlightColor: Colors.transparent,
@@ -361,7 +351,6 @@ class _TasksScreenState extends State<TasksScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12.0), // Скругление углов
                 ),
-<<<<<<< HEAD
                 elevation: 4,
                 // Тень
                 color: Colors.white,
@@ -405,41 +394,6 @@ class _TasksScreenState extends State<TasksScreen> {
                         ),
                     ],
               ),
-=======
-                elevation: 4, // Тень
-                color: Colors.white, // Фон меню
-                onSelected: (value) => _handlePopupSelection(value, context),
-                itemBuilder: (context) => [
-                  PopupMenuItem<String>(
-                    value: 'info',
-                    child: Row(
-                      children: [
-                        Icon(Icons.info_outline, color: TaskScreenStyles.primaryColor),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Информация о группе',
-                          style: TextStyle(fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (groupProvider.isOwner) // Дополнительные пункты для админа
-                    PopupMenuItem<String>(
-                      value: 'manage',
-                      child: Row(
-                        children: [
-                          Icon(Icons.settings, color: TaskScreenStyles.secondaryColor),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Управление группой',
-                            style: TextStyle(fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              )
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
             ),
         ],
       ),
@@ -453,14 +407,8 @@ class _TasksScreenState extends State<TasksScreen> {
     if (value == 'manage') {
       _showGroupManagementMenu(context);
     }
-<<<<<<< HEAD
   }
 
-=======
-
-  }
-
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
   Widget _buildUnauthorizedView() {
     return Scaffold(
       body: Center(
@@ -624,7 +572,6 @@ class _TasksScreenState extends State<TasksScreen> {
               },
               itemBuilder:
                   (context) => [
-<<<<<<< HEAD
                      PopupMenuItem<String>(
                       value: 'date',
                       child: Text('По дате окончания', style: _textStyleSemiBold),
@@ -640,23 +587,6 @@ class _TasksScreenState extends State<TasksScreen> {
                      PopupMenuItem<String>(
                       value: 'default',
                       child: Text('Обычная сортировка', style: _textStyleSemiBold),
-=======
-                    const PopupMenuItem<String>(
-                      value: 'date',
-                      child: Text('По дате окончания'),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'completed',
-                      child: Text('Только выполненные'),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'pending',
-                      child: Text('Только невыполненные'),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'default',
-                      child: Text('Обычная сортировка'),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                     ),
                   ],
               child: Row(
@@ -784,7 +714,6 @@ class _TasksScreenState extends State<TasksScreen> {
                           color: Colors.grey,
                         ),
                         const SizedBox(height: 16),
-<<<<<<< HEAD
                         Text(
                           'Нет задач',
                           style: _textStyleSemiBold.copyWith(fontSize: 18, color: Colors.grey),
@@ -792,15 +721,6 @@ class _TasksScreenState extends State<TasksScreen> {
                         TextButton(
                           onPressed: _refreshData,
                           child: const Text('Обновить', style: _textStyleBold),
-=======
-                        const Text(
-                          'Нет задач',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
-                        ),
-                        TextButton(
-                          onPressed: _refreshData,
-                          child: const Text('Обновить'),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                         ),
                       ],
                     ),
@@ -948,18 +868,10 @@ class _TasksScreenState extends State<TasksScreen> {
                             children: [
                               Text(
                                 task.name,
-<<<<<<< HEAD
                                 style: _textStyleBold.copyWith(
                                   fontSize: TaskScreenStyles.taskNameFontSize(
                                     context,
                                   ),
-=======
-                                style: TextStyle(
-                                  fontSize: TaskScreenStyles.taskNameFontSize(
-                                    context,
-                                  ),
-                                  fontWeight: FontWeight.bold,
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                                   color: TaskScreenStyles.primaryColor,
                                   decoration:
                                       task.state == 'Completed'
@@ -976,11 +888,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                   ),
                                   child: Text(
                                     task.description,
-<<<<<<< HEAD
                                     style: _textStyleSemiBold.copyWith(
-=======
-                                    style: TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                                       fontSize: TaskScreenStyles.dateFontSize(
                                         context,
                                       ),
@@ -1015,11 +923,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                     ),
                                     child: Text(
                                       'Для: ${groupProvider.members.firstWhere((m) => m.id == task.customerId, orElse: () => UserModel(id: 0, name: 'Неизвестно', email: '', login: '')).name}',
-<<<<<<< HEAD
                                       style: _textStyleBold.copyWith(
-=======
-                                      style: TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                                         fontSize:
                                             TaskScreenStyles.dateFontSize(
                                               context,
@@ -1054,7 +958,6 @@ class _TasksScreenState extends State<TasksScreen> {
                                       ),
                                     if (endPoint != null)
                                       Text(
-<<<<<<< HEAD
                                         'До ${DateFormat('dd.MM').format(endPoint)}',
                                         style: _textStyleBold.copyWith(
                                           fontSize:
@@ -1062,14 +965,6 @@ class _TasksScreenState extends State<TasksScreen> {
                                                 context,
                                               ) *
                                               0.9,
-=======
-                                        'До ${DateFormat('dd.MM.yyyy HH:mm').format(endPoint)}',
-                                        style: TextStyle(
-                                          fontSize:
-                                              TaskScreenStyles.dateFontSize(
-                                                context,
-                                              ),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                                           color:
                                               isOverdue
                                                   ? Colors.red[400]
@@ -1077,7 +972,6 @@ class _TasksScreenState extends State<TasksScreen> {
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-<<<<<<< HEAD
                                     Text(
                                       DateFormat('HH:mm').format(endPoint!),
                                       style: _textStyleBold.copyWith(
@@ -1091,19 +985,6 @@ class _TasksScreenState extends State<TasksScreen> {
                                                 ? Colors.red[400]
                                                 : Colors.white,
                                         fontWeight: FontWeight.bold,
-=======
-                                    if (startPoint != null)
-                                      Text(
-                                        'С ${DateFormat('dd.MM.yyyy HH:mm').format(startPoint)}',
-                                        style: TextStyle(
-                                          fontSize:
-                                              TaskScreenStyles.dateFontSize(
-                                                context,
-                                              ) *
-                                              0.8,
-                                          color: Colors.white.withOpacity(0.8),
-                                        ),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                                       ),
                                     ),
                                   ],
@@ -1346,11 +1227,7 @@ class _TasksScreenState extends State<TasksScreen> {
                           _deadline == null
                               ? 'Выберите дедлайн'
                               : 'Дедлайн: ${DateFormat('dd.MM.yyyy HH:mm').format(_deadline!)}',
-<<<<<<< HEAD
                           style: _textStyleBold.copyWith(
-=======
-                          style: TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                             fontSize: 14,
                             color:
                                 _deadline == null
@@ -1368,15 +1245,9 @@ class _TasksScreenState extends State<TasksScreen> {
                             });
                           }
                         },
-<<<<<<< HEAD
                         child: Text(
                           'Выбрать',
                           style: _textStyleBold.copyWith(
-=======
-                        child: const Text(
-                          'Выбрать',
-                          style: TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                             color: TaskScreenStyles.primaryColor,
                           ),
                         ),
@@ -1582,10 +1453,7 @@ class _TasksScreenState extends State<TasksScreen> {
               authProvider.isAdmin
                   ? 'Задача подтверждена'
                   : 'Задача выполнена (ожидает подтверждения)',
-<<<<<<< HEAD
               style: _textStyleBold,
-=======
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
             ),
           ),
         );
@@ -1608,17 +1476,6 @@ class _TasksScreenState extends State<TasksScreen> {
     }
   }
 
-<<<<<<< HEAD
-=======
-  void _showNonOwnerSnackbar() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Только администратор может добавлять задачи'),
-      ),
-    );
-  }
-
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
@@ -1664,15 +1521,9 @@ class _TasksScreenState extends State<TasksScreen> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-<<<<<<< HEAD
                       child: Text(
                         'Информация о группе',
                         style: _textStyleBold.copyWith(
-=======
-                      child: const Text(
-                        'Информация о группе',
-                        style: TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -1684,21 +1535,13 @@ class _TasksScreenState extends State<TasksScreen> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-<<<<<<< HEAD
                           Text('Код: ${groupProvider.groupCode}', style: _textStyleSemiBold),
-=======
-                          Text('Код: ${groupProvider.groupCode}'),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                           const SizedBox(height: 10),
                           Text(
                             groupProvider.isOwner
                                 ? 'Вы администратор группы'
                                 : 'Вы участник группы',
-<<<<<<< HEAD
                             style: _textStyleBold.copyWith(
-=======
-                            style: TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                               color:
                                   groupProvider.isOwner
                                       ? Colors.green
@@ -1717,18 +1560,10 @@ class _TasksScreenState extends State<TasksScreen> {
                           TextButton(
                             onPressed:
                                 () => _handleLeaveGroup(ctx, groupProvider),
-<<<<<<< HEAD
                             child: const Text('Выйти из группы', style: _textStyleSemiBold),
                           ),
                           if (groupProvider.isOwner) ...[
                             const SizedBox(width: 8),
-=======
-                            child: const Text('Выйти из группы'),
-                          ),
-                          if (groupProvider.isOwner) ...[
-                            const SizedBox(width: 8),
-
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                           ],
                           if (!groupProvider.isOwner) ...[
                             const SizedBox(width: 8),
@@ -1737,11 +1572,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                 Navigator.pop(ctx);
                                 _showGroupMembersDialog(context);
                               },
-<<<<<<< HEAD
                               child: const Text('Участники группы', style: _textStyleBold),
-=======
-                              child: const Text('Участники группы'),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                             ),
                           ],
                         ],
@@ -1775,7 +1606,6 @@ class _TasksScreenState extends State<TasksScreen> {
       builder:
           (ctx) => AlertDialog(
             backgroundColor: Colors.white,
-<<<<<<< HEAD
             title: const Text('Подтверждение', style: _textStyleBold,),
             content: const Text('Вы уверены, что хотите выйти из группы?', style: _textStyleSemiBold),
             actions: [
@@ -1786,18 +1616,6 @@ class _TasksScreenState extends State<TasksScreen> {
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
                 child:  Text('Выйти', style: _textStyleBold.copyWith(color: Colors.red)),
-=======
-            title: const Text('Подтверждение'),
-            content: const Text('Вы уверены, что хотите выйти из группы?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Отмена'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Выйти', style: TextStyle(color: Colors.red)),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
               ),
             ],
           ),
@@ -1845,15 +1663,9 @@ class _TasksScreenState extends State<TasksScreen> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-<<<<<<< HEAD
                       child: Text(
                         'Управление группой',
                         style: _textStyleBold.copyWith(
-=======
-                      child: const Text(
-                        'Управление группой',
-                        style: TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -1870,11 +1682,7 @@ class _TasksScreenState extends State<TasksScreen> {
                               Icons.people,
                               color: TaskScreenStyles.primaryColor,
                             ),
-<<<<<<< HEAD
                             title: const Text('Управление участниками', style: _textStyleSemiBold),
-=======
-                            title: const Text('Управление участниками'),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                             onTap: () {
                               Navigator.pop(ctx);
                               _showGroupMembersDialog(context);
@@ -1887,11 +1695,7 @@ class _TasksScreenState extends State<TasksScreen> {
                               Icons.delete,
                               color: Colors.red,
                             ),
-<<<<<<< HEAD
                             title: const Text('Распустить группу', style: _textStyleSemiBold),
-=======
-                            title: const Text('Распустить группу'),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                             onTap: () {
                               Navigator.pop(ctx);
                               _confirmGroupDisband(context);
@@ -1907,11 +1711,7 @@ class _TasksScreenState extends State<TasksScreen> {
                         children: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx),
-<<<<<<< HEAD
                             child: const Text('Закрыть', style: _textStyleSemiBold),
-=======
-                            child: const Text('Закрыть'),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                           ),
                         ],
                       ),
@@ -1935,30 +1735,6 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
-<<<<<<< HEAD
-=======
-  Widget _buildMenuTile({
-    required IconData icon,
-    required String title,
-    Color? color,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      leading: Icon(icon, color: color ?? Colors.blue[600]),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontSize: 16,
-          color: color ?? Colors.black87,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      onTap: onTap,
-    );
-  }
-
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
   Future<void> _showGroupMembersDialog(BuildContext context) async {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -2006,15 +1782,9 @@ class _TasksScreenState extends State<TasksScreen> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-<<<<<<< HEAD
                         child:  Text(
                           'Участники группы',
                           style: _textStyleSemiBold.copyWith(
-=======
-                        child: const Text(
-                          'Участники группы',
-                          style: TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -2036,29 +1806,17 @@ class _TasksScreenState extends State<TasksScreen> {
                                 contentPadding: EdgeInsets.zero,
                                 leading: CircleAvatar(
                                   radius: 20,
-<<<<<<< HEAD
                                   child: Text(member.name[0], style: _textStyleSemiBold,),
                                 ),
                                 title: Text(
                                   member.name,
                                   style:  _textStyleBold.copyWith(fontSize: 14),
-=======
-                                  child: Text(member.name[0]),
-                                ),
-                                title: Text(
-                                  member.name,
-                                  style: const TextStyle(fontSize: 14),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                                 ),
                                 subtitle: Text(
                                   member.role.isAdmin
                                       ? 'Администратор'
                                       : 'Участник',
-<<<<<<< HEAD
                                   style: _textStyleSemiBold.copyWith(
-=======
-                                  style: TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                                     fontSize: 12,
                                     color:
                                         member.role.isAdmin
@@ -2097,11 +1855,7 @@ class _TasksScreenState extends State<TasksScreen> {
                           children: [
                             TextButton(
                               onPressed: () => Navigator.pop(ctx),
-<<<<<<< HEAD
                               child: const Text('Закрыть', style: _textStyleSemiBold),
-=======
-                              child: const Text('Закрыть'),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                             ),
                           ],
                         ),
@@ -2170,24 +1924,14 @@ class _TasksScreenState extends State<TasksScreen> {
       builder:
           (ctx) => AlertDialog(
             backgroundColor: Colors.white,
-<<<<<<< HEAD
             title: const Text('Распустить группу?', style: _textStyleBold),
             content: const Text(
               'Все участники будут удалены из группы. Это действие нельзя отменить.', style: _textStyleSemiBold
-=======
-            title: const Text('Распустить группу?'),
-            content: const Text(
-              'Все участники будут удалены из группы. Это действие нельзя отменить.',
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-<<<<<<< HEAD
                 child: const Text('Отмена', style: _textStyleSemiBold),
-=======
-                child: const Text('Отмена'),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
               ),
               TextButton(
                 onPressed: () async {
@@ -2201,15 +1945,9 @@ class _TasksScreenState extends State<TasksScreen> {
                     _showError('Ошибка распускания группы: ${e.toString()}');
                   }
                 },
-<<<<<<< HEAD
                 child: Text(
                   'Распустить',
                   style: _textStyleSemiBold.copyWith(color: Colors.red),
-=======
-                child: const Text(
-                  'Распустить',
-                  style: TextStyle(color: Colors.red),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                 ),
               ),
             ],
@@ -2227,11 +1965,7 @@ class _TasksScreenState extends State<TasksScreen> {
     if (groupProvider.isInGroup) {
       ScaffoldMessenger.of(
         context,
-<<<<<<< HEAD
       ).showSnackBar(const SnackBar(content: Text('Вы уже в группе', style: _textStyleSemiBold,)));
-=======
-      ).showSnackBar(const SnackBar(content: Text('Вы уже в группе')));
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
       return;
     }
 
@@ -2239,25 +1973,15 @@ class _TasksScreenState extends State<TasksScreen> {
       context: context,
       builder:
           (ctx) => AlertDialog(
-<<<<<<< HEAD
             title: const Text("Создать новую группу", style: _textStyleBold),
             content: const Text(
               "Нажмите 'Создать' для генерации группы с уникальным кодом",
                 style: _textStyleSemiBold
-=======
-            title: const Text("Создать новую группу"),
-            content: const Text(
-              "Нажмите 'Создать' для генерации группы с уникальным кодом",
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-<<<<<<< HEAD
                 child: const Text("Отмена", style: _textStyleSemiBold),
-=======
-                child: const Text("Отмена"),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
               ),
               TextButton(
                 onPressed: () async {
@@ -2275,10 +1999,7 @@ class _TasksScreenState extends State<TasksScreen> {
                       SnackBar(
                         content: Text(
                           'Группа создана! Код: ${groupProvider.groupCode}',
-<<<<<<< HEAD
                             style: _textStyleSemiBold
-=======
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                         ),
                       ),
                     );
@@ -2288,11 +2009,7 @@ class _TasksScreenState extends State<TasksScreen> {
                     );
                   }
                 },
-<<<<<<< HEAD
                 child: const Text("Создать", style: _textStyleBold),
-=======
-                child: const Text("Создать"),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
               ),
             ],
           ),
@@ -2304,11 +2021,7 @@ class _TasksScreenState extends State<TasksScreen> {
       context: context,
       builder:
           (ctx) => AlertDialog(
-<<<<<<< HEAD
             title: const Text("Вступить в группу", style: _textStyleBold),
-=======
-            title: const Text("Вступить в группу"),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -2326,11 +2039,7 @@ class _TasksScreenState extends State<TasksScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-<<<<<<< HEAD
                 child: const Text("Отмена", style: _textStyleBold),
-=======
-                child: const Text("Отмена"),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
               ),
               TextButton(
                 onPressed: () async {
@@ -2338,11 +2047,7 @@ class _TasksScreenState extends State<TasksScreen> {
                   if (code.length != 6) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
                       const SnackBar(
-<<<<<<< HEAD
                         content: Text("Код должен содержать 6 символов", style: _textStyleSemiBold),
-=======
-                        content: Text("Код должен содержать 6 символов"),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                       ),
                     );
                     return;
@@ -2357,28 +2062,16 @@ class _TasksScreenState extends State<TasksScreen> {
                     Navigator.pop(ctx);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-<<<<<<< HEAD
                         content: Text("Вы успешно присоединились!", style: _textStyleSemiBold),
-=======
-                        content: Text("Вы успешно присоединились!"),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                       ),
                     );
                   } else {
                     ScaffoldMessenger.of(ctx).showSnackBar(
-<<<<<<< HEAD
                       const SnackBar(content: Text("Ошибка присоединения", style: _textStyleSemiBold)),
                     );
                   }
                 },
                 child: const Text("Присоединиться", style: _textStyleBold),
-=======
-                      const SnackBar(content: Text("Ошибка присоединения")),
-                    );
-                  }
-                },
-                child: const Text("Присоединиться"),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
               ),
             ],
           ),
@@ -2434,7 +2127,6 @@ class _TasksScreenState extends State<TasksScreen> {
                             children: [
                               TextButton(
                                 onPressed: () => Navigator.of(context).pop(),
-<<<<<<< HEAD
                                 child: Text(
                                   'Отмена',
                                   style: _textStyleBold.copyWith(color: Colors.grey),
@@ -2443,16 +2135,6 @@ class _TasksScreenState extends State<TasksScreen> {
                                Text(
                                 'Редактировать задачу',
                                 style: _textStyleBold.copyWith(
-=======
-                                child: const Text(
-                                  'Отмена',
-                                  style: TextStyle(color: Colors.grey),
-                                ),
-                              ),
-                              const Text(
-                                'Редактировать задачу',
-                                style: TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                                   color: TaskScreenStyles.primaryColor,
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -2502,11 +2184,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                                 ).showSnackBar(
                                                   const SnackBar(
                                                     content: Text(
-<<<<<<< HEAD
                                                       'Задача обновлена', style: _textStyleBold,
-=======
-                                                      'Задача обновлена',
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                                                     ),
                                                   ),
                                                 );
@@ -2526,15 +2204,9 @@ class _TasksScreenState extends State<TasksScreen> {
                                             }
                                           }
                                         },
-<<<<<<< HEAD
                                 child: Text(
                                   'Сохранить',
                                   style: _textStyleBold.copyWith(
-=======
-                                child: const Text(
-                                  'Сохранить',
-                                  style: TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                                     color: TaskScreenStyles.primaryColor,
                                     fontSize: 12,
                                   ),
@@ -2607,11 +2279,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                 Icons.arrow_drop_down,
                                 color: Color(0xFF937DF3),
                               ),
-<<<<<<< HEAD
                               style: _textStyleBold.copyWith(
-=======
-                              style: TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                                 color: Colors.black,
                                 fontSize: 16,
                               ),
@@ -2620,11 +2288,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                   value: 0,
                                   child: Text(
                                     'Для всех участников',
-<<<<<<< HEAD
                                     style: _textStyleSemiBold.copyWith(color: Colors.black),
-=======
-                                    style: TextStyle(color: Colors.black),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                                   ),
                                 ),
                                 ...Provider.of<GroupProvider>(
@@ -2635,11 +2299,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                     value: member.id,
                                     child: Text(
                                       member.name,
-<<<<<<< HEAD
                                       style: _textStyleSemiBold.copyWith(color: Colors.black),
-=======
-                                      style: TextStyle(color: Colors.black),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                                     ),
                                   );
                                 }).toList(),
@@ -2657,7 +2317,6 @@ class _TasksScreenState extends State<TasksScreen> {
                             controller: _editRewardController,
                             labelText: 'Количество звёзд',
                             validator: (value) {
-<<<<<<< HEAD
                               if (value == null || value.isEmpty) {
                                 return 'Введите количество';
                               }
@@ -2666,14 +2325,6 @@ class _TasksScreenState extends State<TasksScreen> {
                               if (num < 0) {
                                 return 'Число должно быть положительным';
                               }
-=======
-                              if (value == null || value.isEmpty)
-                                return 'Введите количество';
-                              final num = double.tryParse(value);
-                              if (num == null) return 'Введите число';
-                              if (num < 0)
-                                return 'Число должно быть положительным';
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                               return null;
                             },
                           ),
@@ -2702,11 +2353,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                     deadline == null
                                         ? 'Выберите дедлайн'
                                         : 'Дедлайн: ${DateFormat('dd.MM.yyyy HH:mm').format(deadline!)}',
-<<<<<<< HEAD
                                     style: _textStyleSemiBold.copyWith(
-=======
-                                    style: TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                                       fontSize: 14,
                                       color:
                                           deadline == null
@@ -2726,15 +2373,9 @@ class _TasksScreenState extends State<TasksScreen> {
                                       });
                                     }
                                   },
-<<<<<<< HEAD
                                   child: Text(
                                     'Выбрать',
                                     style: _textStyleBold.copyWith(
-=======
-                                  child: const Text(
-                                    'Выбрать',
-                                    style: TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                                       color: TaskScreenStyles.primaryColor,
                                     ),
                                   ),
@@ -2797,24 +2438,14 @@ class _TasksScreenState extends State<TasksScreen> {
                       children: [
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(),
-<<<<<<< HEAD
                           child: Text(
                             'Закрыть',
                             style: _textStyleSemiBold.copyWith(color: Colors.grey),
-=======
-                          child: const Text(
-                            'Закрыть',
-                            style: TextStyle(color: Colors.grey),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                           ),
                         ),
                         Text(
                           'Информация о задаче',
-<<<<<<< HEAD
                           style: _textStyleBold.copyWith(
-=======
-                          style: TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                             color: TaskScreenStyles.primaryColor,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -2834,11 +2465,7 @@ class _TasksScreenState extends State<TasksScreen> {
                       padding: const EdgeInsets.all(16),
                       child: Text(
                         task.name,
-<<<<<<< HEAD
                         style: _textStyleBold.copyWith(
-=======
-                        style: TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: theme.primaryColor,
@@ -2857,11 +2484,7 @@ class _TasksScreenState extends State<TasksScreen> {
                         padding: const EdgeInsets.all(16),
                         child: Text(
                           task.description,
-<<<<<<< HEAD
                           style: _textStyleSemiBold.copyWith(fontSize: 14),
-=======
-                          style: const TextStyle(fontSize: 14),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -2884,11 +2507,7 @@ class _TasksScreenState extends State<TasksScreen> {
                           const SizedBox(width: 8),
                           Text(
                             'Назначено: ${assignedUser.name}',
-<<<<<<< HEAD
                             style: _textStyleSemiBold.copyWith(fontSize: 14),
-=======
-                            style: const TextStyle(fontSize: 14),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                           ),
                         ],
                       ),
@@ -2913,11 +2532,7 @@ class _TasksScreenState extends State<TasksScreen> {
                             const SizedBox(width: 8),
                             Text(
                               'Дедлайн: ${DateFormat('dd.MM.yyyy HH:mm').format(endPoint)}',
-<<<<<<< HEAD
                               style: _textStyleSemiBold.copyWith(
-=======
-                              style: TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                                 fontSize: 14,
                                 color: isOverdue ? Colors.red : null,
                               ),
@@ -2942,11 +2557,7 @@ class _TasksScreenState extends State<TasksScreen> {
                             const SizedBox(width: 8),
                             Text(
                               'Награда: ${task.reward} звёзд',
-<<<<<<< HEAD
                               style: _textStyleSemiBold.copyWith(fontSize: 14),
-=======
-                              style: const TextStyle(fontSize: 14),
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                             ),
                           ],
                         ),
@@ -2989,11 +2600,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                 : task.state == 1
                                 ? 'Ожидает подтверждения'
                                 : 'В процессе'}',
-<<<<<<< HEAD
                             style: _textStyleBold.copyWith(
-=======
-                            style: TextStyle(
->>>>>>> 1ff228d5ea909ee1302341b26d7a53116d30ba17
                               fontSize: 14,
                               color:
                                   task.state == 2
