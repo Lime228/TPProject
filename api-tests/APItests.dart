@@ -233,9 +233,9 @@ void main() {
       print('Создание задачи...');
 
       final requestData = {
-        'name': 'TEST TASK',
+        'name': 'тест TASK',
         'reward': 100,
-        'description': 'Ogo, chto eto? Eto je opisanie!',
+        'description': 'тест русского описания',
         'startdate': '2025-05-02',
         'enddate': '2025-05-20',
         'lobbyid': 1,
