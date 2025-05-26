@@ -62,3 +62,4 @@
 - [О коммитах](https://youtrack.zadachok.ru/articles/TPP-A-7/O-kommitah)
 - [Как собрать frontend в Android Studio](https://github.com/Lime228/TPProject/blob/main/frontend/README.md)
 - API находится по адресу https://api.zadachok.ru
+- [Билд на момент 26 мая 2025 года](https://disk.yandex.ru/d/1UvaWr48cTbPvA)
