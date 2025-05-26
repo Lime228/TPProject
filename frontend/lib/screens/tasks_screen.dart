@@ -718,10 +718,6 @@ class _TasksScreenState extends State<TasksScreen> {
                           'Нет задач',
                           style: _textStyleSemiBold.copyWith(fontSize: 18, color: Colors.grey),
                         ),
-                        TextButton(
-                          onPressed: _refreshData,
-                          child: const Text('Обновить', style: _textStyleBold),
-                        ),
                       ],
                     ),
                   );
@@ -879,25 +875,25 @@ class _TasksScreenState extends State<TasksScreen> {
                                           : null,
                                 ),
                               ),
-                              if (task.description.isNotEmpty)
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    top:
-                                        MediaQuery.of(context).size.height *
-                                        0.005,
-                                  ),
-                                  child: Text(
-                                    task.description,
-                                    style: _textStyleSemiBold.copyWith(
-                                      fontSize: TaskScreenStyles.dateFontSize(
-                                        context,
-                                      ),
-                                      color: Colors.grey[700],
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
+                              // if (task.description.isNotEmpty)
+                              //   Padding(
+                              //     padding: EdgeInsets.only(
+                              //       top:
+                              //           MediaQuery.of(context).size.height *
+                              //           0.005,
+                              //     ),
+                              //     child: Text(
+                              //       task.description,
+                              //       style: _textStyleSemiBold.copyWith(
+                              //         fontSize: TaskScreenStyles.dateFontSize(
+                              //           context,
+                              //         ),
+                              //         color: Colors.grey[700],
+                              //       ),
+                              //       maxLines: 2,
+                              //       overflow: TextOverflow.ellipsis,
+                              //     ),
+                              //   ),
                               if (task.customerId != 0)
                                 Padding(
                                   padding: EdgeInsets.only(
