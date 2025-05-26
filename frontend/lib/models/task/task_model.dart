@@ -103,9 +103,9 @@ class TaskModel{
   factory TaskModel.fromResponse(Map<String, dynamic> json) {
     return TaskModel(
       id: json['id'] ?? 0,
-      name: utf8.decode(json['name'].toString().codeUnits), // Декодируем имя
+      name:(json['name']), // Декодируем имя
       reward: json['reward']?.toInt() ?? 0,
-      description: utf8.decode(json['description'].toString().codeUnits), // Декодируем описание
+      description: (json['description']), // Декодируем описание
       startPoint: json['startDate'],
       endPoint: json['endDate'],
       customerId: json['customerId'],

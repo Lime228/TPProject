@@ -95,6 +95,7 @@ class TasksScreen extends StatefulWidget {
 }
 
 class _TasksScreenState extends State<TasksScreen> {
+  bool _isInitialized = false;
   int? _selectedMemberId;
   late final _formKey = GlobalKey<FormState>();
   late final _titleController = TextEditingController();
@@ -113,7 +114,17 @@ class _TasksScreenState extends State<TasksScreen> {
   @override
   void initState() {
     super.initState();
-    _loadTasks();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isInitialized) {
+        _isInitialized = true;
+        _initData();
+      }
+    });
+  }
+
+  Future<void> _initData() async {
+    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+    await groupProvider.refreshGroupData(); // Вызовется один раз
   }
 
   Future<void> _refreshData() async {
@@ -123,6 +134,7 @@ class _TasksScreenState extends State<TasksScreen> {
 
     if (groupProvider.isInGroup && authProvider.isAuthorized) {
       await taskProvider.refreshTasks();
+      await groupProvider.refreshGroupData();
     }
   }
 
@@ -134,8 +146,9 @@ class _TasksScreenState extends State<TasksScreen> {
     if (groupProvider.isInGroup && authProvider.isAuthorized) {
       taskProvider.setUser(authProvider.user!);
       taskProvider.setLobbyId(groupProvider.lobbyId);
-      await taskProvider.refreshTasks();
     }
+
+
   }
 
   @override
@@ -228,20 +241,6 @@ class _TasksScreenState extends State<TasksScreen> {
     return null;
   }
 
-  Future<void> _initData() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
-
-    if (authProvider.isAuthorized) {
-      if (!groupProvider.isInGroup) {
-        await groupProvider.loadGroupData();
-      }
-
-      if (groupProvider.isInGroup) {
-        await _loadTasks();
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {

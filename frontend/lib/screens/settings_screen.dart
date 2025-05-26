@@ -46,7 +46,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   double get avatarRadius => MediaQuery.of(context).size.width * 0.12;
   double get settingsIconSize => MediaQuery.of(context).size.width * 0.06;
   double get decorativeLineWidth => MediaQuery.of(context).size.width * 0.7;
-  double get decorativeLineHeight => 2.0;
+  double get decorativeLineHeight => MediaQuery.of(context).size.height * 0.002;
 
   static const Color titleColor = Color(0xFF6E44FF);
   static const Color decorativeLineColor = Color(0xFFCCC1FF);
@@ -259,11 +259,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(blockBorderRadius),
-              boxShadow: const [
+              boxShadow:  [
                 BoxShadow(
                   color: Colors.black12,
-                  blurRadius: 8,
-                  offset: Offset(0, 4),
+                  blurRadius: MediaQuery.of(context).size.width * 0.015,
+                  offset: Offset(0, MediaQuery.of(context).size.height * 0.005),
                 ),
               ],
             ),
@@ -304,11 +304,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(blockBorderRadius),
-              boxShadow: const [
+              boxShadow:  [
                 BoxShadow(
                   color: Colors.black12,
-                  blurRadius: 8,
-                  offset: Offset(0, 4),
+                  blurRadius: MediaQuery.of(context).size.width * 0.015,
+                  offset: Offset(0, MediaQuery.of(context).size.height * 0.005),
                 ),
               ],
             ),
@@ -477,6 +477,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       key: _blockKeys['уведомления']!,
       title: 'Уведомления',
       child: SwitchListTile(
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width * 0.02,
+        ),
         activeTrackColor: titleColor,
         value: settings.notificationsEnabled,
         onChanged: (val) => settings.update('notificationsEnabled', val),
@@ -640,11 +643,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(blockBorderRadius),
-        boxShadow: const [
+        boxShadow:  [
           BoxShadow(
             color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 4),
+            blurRadius: MediaQuery.of(context).size.width * 0.015,
+            offset: Offset(0, MediaQuery.of(context).size.height * 0.005),
           ),
         ],
       ),

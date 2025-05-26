@@ -159,6 +159,7 @@ class AuthProvider with ChangeNotifier {
         taskProvider.setUser(_user!);
         taskProvider.setLobbyId(lobby.id);
         await taskProvider.refreshTasks();
+        await groupProvider.refreshGroupData();
         shopProvider.setCurrentShop(lobby.shopId);
         await shopProvider.refreshProducts();
       } else {

@@ -223,7 +223,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: _buildDayLabels(),
           ),
-          const SizedBox(height: 8), // Можно регулировать отступ между днями недели и числами
+        SizedBox(height: MediaQuery.of(context).size.height * 0.01), // Можно регулировать отступ между днями недели и числами
           // Скроллимые даты
           Expanded(
             child: GridView.count(
@@ -282,7 +282,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return GestureDetector(
       onTap: () => setState(() => _selectedDate = date),
       child: Container(
-        padding: EdgeInsets.only(left: 0, bottom: MediaQuery.of(context).size.width * 0.02),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).size.height * 0.01),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
@@ -307,7 +307,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
             if (hasTasks)
               Positioned(
-                top: 0.1,
+        top: MediaQuery.of(context).size.height * 0.01,
                 right: MediaQuery.of(context).size.width * 0.01,
                 child: Container(
                   width: MediaQuery.of(context).size.width * 0.02,
@@ -359,7 +359,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.12,
+      height: MediaQuery.of(context).size.height * 0.15,
       margin: EdgeInsets.symmetric(
         horizontal: MediaQuery.of(context).size.width * 0.04,
         vertical: MediaQuery.of(context).size.height * 0.01,
@@ -801,8 +801,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       crossAxisCount: 7,
       childAspectRatio: 1,
       padding: EdgeInsets.zero,
-      mainAxisSpacing: 0,
-      crossAxisSpacing: 0,
+      mainAxisSpacing: MediaQuery.of(context).size.width * 0.005,
+      crossAxisSpacing: MediaQuery.of(context).size.width * 0.005,
       shrinkWrap: true,
       children: [
         for (int i = 0; i < startOffset; i++) const SizedBox(),

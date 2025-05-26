@@ -67,7 +67,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                     fontSize: MediaQuery.of(context).size.width * 0.035,
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                 TextFormField(
                   controller: codeController,
                   decoration: const InputDecoration(
@@ -77,7 +77,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                   validator: (value) =>
                   value?.isEmpty ?? true ? 'Введите код' : null,
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.01),
                 TextFormField(
                   controller: newPasswordController,
                   obscureText: true,
@@ -89,7 +89,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                       ? 'Минимум 6 символов'
                       : null,
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.01),
                 TextFormField(
                   controller: confirmPasswordController,
                   obscureText: true,
@@ -226,7 +226,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
         child: Padding(
           padding: EdgeInsets.symmetric(
             horizontal: MediaQuery.of(context).size.width * 0.08,
-            vertical: 20,
+            vertical: MediaQuery.of(context).size.height * 0.02,
           ),
           child: Form(
             key: _formKey,
@@ -237,26 +237,26 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                   'lib/assets/logo.svg',
                   width: MediaQuery.of(context).size.width * 0.4,
                 ),
-                const SizedBox(height: 30),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.03),
                 Text(
                   "Восстановление пароля",
                   style: _textStyleBold.copyWith(
-                    fontSize: MediaQuery.of(context).size.width * 0.07,
+                    fontSize: MediaQuery.of(context).size.width * 0.06,
                     color: const Color.fromARGB(100, 110, 68, 255),
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                 Container(
                   width: MediaQuery.of(context).size.width * 0.8,
                   height: MediaQuery.of(context).size.height * 0.06,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black26,
-                        blurRadius: 6,
-                        offset: const Offset(0, 4),
+                        blurRadius: MediaQuery.of(context).size.width * 0.01,
+                        offset: Offset(0, MediaQuery.of(context).size.height * 0.005),
                       ),
                     ],
                   ),
@@ -270,24 +270,24 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                         vertical: 15,
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
+                        borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
                         borderSide: BorderSide.none,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.01),
                 Container(
                   width: MediaQuery.of(context).size.width * 0.8,
                   height: MediaQuery.of(context).size.height * 0.06,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black26,
-                        blurRadius: 6,
-                        offset: const Offset(0, 4),
+                        blurRadius: MediaQuery.of(context).size.width * 0.01,
+                        offset: Offset(0, MediaQuery.of(context).size.height * 0.005),
                       ),
                     ],
                   ),
@@ -296,12 +296,12 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                     validator: _validateEmail,
                     decoration: InputDecoration(
                       hintText: 'Почта',
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 15,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: MediaQuery.of(context).size.width * 0.05,
+                        vertical: MediaQuery.of(context).size.height * 0.015,
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
+                        borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
                         borderSide: BorderSide.none,
                       ),
                     ),
@@ -315,17 +315,17 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                       style: _textStyleSemiBold.copyWith(color: Colors.red),
                     ),
                   ),
-                const SizedBox(height: 20),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                 Container(
                   width: MediaQuery.of(context).size.width * 0.6,
                   height: MediaQuery.of(context).size.height * 0.06,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(25),
+                    borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.06),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black26,
-                        blurRadius: 6,
-                        offset: const Offset(0, 4),
+                        blurRadius: MediaQuery.of(context).size.width * 0.01,
+                        offset: Offset(0, MediaQuery.of(context).size.height * 0.005),
                       ),
                     ],
                   ),
@@ -334,7 +334,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF937DF3),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
+                        borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.06),
                       ),
                     ),
                     child: _isLoading
@@ -347,7 +347,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child:  Text(
@@ -357,7 +357,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 30),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.03),
               ],
             ),
           ),

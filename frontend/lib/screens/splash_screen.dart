@@ -18,15 +18,18 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   static const Duration LOGO_ANIMATION_DURATION = Duration(milliseconds: 2000);
-  static const Duration TEXT_ANIMATION_DURATION = Duration(milliseconds: 800);
+  static const Duration TEXT_ANIMATION_DURATION = Duration(milliseconds: 400);
+  static const Duration TRANSITION_DURATION = Duration(milliseconds: 50);
   static const double LOGO_SIZE = 150.0;
-  static const double TEXT_FONT_SIZE = 28.0;
+  static const double TEXT_FONT_SIZE = 40.0;
 
   late AnimationController _logoController;
   late Animation<double> _logoScale;
+  late Animation<double> _logoRotation;
   late Animation<double> _logoSlide;
   late AnimationController _textController;
   late Animation<double> _textOpacity;
+  late Animation<Offset> _textSlide;
 
   Future<void> _initializeAndAnimate() async {
     await _initializeApp();
@@ -46,17 +49,26 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
     );
 
-    _logoScale = Tween<double>(begin: 0.0, end: 1.0).animate(
+    // Логотип появляется с масштабированием и небольшим вращением
+    _logoScale = Tween<double>(begin: 0.5, end: 1.0).animate(
       CurvedAnimation(
         parent: _logoController,
-        curve: const Interval(0.0, 0.3, curve: Curves.easeOutBack),
+        curve: const Interval(0.0, 0.4, curve: Curves.elasticOut),
       ),
     );
 
+    _logoRotation = Tween<double>(begin: -0.2, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _logoController,
+        curve: const Interval(0.0, 0.4, curve: Curves.easeOut),
+      ),
+    );
+
+    // Логотип поднимается вверх с "пружинным" эффектом
     _logoSlide = Tween<double>(begin: 0.0, end: -152.0).animate(
       CurvedAnimation(
         parent: _logoController,
-        curve: const Interval(0.5, 1.0, curve: Curves.easeInOut),
+        curve: const Interval(0.5, 1.0, curve: Curves.easeInOutBack),
       ),
     );
 
@@ -65,7 +77,23 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
     );
 
-    _textOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(_textController);
+    // Текст появляется с прозрачностью и небольшим скольжением снизу
+    _textOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _textController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _textSlide = Tween<Offset>(
+      begin: const Offset(0, 0.5),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _textController,
+        curve: Curves.easeOut,
+      ),
+    );
   }
 
   Future<void> _initializeApp() async {
@@ -77,12 +105,23 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _startAnimation() async {
+    // Запускаем анимацию логотипа
     await _logoController.forward();
+
+    // Небольшая пауза перед появлением текста
     await Future.delayed(const Duration(milliseconds: 300));
+
+    // Запускаем анимацию текста
     await _textController.forward();
-    await Future.delayed(const Duration(milliseconds: 1000));
+
+    // Пауза для демонстрации
+    await Future.delayed(const Duration(milliseconds: 1500));
+
+    // Плавное исчезновение текста
     await _textController.reverse();
-    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Финальная пауза перед переходом
+    await Future.delayed(TRANSITION_DURATION);
 
     if (!mounted) return;
 
@@ -97,7 +136,7 @@ class _SplashScreenState extends State<SplashScreen>
     return Scaffold(
       backgroundColor: Colors.white,
       body: AnimatedBuilder(
-        animation: _logoController,
+        animation: Listenable.merge([_logoController, _textController]),
         builder: (context, child) {
           return Center(
             child: Transform.translate(
@@ -105,8 +144,11 @@ class _SplashScreenState extends State<SplashScreen>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Transform.scale(
-                    scale: _logoScale.value,
+                  Transform(
+                    transform: Matrix4.identity()
+                      ..scale(_logoScale.value)
+                      ..rotateZ(_logoRotation.value),
+                    alignment: Alignment.center,
                     child: SvgPicture.asset(
                       'lib/assets/logo.svg',
                       width: LOGO_SIZE,
@@ -114,17 +156,22 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
                   const SizedBox(height: 30),
-                  FadeTransition(
-                    opacity: _textOpacity,
-                    child: const Text(
-                      'ZadachOk',
-                      style: TextStyle(
-                        fontSize: TEXT_FONT_SIZE,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Inter',
+                  SlideTransition(
+                    position: _textSlide,
+                    child: FadeTransition(
+                      opacity: _textOpacity,
+                      child: const Text(
+                        'ZадачOk',
+                        style: TextStyle(
+                          fontSize: TEXT_FONT_SIZE,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Inter',
+                          color: Color(0xFF937DF3)
+                        ),
                       ),
                     ),
                   ),
+
                 ],
               ),
             ),

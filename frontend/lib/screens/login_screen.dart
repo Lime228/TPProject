@@ -146,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   SizedBox(height: MediaQuery.of(context).size.height * 0.05),
                   SvgPicture.asset(
                     'lib/assets/logo.svg',
-                    width: MediaQuery.of(context).size.width * 0.4,
+                    width: MediaQuery.of(context).size.width * 0.35,
                   ),
                   SizedBox(height: MediaQuery.of(context).size.height * 0.04),
                   Text(
@@ -250,6 +250,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: MediaQuery.of(context).size.width * 0.06,
                         child: const CircularProgressIndicator(
                           color: Colors.white,
+
                         ),
                       )
                           : Text("Войти", style: _enterStyle),
@@ -327,11 +328,11 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             hintText: hintText,
             suffixIcon: suffixIcon,
-            hintStyle: TextStyle(
+            hintStyle: _textStyle.copyWith(
               fontSize: MediaQuery.of(context).size.width * 0.035,
             ),
           ),
-          style: TextStyle(
+          style: _textStyle.copyWith(
             fontSize: MediaQuery.of(context).size.width * 0.04,
           ),
           validator: validator,

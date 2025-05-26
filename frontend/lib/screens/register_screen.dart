@@ -128,12 +128,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                   SvgPicture.asset(
                     'lib/assets/logo.svg',
                     width: MediaQuery.of(context).size.width * 0.4,
                   ),
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.04),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                   Text(
                     "Регистрация",
                     style: _textStyleBold.copyWith(
@@ -141,7 +141,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       color: colorEnter,
                     ),
                   ),
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                   _buildInputField(
                     hintText: 'Логин',
                     controller: _usernameController,
@@ -200,11 +200,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                     ),
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                   _buildRegisterButton(),
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                   _buildLoginPrompt(),
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                 ],
               ),
             ),
@@ -231,8 +231,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           boxShadow: [
             BoxShadow(
               color: Colors.black26,
-              blurRadius: 6,
-              offset: const Offset(0, 4),
+              blurRadius: MediaQuery.of(context).size.width * 0.015,
+              offset: Offset(0, MediaQuery.of(context).size.height * 0.005),
             ),
           ],
         ),
@@ -275,8 +275,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black26,
-            blurRadius: 6,
-            offset: const Offset(0, 4),
+            blurRadius: MediaQuery.of(context).size.width * 0.015,
+            offset: Offset(0, MediaQuery.of(context).size.height * 0.005),
           ),
         ],
       ),
