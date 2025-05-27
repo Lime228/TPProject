@@ -17,7 +17,7 @@ class UserModel {
     required this.email,
     this.birthdayDate,
     required this.login,
-    this.photoBytes, // Делаем параметр nullable
+    this.photoBytes,
     this.password,
     this.role = UserRole.user,
   });
@@ -46,16 +46,36 @@ class UserModel {
 
   factory UserModel.fromResponse(Map<String, dynamic> json) {
     return UserModel(
-      id: json['customer_ID'] ?? 0,
+      id: _parseId(json),
       login: json['login'] ?? '',
-      email: json['customer_email'] ?? '',
+      email: _parseEmail(json),
       role: UserRole.fromString(json['admin']?.toString() ?? ''),
-      birthdayDate: json['birthdayDate'] != null
-          ? DateTime.tryParse(json['birthdayDate'])
-          : null,
-      photoBytes: json['customer_photo']?.toString(),
-      name: json['customer_name'] ?? '',
+      birthdayDate: _parseBirthdayDate(json),
+      photoBytes: _parsePhotoBytes(json),
+      name: _parseName(json),
     );
+  }
+
+  // Вспомогательные методы для парсинга с учетом обоих форматов
+  static int _parseId(Map<String, dynamic> json) {
+    return json['id'] ?? json['customer_ID'] ?? 0;
+  }
+
+  static String _parseName(Map<String, dynamic> json) {
+    return json['name'] ?? json['customer_name'] ?? '';
+  }
+
+  static String _parseEmail(Map<String, dynamic> json) {
+    return json['email'] ?? json['customer_email'] ?? '';
+  }
+
+  static DateTime? _parseBirthdayDate(Map<String, dynamic> json) {
+    final dateStr = json['birthdayDate'] ?? json['birthday_date'];
+    return dateStr != null ? DateTime.tryParse(dateStr) : null;
+  }
+
+  static String? _parsePhotoBytes(Map<String, dynamic> json) {
+    return json['photo']?.toString() ?? json['customer_photo']?.toString();
   }
 
   Map<String, dynamic> toRegisterRequest() => {
@@ -86,7 +106,7 @@ class UserModel {
     'name': name,
     'email': email,
     if (birthdayDate != null) 'birthdayDate': birthdayDate!.toIso8601String(),
-    if (photoBytes!.isNotEmpty) 'photo': photoBytes,
+    if (photoBytes != null && photoBytes!.isNotEmpty) 'photo': photoBytes,
     'admin': role == UserRole.admin ? "ADMIN" : "USER",
   };
 
@@ -102,15 +122,13 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['customer_ID'] ?? 0,
+      id: _parseId(json),
       login: json['login'] ?? '',
-      email: json['customer_email'] ?? '',
+      email: _parseEmail(json),
       role: UserRole.fromString(json['admin']?.toString() ?? ''),
-      birthdayDate: json['birthday_date'] != null
-          ? DateTime.tryParse(json['birthday_date'])
-          : null,
-      photoBytes: json['customer_photo'] ?? '', // Может быть null
-      name: json['customer_name'] ?? '',
+      birthdayDate: _parseBirthdayDate(json),
+      photoBytes: _parsePhotoBytes(json),
+      name: _parseName(json),
     );
   }
 
@@ -119,7 +137,6 @@ class UserModel {
         ? base64Decode(photoBytes!)
         : null;
   }
-
 
   @override
   bool operator ==(Object other) => identical(this, other) ||

@@ -20,14 +20,19 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   await EndpointsConfigParse.load();
 
-  final apiClient = ApiClient();
-
-  // Загружаем начальные данные
-  final authProvider = AuthProvider(groupProvider: GroupProvider(authProvider: null));
+  // Создаём один экземпляр groupProvider без authProvider
+  final groupProvider = GroupProvider(authProvider: null);
+  // Создаём authProvider, передаём groupProvider
+  final authProvider = AuthProvider(groupProvider: groupProvider);
   await authProvider.checkAuth();
 
+  // Привязываем authProvider к groupProvider
+  groupProvider.setAuthProvider(authProvider);
+
+  final shopProvider = ShopProvider(authProvider: authProvider, prefs: prefs);
+  final taskProvider = TaskProvider(authProvider: authProvider);
+
   if (authProvider.isAuthorized) {
-    final groupProvider = GroupProvider(authProvider: authProvider);
     await groupProvider.loadGroupData();
     if (groupProvider.isInGroup) {
       await groupProvider.refreshGroupData();
@@ -38,29 +43,17 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => authProvider),
-        ChangeNotifierProxyProvider<AuthProvider, GroupProvider>(
-          create: (context) => GroupProvider(
-            authProvider: Provider.of<AuthProvider>(context, listen: false),
-          ),
-          update: (context, authProvider, groupProvider) =>
-          groupProvider ?? GroupProvider(authProvider: authProvider),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => TaskProvider(authProvider: authProvider),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => SettingsProvider()..loadSettings(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ShopProvider(
-            prefs: prefs, authProvider: authProvider, 
-          ),
-        ),
+        ChangeNotifierProvider(create: (_) => groupProvider),
+        ChangeNotifierProvider(create: (_) => taskProvider),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()..loadSettings()),
+        ChangeNotifierProvider(create: (_) => shopProvider),
       ],
       child: const MyApp(),
     ),
   );
 }
+
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
