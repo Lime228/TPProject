@@ -222,15 +222,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: _buildDayLabels(),
-          ),
-        SizedBox(height: MediaQuery.of(context).size.height * 0.01), // Можно регулировать отступ между днями недели и числами
+          ), // Можно регулировать отступ между днями недели и числами
           // Скроллимые даты
           Expanded(
             child: GridView.count(
               shrinkWrap: true,
               crossAxisCount: 7,
-              mainAxisSpacing: MediaQuery.of(context).size.width * 0.02,
-              crossAxisSpacing: MediaQuery.of(context).size.width * 0.02,
+              mainAxisSpacing: 0,  // Убери вертикальные промежутки между ячейками
+              crossAxisSpacing: 0, // Можно оставить, если хочется горизонтальные отступы
+              padding: EdgeInsets.zero, // Убери отступы вокруг сетки
               children: _buildCalendarDays(_selectedDate, tasks), // только числа месяца + пустые ячейки
             ),
           ),
@@ -275,43 +275,72 @@ class _CalendarScreenState extends State<CalendarScreen> {
     required DateTime date,
     required List<TaskModel> tasks,
   }) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     final isToday = DateUtils.isSameDay(DateTime.now(), date);
     final isSelected = DateUtils.isSameDay(_selectedDate, date);
-    final hasTasks = tasks.any((t) => DateUtils.isSameDay(date, _safeParseDate(t.endPoint)));
+
+    // Размер круга выделения (радиус * 2)
+    final double highlightSize = screenWidth * 0.1; // Меняй тут радиус
+
+    // Показывать точку, если текущая дата входит в любой интервал задач
+    final hasTasks = tasks.any((t) {
+      final start = _safeParseDate(t.startPoint);
+      final end = _safeParseDate(t.endPoint);
+      return (start != null && end != null)
+          ? !date.isBefore(start) && !date.isAfter(end)
+          : false;
+    });
 
     return GestureDetector(
       onTap: () => setState(() => _selectedDate = date),
       child: Container(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).size.height * 0.01),
+        padding: EdgeInsets.only(bottom: 10),
         alignment: Alignment.center,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: isSelected ? Color(0xFFCCC1FF) : null,
-          border: Border.all(
-            color: isToday
-                ? (isSelected ? Colors.white : CalendarStyles.todayBorderColor)
-                : Colors.transparent,
-            width: 0,
-          ),
-        ),
         child: Stack(
           alignment: Alignment.center,
           children: [
+            if (isSelected || isToday)
+              Transform.translate(
+                offset: Offset(0, screenHeight * 0.0008), // сдвиг по вертикали
+                child: Container(
+                  width: highlightSize,
+                  height: highlightSize,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected ? const Color(0xFFCCC1FF) : null,
+                    border: isToday && !isSelected
+                        ? Border.all(
+                      color: CalendarStyles.todayBorderColor,
+                      width: 2,
+                    )
+                        : null,
+                  ),
+                ),
+              ),
+
             Text(
               '$day',
               style: _textStyleBold.copyWith(
-                color: isSelected ? CalendarStyles.selectedDayColor : CalendarStyles.dayNumberColor,
+                color: isSelected
+                    ? CalendarStyles.selectedDayColor
+                    : CalendarStyles.dayNumberColor,
                 fontSize: CalendarStyles.dayNumberFontSize(context),
                 fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
               ),
             ),
+
             if (hasTasks)
-              Positioned(
-        top: MediaQuery.of(context).size.height * 0.01,
-                right: MediaQuery.of(context).size.width * 0.01,
+              Align(
+                alignment: Alignment.topRight,
                 child: Container(
-                  width: MediaQuery.of(context).size.width * 0.02,
-                  height: MediaQuery.of(context).size.width * 0.02,
+                  margin: EdgeInsets.only(
+                    top: screenHeight * 0.002,
+                    right: day < 10 ? screenWidth * 0.02 : screenWidth * 0.005,
+                  ),
+                  width: screenWidth * 0.015,
+                  height: screenWidth * 0.015,
                   decoration: const BoxDecoration(
                     color: Colors.red,
                     shape: BoxShape.circle,
@@ -323,6 +352,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
     );
   }
+
+
+
 
   Widget _buildTaskList() {
     final tasks = Provider.of<TaskProvider>(context).tasks;
@@ -787,6 +819,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _buildMiniCalendar(int year, int month) {
+    final screenWidth = MediaQuery.of(context).size.width;
     final firstDay = DateTime(year, month, 1);
     final lastDay = DateTime(year, month + 1, 0);
     final startOffset = (firstDay.weekday + 6) % 7;
@@ -796,31 +829,65 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final currentMonth = currentDate.month;
     final currentYear = currentDate.year;
 
-    return GridView.count(
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 7,
-      childAspectRatio: 1,
-      padding: EdgeInsets.zero,
-      mainAxisSpacing: MediaQuery.of(context).size.width * 0.005,
-      crossAxisSpacing: MediaQuery.of(context).size.width * 0.005,
-      shrinkWrap: true,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        for (int i = 0; i < startOffset; i++) const SizedBox(),
-        for (int day = 1; day <= daysInMonth; day++)
-          Center(
-            child: Text(
-              '$day',
-              style: _textStyleSemiBold.copyWith(
-                fontSize: MediaQuery.of(context).size.width * 0.025,
-                color: (month == currentMonth && year == currentYear)
-                    ? CalendarStyles.todayMonthColor
-                    : Colors.white,
+        // Дни недели — без внешнего отступа
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'].map((day) {
+            return SizedBox(
+              width: screenWidth / 7,
+              child: Center(
+                child: Text(
+                  day,
+                  style: _textStyleBold.copyWith(
+                    fontSize: screenWidth * 0.025,
+                    color: CalendarStyles.dayLabelColor,
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          }).toList(),
+        ),
+
+        // Никакого SizedBox между днями недели и числами — убрали!
+
+        // Сетка дат — максимально плотная, равная высота и ширина
+        Wrap(
+          spacing: 0,
+          runSpacing: 0,
+          children: [
+            for (int i = 0; i < startOffset; i++)
+              SizedBox(
+                width: screenWidth / 7,
+                height: screenWidth / 7,
+              ),
+
+            for (int day = 1; day <= daysInMonth; day++)
+              SizedBox(
+                width: screenWidth / 7,
+                height: screenWidth / 7,
+                child: Center(
+                  child: Text(
+                    '$day',
+                    style: _textStyleSemiBold.copyWith(
+                      fontSize: screenWidth * 0.025,
+                      color: (month == currentMonth && year == currentYear)
+                          ? CalendarStyles.todayMonthColor
+                          : Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ],
     );
   }
+
+
+
 
   DateTime? _safeParseDate(dynamic date) {
     try {
