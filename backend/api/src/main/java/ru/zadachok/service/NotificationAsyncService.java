@@ -134,4 +134,35 @@ public class NotificationAsyncService {
                 )
         );
     }
+
+    public ResponseEntity AIHealthCheck() {
+        try {
+            String url = aiServiceUrl + "/health";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    requestEntity,
+                    Map.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return (ResponseEntity) response.getBody();
+            } else {
+                return ResponseEntity.status(response.getStatusCode()).body(Map.of(
+                        "status", "error",
+                        "message", "AI service returned non-200 status"
+                ));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+                    "status", "error",
+                    "message", "AI service unavailable: " + e.getMessage()
+            ));
+        }
+    }
 }
