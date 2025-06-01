@@ -37,4 +37,9 @@ public class NotificationController {
 
         return ResponseEntity.ok(status);
     }
+
+    @GetMapping("/status/healthcheck")
+    public ResponseEntity<?> checkAI() {
+        return ResponseEntity.ok(notificationAsyncService.AIHealthCheck());
+    }
 }
