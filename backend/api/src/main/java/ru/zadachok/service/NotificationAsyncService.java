@@ -2,6 +2,7 @@ package ru.zadachok.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -139,13 +140,15 @@ public class NotificationAsyncService {
         try {
             String url = aiServiceUrl + "/health";
 
-            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            ResponseEntity<Map<String, String>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<Map<String, String>>() {}
+            );
 
-            if (response.getStatusCode().is2xxSuccessful()) {
-                return Map.of(
-                        "status", "ok",
-                        "message", "API is working"
-                );
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return response.getBody(); // Возвращаем ответ как есть
             } else {
                 return Map.of(
                         "status", "error",
