@@ -137,28 +137,46 @@ class ShopProvider with ChangeNotifier {
     }
   }
 
+  // Резервирование товара (первый этап)
   Future<bool> buyProduct(int productId) async {
-    if (_currentShopId == null || authProvider?.user == null || authProvider?.user?.role == UserRole.admin) {
-      _error = 'Магазин не выбран или пользователь неавторизован/администратор';
-      return false;
-    }
-
     try {
-      final apiClient = _getAuthenticatedClient();
-      final success = await apiClient.buyShopItem(
-        ShopModel(id: _currentShopId!, productIds: []),
+      final result = await client.buyShopItem(
+        _currentShopId!,
         productId,
         authProvider!.user!.id,
       );
 
-      if (success) {
+      if (result.customerId == authProvider!.user!.id) {
         await refreshProducts();
         return true;
       }
       return false;
     } catch (e) {
-      _error = 'Ошибка покупки товара: ${e.toString()}';
-      debugPrint(_error!);
+      _error = 'Ошибка резервирования: ${e.toString()}';
+      return false;
+    }
+  }
+
+  Future<bool> confirmPurchase(int productId) async {
+    try {
+      final product = _products.firstWhere((p) => p.id == productId);
+
+      // Проверяем что пользователь - покупатель
+      if (product.customerId != authProvider!.user!.id) {
+        throw Exception('Нельзя подтвердить чужую покупку');
+      }
+
+      // Обновляем статус товара
+      final updated = await client.updateShopItem(
+          product.copyWith(
+            id: productId, // Убедимся, что ID передается
+            isAvailable: false,
+          )
+      );
+
+      return !updated.isAvailable;
+    } catch (e) {
+      _error = 'Ошибка подтверждения: ${e.toString()}';
       return false;
     }
   }

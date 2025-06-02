@@ -1,7 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:zadachok/providers/auth_provider.dart';
@@ -12,6 +10,7 @@ import '../api/api_client.dart';
 import '../models/user/user_model.dart';
 import '../providers/shop_provider.dart';
 import '../providers/task_provider.dart';
+import '../services/notification_service.dart';
 
 const TextStyle _textStyleSemiBold = TextStyle(
   fontFamily: 'Inter',
@@ -119,7 +118,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildDecorativeLine(),
                   _buildStatisticsBlock(authProvider, isAuthorized),
                   _buildDecorativeLine(),
-                  _buildNotificationsBlock(settings),
+                  _buildNotificationsBlock(authProvider, settings, isAuthorized),
                   _buildDecorativeLine(),
                   _buildAccountBlock(authProvider, isAuthorized),
                 ],
@@ -472,27 +471,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildNotificationsBlock(SettingsProvider settings) {
+  Widget _buildNotificationsBlock(AuthProvider authProvider, SettingsProvider settings, bool isAuthorized) {
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    final notificationService = NotificationService();
+
     return _buildBlock(
       key: _blockKeys['уведомления']!,
       title: 'Уведомления',
-      child: SwitchListTile(
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: MediaQuery.of(context).size.width * 0.02,
-        ),
-        activeTrackColor: titleColor,
-        value: settings.notificationsEnabled,
-        onChanged: (val) => settings.update('notificationsEnabled', val),
-        title: Text(
-          'Получать уведомления',
-          style: _textStyleSemiBold.copyWith(
-            fontSize: MediaQuery.of(context).size.width * 0.04,
+      child: Column(
+        children: [
+          SwitchListTile(
+            value: settings.notificationsEnabled,
+            onChanged: (val) {
+              settings.update('notificationsEnabled', val);
+              notificationService.setNotificationsEnabled(val);
+              // Убедимся, что токен установлен
+              if (authProvider.token != null) {
+                notificationService.setAuthToken(authProvider.token);
+              }
+            },
+            title: Text('Получать уведомления'),
           ),
-        ),
-        secondary: Icon(
-          Icons.notifications,
-          size: settingsIconSize,
-        ),
+          Container(
+            width: double.infinity,
+            height: MediaQuery.of(context).size.height * 0.06,
+            decoration: BoxDecoration(
+              color: Colors.lightBlue[100],
+              borderRadius: BorderRadius.circular(blockBorderRadius),
+              border: Border.all(color: Colors.red.withOpacity(0.3)),
+            ),
+            child: TextButton(
+              onPressed: () async {
+                if (authProvider.token == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Требуется авторизация')),
+                  );
+                  return;
+                }
+
+                final activeTasks = taskProvider.tasks.where((t) => t.state == 0).toList();
+                if (activeTasks.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Нет активных задач!')),
+                  );
+                  return;
+                }
+
+                final task = activeTasks.last;
+                await notificationService.showTaskNotification(taskId: task.id);
+              },
+              child: Text('Отправить тестовое уведомление'),
+            ),
+          ),
+        ],
       ),
     );
   }
