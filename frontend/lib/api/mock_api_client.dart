@@ -280,4 +280,16 @@ class MockApiClient implements ApiInterface {
     // TODO: implement restorePassword
     throw UnimplementedError();
   }
+
+  @override
+  Future<Map<String, dynamic>> generateNotification(int taskId) {
+    // TODO: implement generateNotification
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Map<String, dynamic>> getNotificationStatus(String notificationId) {
+    // TODO: implement getNotificationStatus
+    throw UnimplementedError();
+  }
 }

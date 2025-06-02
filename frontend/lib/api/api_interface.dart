@@ -25,6 +25,9 @@ abstract class ApiInterface {
   Future<ProductModel> updateShopItem(ProductModel request);
   Future<void> deleteShopItem(int shopId, int productId);
   Future<WalletModel> updateWallet(WalletModel request);
+  Future<Map<String, dynamic>> generateNotification(int taskId);
+  Future<Map<String, dynamic>> getNotificationStatus(String notificationId);
+
 
   void dispose();
 }

@@ -8,6 +8,7 @@ import 'package:zadachok/providers/shop_provider.dart';
 import 'package:zadachok/providers/task_provider.dart';
 import '../api/api_client.dart';
 import '../models/user/user_model.dart';
+import '../services/notification_service.dart';
 import 'group_provider.dart';
 
 class AuthProvider with ChangeNotifier {
@@ -39,6 +40,7 @@ class AuthProvider with ChangeNotifier {
     await prefs.setString('user', jsonEncode(user.toJson()));
 
     groupProvider.setCurrentUser(user);
+    NotificationService().setAuthToken(token);
     notifyListeners();
   }
 

@@ -37,9 +37,26 @@ class TaskProvider with ChangeNotifier {
       : _tasks;
 
   void setUser(UserModel user) {
-    _user = user;
-    notifyListeners();
+    if (_user != user) {
+      _user = user;
+      _safeNotifyListeners();
+    }
   }
+
+  void setLobbyId(int lobbyId) {
+    if (_currentLobbyId != lobbyId) {
+      _currentLobbyId = lobbyId;
+      _safeNotifyListeners();
+    }
+  }
+
+  void _safeNotifyListeners() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_isDisposed) return;
+      notifyListeners();
+    });
+  }
+
   ApiClient _getAuthenticatedClient() {
     if (authProvider?.token == null) throw Exception('Токен отсутствует');
     client.setAuthToken(authProvider!.token!);
@@ -47,13 +64,17 @@ class TaskProvider with ChangeNotifier {
   }
 
   void setAuthProvider(AuthProvider provider) {
-    authProvider = provider;
-    notifyListeners();
+    if (authProvider != provider) {
+      authProvider = provider;
+      _safeNotifyListeners();
+    }
   }
+  bool _isDisposed = false;
 
-  void setLobbyId(int lobbyId) {
-    _currentLobbyId = lobbyId;
-    notifyListeners();
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
   }
 
   Future<void> refreshTasks() async {
@@ -63,20 +84,15 @@ class TaskProvider with ChangeNotifier {
     _error = null;
 
     try {
-
-
       final apiClient = _getAuthenticatedClient();
-      final lobby = apiClient.getLobby(_currentLobbyId!);
-      final allTasks = await apiClient.getUserTasks(await lobby, _user!);
-
+      final lobby = await apiClient.getLobby(_currentLobbyId!);
+      final allTasks = await apiClient.getUserTasks(lobby, _user!);
 
       _tasks = _user!.role.isAdmin
           ? allTasks
           : allTasks.where((task) => task.customerId == _user!.id).toList();
 
-
-
-      notifyListeners();
+      _safeNotifyListeners();
     } catch (e) {
       _error = 'Ошибка обновления задач: ${e.toString()}';
       debugPrint(_error!);
@@ -115,7 +131,7 @@ class TaskProvider with ChangeNotifier {
       );
       final apiClient = _getAuthenticatedClient();
       _tasks = await apiClient.getUserTasks(lobby, _user!);
-      notifyListeners();
+      _safeNotifyListeners();
     } catch (e) {
       _error = 'Ошибка загрузки задач: ${e.toString()}';
       debugPrint(_error!);
@@ -138,7 +154,7 @@ class TaskProvider with ChangeNotifier {
       final apiClient = _getAuthenticatedClient();
       final newTask = await apiClient.createTask(task, lobbyId);
       _tasks.add(newTask);
-      notifyListeners();
+      _safeNotifyListeners();
       return true;
     } catch (e) {
       _error = e.toString();
@@ -170,7 +186,7 @@ class TaskProvider with ChangeNotifier {
       await apiClient.deleteTask(taskToDelete);
 
       _tasks.removeWhere((task) => task.id == taskId);
-      notifyListeners();
+      _safeNotifyListeners();
 
       debugPrint('Задача $taskId удалена');
       return true;
@@ -209,7 +225,7 @@ class TaskProvider with ChangeNotifier {
       _tasks.removeWhere((t) => t.id == taskId);
       _tasks.add(serverResponse);
 
-      notifyListeners();
+      _safeNotifyListeners();
     } catch (e) {
       _error = 'Ошибка завершения задачи: ${e.toString()}';
       debugPrint(_error!);
@@ -244,7 +260,7 @@ class TaskProvider with ChangeNotifier {
         }
 
         _tasks[index] = confirmedTask;
-        notifyListeners();
+        _safeNotifyListeners();
       }
     } catch (e) {
       _error = 'Ошибка подтверждения задачи: ${e.toString()}';
@@ -265,7 +281,7 @@ class TaskProvider with ChangeNotifier {
         final apiClient = _getAuthenticatedClient();
         final updatedTask = await apiClient.updateTask(task);
         _tasks[index] = updatedTask;
-        notifyListeners();
+        _safeNotifyListeners();
       }
     } catch (e) {
       _error = 'Ошибка обновления задачи: ${e.toString()}';
@@ -273,30 +289,36 @@ class TaskProvider with ChangeNotifier {
   }
 
   void _setLoadingTasks(bool loading) {
-    _isLoadingTasks = loading;
-    notifyListeners();
+    if (_isLoadingTasks != loading) {
+      _isLoadingTasks = loading;
+      _safeNotifyListeners();
+    }
   }
 
   void _setLoadingTaskCreation(bool loading) {
-    _isLoadingTaskCreation = loading;
-    notifyListeners();
+    if (_isLoadingTaskCreation != loading) {
+      _isLoadingTaskCreation = loading;
+      _safeNotifyListeners();
+    }
   }
 
   void _setLoadingTaskDeletion(bool loading) {
-    _isLoadingTaskDeletion = loading;
-    notifyListeners();
+    if (_isLoadingTaskDeletion !=loading) {
+      _isLoadingTaskDeletion = loading;
+      _safeNotifyListeners();
+    }
   }
 
   void searchTasks(String query) {
     _searchQuery = query.toLowerCase();
     _applyFilters();
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   void sortTasks({String? option}) {
     _sortOption = option ?? 'default';
     _applyFilters();
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   void _applyFilters() {
@@ -337,6 +359,6 @@ class TaskProvider with ChangeNotifier {
     _searchQuery = '';
     _sortOption = 'all';
     _applyFilters();
-    notifyListeners();
+    _safeNotifyListeners();
   }
 }

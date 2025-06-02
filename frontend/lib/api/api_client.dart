@@ -423,24 +423,24 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  Future<bool> buyShopItem(ShopModel shop, int productId, int customerId) async { //переделать
+  @override
+  Future<ProductModel> buyShopItem(int shopId, int productId, int customerId) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}/api/shop/product/buy');
 
     try {
       final response = await _client.post(
         url,
         headers: _getHeaders(),
-        body: json.encode(shop.buyProductRequest(customerId, productId)),
+        body: json.encode({
+          'shopId': shopId,
+          'productId': productId,
+          'customerId': customerId,
+        }),
       ).timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        final responseBody = response.body;
-        return responseBody.contains('Покупка прошла успешно');
-      } else {
-        return false;
-      }
+      return _handleProductResponse(response);
     } catch (e) {
-      return false;
+      throw Exception('Ошибка резервирования товара: $e');
     }
   }
 
@@ -502,29 +502,68 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override // в теории работает
+  @override
   Future<ProductModel> updateShopItem(ProductModel product) async {
-    if (product.id <= 0) {
-      throw Exception('ID товара не может быть пустым');
-    }
-
-    if (product.name.isEmpty) {
-      throw Exception('Название товара не может быть пустым');
-    }
-
     final url = Uri.parse(ApiEndpoints.shopProductUpdateUrl);
-    final ShopModel shop = new ShopModel(productIds: [0]);
+
     try {
       final response = await _client.patch(
         url,
         headers: _getHeaders(),
-        body: json.encode(shop.updateProductRequest(product)),
+        body: json.encode({
+          'productid': product.id, // Убедимся, что ID передается
+          'name': product.name,
+          'description': product.description,
+          'photo': product.photoBytes,
+          'state': product.isAvailable,
+          'price': product.price,
+          'link': product.link,
+        }),
       ).timeout(requestTimeout);
 
       return _handleProductResponse(response);
-    } on http.ClientException catch (e) {
-      throw Exception('Ошибка подключения: ${e.message}');
-    } on Exception catch (e) {
+    } catch (e) {
+      throw Exception('Ошибка обновления товара: $e');
+    }
+  }
+
+  // В api_client.dart
+  @override
+  Future<Map<String, dynamic>> generateNotification(int taskId) async {
+    final url = Uri.parse('${ApiEndpoints.notificationCreateUrl}/${taskId}');
+    try {
+      final response = await _client.post(
+        url,
+        headers: {'Content-Type': 'application/json; charset=utf-8',
+      'Authorization': 'Bearer $_authToken'},
+      ).timeout(requestTimeout);
+
+      if (response.statusCode != 200) {
+        throw Exception('Ошибка генерации уведомления: ${response.statusCode}');
+      }
+
+      return json.decode(utf8.decode(response.bodyBytes));
+    } catch (e) {
+      throw Exception('Ошибка: $e');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getNotificationStatus(String notificationId) async {
+    final url = Uri.parse('${ApiEndpoints.notificationGetUrl}/${notificationId}');
+    try {
+      final response = await _client.get(
+        url,
+        headers: {'Content-Type': 'application/json; charset=utf-8',
+      'Authorization': 'Bearer $_authToken'},
+      ).timeout(requestTimeout);
+
+      if (response.statusCode != 200) {
+        throw Exception('Ошибка получения статуса уведомления: ${response.statusCode}');
+      }
+
+      return json.decode(utf8.decode(response.bodyBytes));
+    } catch (e) {
       throw Exception('Ошибка: $e');
     }
   }
@@ -596,8 +635,7 @@ class ApiClient implements ApiInterface {
         ).timeout(requestTimeout);
 
         if (taskResponse.statusCode == 200) {
-          final taskJson = json.decode(taskResponse.body);
-          final task = TaskModel.fromResponse(taskJson);
+          final task = _handleTaskResponse(taskResponse);
           userTasks.add(task);
         } else {
           throw Exception('Ошибка при получении задачи $taskId: ${taskResponse.statusCode}');
