@@ -47,7 +47,7 @@
 - [Письмо к дополнению](https://github.com/Lime228/TPProject/blob/main/Documentation/Письмо%20к%20дополнению.pdf)
 - [PM-отчет (2 атт.)](https://github.com/Lime228/TPProject/blob/main/Documentation/PM-отчет.pdf)
 - [Отчет о тестировании](https://github.com/Lime228/TPProject/blob/main/Documentation/Otchyot_o_testirovanii.pdf)
-- [Курсовая работа по проекту](https://github.com/Lime228/TPProject/blob/main/Documentation/course_work_(0.3).pdf)
+- [Курсовая работа по проекту](https://github.com/Lime228/TPProject/blob/main/Documentation/course_work_(1.0).pdf)
 
 ### Проверка
 - [Чек-лист](https://github.com/Lime228/TPProject/blob/main/Documentation/ВГУ-ТП.%20Чеклист%201%20этап%20Команда%208.2.pdf)
