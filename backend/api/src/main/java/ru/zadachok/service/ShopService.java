@@ -80,6 +80,7 @@ public class ShopService {
         if (request.getPhoto() != null) product.setPhoto(request.getPhoto());
         if (request.getState() != null) product.setState(request.getState());
         if (request.getPrice() != null) product.setPrice(request.getPrice());
+        if (request.getLink() != null) product.setLink(request.getLink());
 
         return productRepository.save(product);
     }
