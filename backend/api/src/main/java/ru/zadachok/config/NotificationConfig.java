@@ -12,8 +12,8 @@ public class NotificationConfig {
     @Bean
     public RestTemplate restTemplate() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout((int) Duration.ofMinutes(30).toMillis());
-        factory.setReadTimeout((int) Duration.ofMinutes(30).toMillis());
+        factory.setConnectTimeout((int) Duration.ofMinutes(120).toMillis());
+        factory.setReadTimeout((int) Duration.ofMinutes(120).toMillis());
         return new RestTemplate(factory);
     }
 }
