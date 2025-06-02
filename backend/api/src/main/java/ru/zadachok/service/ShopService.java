@@ -1,10 +1,13 @@
 package ru.zadachok.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.stereotype.Service;
+import ru.zadachok.model.Customer;
 import ru.zadachok.model.Product;
 import ru.zadachok.model.Shop;
 import ru.zadachok.model.Wallet;
+import ru.zadachok.repository.CustomerRepository;
 import ru.zadachok.repository.ProductRepository;
 import ru.zadachok.repository.ShopRepository;
 import ru.zadachok.repository.WalletRepository;
@@ -24,6 +27,7 @@ public class ShopService {
     private final ProductRepository productRepository;
     private final ShopRepository shopRepository;
     private final WalletRepository walletRepository;
+    private final CustomerRepository customerRepository;
 
     public Product createProductForShop(ProductCreateRequest request) {
         Shop shop = shopRepository.findById(request.getShopId())
@@ -87,12 +91,18 @@ public class ShopService {
         Wallet wallet = walletRepository.findByCustomerId(request.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("Кошелек не найден"));
 
+        Customer customer = customerRepository.findById(request.getCustomerId())
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+
         if (wallet.getBalance() < product.getPrice()) {
             throw new RuntimeException("Недостаточно средств на балансе");
         }
 
         wallet.setBalance(wallet.getBalance() - product.getPrice());
         walletRepository.save(wallet);
+
+        product.setCustomer(customer);
+        productRepository.save(product);
 
         return "Покупка прошла успешно. Остаток: " + wallet.getBalance();
     }
