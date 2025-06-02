@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.zadachok.dto.ProductDto;
 import ru.zadachok.model.Product;
 import ru.zadachok.model.Shop;
 import ru.zadachok.model.Wallet;
@@ -218,9 +219,19 @@ public class ShopController {
             )
     })
     @GetMapping("/product/{id}")
-    public ResponseEntity<Product> getProduct(@PathVariable int id) {
+    public ResponseEntity<ProductDto> getProduct(@PathVariable int id) {
         Product gettedProduct = shopService.getProductById(id);
-        return ResponseEntity.ok(gettedProduct);
+        ProductDto dto = ProductDto.builder()
+                .id(gettedProduct.getId())
+                .name(gettedProduct.getName())
+                .description(gettedProduct.getDescription())
+                .state(gettedProduct.getState() != null && gettedProduct.getState()) // защита от NPE
+                .price(gettedProduct.getPrice())
+                .photo(gettedProduct.getPhoto())
+                .customerId(gettedProduct.getCustomer() != null ? gettedProduct.getCustomer().getCustomer_ID() : null)
+                .link(gettedProduct.getLink())
+                .build();
+        return ResponseEntity.ok(dto);
     }
 
 
