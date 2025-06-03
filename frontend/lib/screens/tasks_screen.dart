@@ -887,7 +887,12 @@ class _TasksScreenState extends State<TasksScreen> {
             SnackBar(
               content: Text(
                   'Задача "${task.name}" удалена', style: _textStyleSemiBold),
-              backgroundColor: Colors.green,
+              // backgroundColor: Colors.green,
+              backgroundColor: TaskScreenStyles.primaryColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           );
         } catch (e) {
@@ -895,7 +900,12 @@ class _TasksScreenState extends State<TasksScreen> {
             SnackBar(
               content: Text('Ошибка удаления: ${e.toString()}',
                   style: _textStyleSemiBold),
-              backgroundColor: Colors.red,
+              // backgroundColor: Colors.red,
+              backgroundColor: TaskScreenStyles.primaryColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           );
           // Восстанавливаем задачу в списке, если удаление не удалось
@@ -1653,6 +1663,11 @@ class _TasksScreenState extends State<TasksScreen> {
                   : 'Задача выполнена (ожидает подтверждения)',
               style: _textStyleBold,
             ),
+            backgroundColor: TaskScreenStyles.primaryColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -1675,7 +1690,12 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg),
+      backgroundColor: TaskScreenStyles.primaryColor,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),));
   }
 
   void _showGroupInfoDialog(BuildContext context) {
@@ -2169,7 +2189,12 @@ class _TasksScreenState extends State<TasksScreen> {
 
     if (groupProvider.isInGroup) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Вы уже в группе', style: _textStyleSemiBold))
+          SnackBar(content: Text('Вы уже в группе', style: _textStyleSemiBold),
+            backgroundColor: TaskScreenStyles.primaryColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),)
       );
       return;
     }
@@ -2399,7 +2424,12 @@ class _TasksScreenState extends State<TasksScreen> {
                   // Копируем код в буфер обмена
                   Clipboard.setData(ClipboardData(text: groupCode));
                   ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Код скопирован в буфер обмена', style: _textStyleSemiBold))
+                      SnackBar(content: Text('Код скопирован в буфер обмена', style: _textStyleSemiBold),
+                        backgroundColor: TaskScreenStyles.primaryColor,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),)
                   );
                 },
                 child: Text(
@@ -2795,9 +2825,14 @@ class _TasksScreenState extends State<TasksScreen> {
                                                 ScaffoldMessenger.of(
                                                   context,
                                                 ).showSnackBar(
-                                                  const SnackBar(
+                                                   SnackBar(
                                                     content: Text(
                                                       'Задача обновлена', style: _textStyleBold,
+                                                    ),
+                                                    backgroundColor: TaskScreenStyles.primaryColor,
+                                                    behavior: SnackBarBehavior.floating,
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(12),
                                                     ),
                                                   ),
                                                 );

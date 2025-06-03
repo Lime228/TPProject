@@ -151,7 +151,15 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg, style: _textStyleSemiBold,)));
+    ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+    content: Text(msg, style: _textStyleSemiBold,),
+    backgroundColor: ShopScreenConstants.primaryColor,
+    behavior: SnackBarBehavior.floating,
+    shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(12),
+    ),
+    ));
   }
 
   void _sortProducts({String? option}) {
@@ -187,7 +195,13 @@ class _ShopScreenState extends State<ShopScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка загрузки: ${e.toString()}', style: _textStyleSemiBold)),
+          SnackBar(
+              content: Text('Ошибка загрузки: ${e.toString()}', style: _textStyleSemiBold),
+            backgroundColor: ShopScreenConstants.primaryColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),),
         );
       }
     }
@@ -673,11 +687,25 @@ class _ShopScreenState extends State<ShopScreen> {
               final success = await shopProvider.buyProduct(product.id);
               if (success && mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Товар успешно куплен!', style: _textStyleSemiBold)),
+                  SnackBar(
+                    content: Text('Товар успешно куплен!', style: _textStyleSemiBold),
+                    backgroundColor: ShopScreenConstants.primaryColor,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 );
               } else if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Ошибка: ${shopProvider.error}', style: _textStyleSemiBold)),
+                  SnackBar(
+                    content: Text('Ошибка: ${shopProvider.error}', style: _textStyleSemiBold),
+                    backgroundColor: ShopScreenConstants.primaryColor,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 );
               }
             },
@@ -921,15 +949,26 @@ class _ShopScreenState extends State<ShopScreen> {
                           final success = await shopProvider.buyProduct(product.id);
                           if (success && mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
+                              SnackBar(
                                 content: Text('Товар зарезервирован! Подтвердите покупку.',
                                     style: _textStyleSemiBold),
+                                backgroundColor: ShopScreenConstants.primaryColor,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                             );
                           } else if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text('Ошибка: ${shopProvider.error}',
-                                  style: _textStyleSemiBold)),
+                                  style: _textStyleSemiBold),
+                                backgroundColor: ShopScreenConstants.primaryColor,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
                             );
                           }
                         },
@@ -963,15 +1002,26 @@ class _ShopScreenState extends State<ShopScreen> {
                               final success = await shopProvider.confirmPurchase(product.id);
                               if (success && mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
+                                   SnackBar(
                                     content: Text('Покупка подтверждена!',
                                         style: _textStyleSemiBold),
+                                    backgroundColor: ShopScreenConstants.primaryColor,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
                                   ),
                                 );
                               } else if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text('Ошибка: ${shopProvider.error}',
-                                      style: _textStyleSemiBold)),
+                                      style: _textStyleSemiBold),
+                                    backgroundColor: ShopScreenConstants.primaryColor,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),),
+
                                 );
                               }
                             },
@@ -1018,7 +1068,12 @@ class _ShopScreenState extends State<ShopScreen> {
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Товар зарезервирован! Подтвердите покупку.'))
+          SnackBar(content: Text('Товар зарезервирован! Подтвердите покупку.'),
+            backgroundColor: ShopScreenConstants.primaryColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),)
       );
     }
   }
@@ -1030,7 +1085,12 @@ class _ShopScreenState extends State<ShopScreen> {
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Покупка подтверждена!'))
+          SnackBar(content: Text('Покупка подтверждена!'),
+            backgroundColor: ShopScreenConstants.primaryColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),)
       );
     }
   }
@@ -1274,7 +1334,14 @@ class _ShopScreenState extends State<ShopScreen> {
       if (success && mounted) {
         Navigator.pop(dialogContext);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Товар успешно добавлен!', style: _textStyleSemiBold)),
+          SnackBar(
+            content: Text('Товар успешно добавлен!', style: _textStyleSemiBold),
+            backgroundColor: ShopScreenConstants.primaryColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
         );
         await shopProvider.refreshProducts();
       }
@@ -1282,7 +1349,16 @@ class _ShopScreenState extends State<ShopScreen> {
       debugPrint('Ошибка при добавлении товара: $e');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка: ${e.toString()}', style: _textStyleSemiBold)));
+      ).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка: ${e.toString()}', style: _textStyleSemiBold),
+            backgroundColor: ShopScreenConstants.primaryColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          )
+      );
     }
   }
 
@@ -1428,8 +1504,13 @@ class _ShopScreenState extends State<ShopScreen> {
                                 if (success) {
                                   await shopProvider.refreshProducts();
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
+                                     SnackBar(
                                       content: Text('Товар удалён', style: _textStyleSemiBold),
+                                      backgroundColor: ShopScreenConstants.primaryColor,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
                                     ),
                                   );
                                 } else {
@@ -1438,6 +1519,11 @@ class _ShopScreenState extends State<ShopScreen> {
                                       content: Text(
                                           'Ошибка: ${shopProvider.error}',
                                           style: _textStyleSemiBold
+                                      ),
+                                      backgroundColor: ShopScreenConstants.primaryColor,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
                                     ),
                                   );
@@ -1744,11 +1830,21 @@ class _ShopScreenState extends State<ShopScreen> {
           _tempProductImage = null;
           Navigator.pop(dialogContext);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Товар успешно обновлен', style: _textStyleSemiBold)),
+             SnackBar(content: Text('Товар успешно обновлен', style: _textStyleSemiBold),
+              backgroundColor: ShopScreenConstants.primaryColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Ошибка: ${shopProvider.error}', style: _textStyleSemiBold)),
+            SnackBar(content: Text('Ошибка: ${shopProvider.error}', style: _textStyleSemiBold),
+              backgroundColor: ShopScreenConstants.primaryColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),),
           );
         }
       }
@@ -1756,7 +1852,12 @@ class _ShopScreenState extends State<ShopScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка: ${e.toString()}', style: _textStyleSemiBold)));
+        ).showSnackBar(SnackBar(content: Text('Ошибка: ${e.toString()}', style: _textStyleSemiBold),
+          backgroundColor: ShopScreenConstants.primaryColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),));
       }
     }
   }
@@ -1983,7 +2084,12 @@ class _ShopScreenState extends State<ShopScreen> {
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: groupCode));
                   ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Код скопирован!', style: _textStyleSemiBold))
+                      SnackBar(content: Text('Код скопирован!', style: _textStyleSemiBold),
+                        backgroundColor: ShopScreenConstants.primaryColor,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),)
                   );
                   Navigator.pop(ctx);
                 },

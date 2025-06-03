@@ -548,7 +548,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _safeReportEvent('settings_test_notification');
                 if (authProvider.token == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Требуется авторизация')),
+                    SnackBar(content: Text('Требуется авторизация'),
+                      backgroundColor: const Color(0xFF937DF3),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),),
                   );
                   return;
                 }
@@ -556,7 +561,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final activeTasks = taskProvider.tasks.where((t) => t.state == 0).toList();
                 if (activeTasks.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Нет активных задач!')),
+                    SnackBar(content: Text('Нет активных задач!'),
+                      backgroundColor: const Color(0xFF937DF3),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),),
                   );
                   return;
                 }
@@ -598,11 +608,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 try {
                   await authProvider.refreshAll(groupProvider, taskProvider, shopProvider);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Данные успешно обновлены', style: _textStyleSemiBold)),
+                    SnackBar(content: Text('Данные успешно обновлены', style: _textStyleSemiBold),
+                      backgroundColor: const Color(0xFF937DF3),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),),
                   );
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Ошибка обновления: $e', style: _textStyleSemiBold)),
+                    SnackBar(content: Text('Ошибка обновления: $e', style: _textStyleSemiBold),
+                      backgroundColor: const Color(0xFF937DF3),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),),
                   );
                 }
               },
@@ -813,7 +833,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       debugPrint('Ошибка при выборе изображения: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка при загрузке изображения: $e', style: _textStyleSemiBold)),
+        SnackBar(content: Text('Ошибка при загрузке изображения: $e', style: _textStyleSemiBold),
+          backgroundColor: const Color(0xFF937DF3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),),
       );
     }
   }
@@ -832,7 +857,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       debugPrint('Ошибка обновления профиля: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка обновления профиля: $e', style: _textStyleSemiBold)),
+        SnackBar(content: Text('Ошибка обновления профиля: $e', style: _textStyleSemiBold),
+          backgroundColor: const Color(0xFF937DF3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),),
       );
     }
   }
@@ -854,7 +884,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       } catch (e) {
         debugPrint('Ошибка парсинга даты: $e');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Неверный формат даты. Используйте ДД.ММ.ГГГГ')),
+          SnackBar(content: Text('Неверный формат даты. Используйте ДД.ММ.ГГГГ'),
+            backgroundColor: const Color(0xFF937DF3),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),),
         );
         return;
       }
@@ -873,12 +908,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Данные успешно сохранены', style: _textStyleSemiBold)),
+        SnackBar(content: Text('Данные успешно сохранены', style: _textStyleSemiBold),
+          backgroundColor: const Color(0xFF937DF3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),),
       );
     } catch (e) {
       debugPrint('Ошибка сохранения данных: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка сохранения: $e', style: _textStyleSemiBold)),
+        SnackBar(content: Text('Ошибка сохранения: $e', style: _textStyleSemiBold),
+          backgroundColor: const Color(0xFF937DF3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),),
       );
     }
   }
