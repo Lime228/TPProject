@@ -326,6 +326,12 @@ class TaskProvider with ChangeNotifier {
   }
 
   void _applyFilters() {
+    // Если поисковый запрос пустой и сортировка по умолчанию, показываем все задачи
+    if (_searchQuery.isEmpty && _sortOption == 'default') {
+      _filteredTasks = _tasks;
+      return;
+    }
+
     List<TaskModel> result = _tasks.where((task) {
       final nameMatches = task.name.toLowerCase().contains(_searchQuery);
       final descMatches = task.description.toLowerCase().contains(_searchQuery);

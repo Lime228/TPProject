@@ -385,7 +385,7 @@ class _ShopScreenState extends State<ShopScreen> {
       return _buildNoGroupView();
     }
 
-    if (!shopProvider.isLoading && products.isEmpty) {
+    if (!shopProvider.isLoading && products.isEmpty && _searchController.text.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -403,80 +403,55 @@ class _ShopScreenState extends State<ShopScreen> {
       );
     }
 
-    return FutureBuilder(
-      future: shopProvider.isLoading ? null : Future.value(true),
-      builder: (context, snapshot) {
-        if (shopProvider.error != null) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(shopProvider.error!, style: _textStyleBold),
-                ElevatedButton(
-                  onPressed: () {
-                    _safeReportEvent('shop_retry_load');
-                    _loadData();
-                  },
-                  child: Text('Повторить попытку', style: _textStyleSemiBold),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return Column(
-          children: [
-            _buildSearchAndSortBar(),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () {
-                  _safeReportEvent('shop_pull_to_refresh');
-                  return _loadData();
-                },
-                child:
-                products.isEmpty
-                    ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.search_off,
-                        size: 64,
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(height: 16),
-                      Text('Ничего не найдено', style: _textStyleBold),
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: () {
-                          _safeReportEvent('shop_reset_filters_button');
-                          _resetFilters();
-                        },
-                        child: const Text('Сбросить фильтры', style: _textStyleSemiBold),
-                      ),
-                    ],
+    return Column(
+      children: [
+        _buildSearchAndSortBar(), // Всегда показываем строку поиска и сортировки
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () {
+              _safeReportEvent('shop_pull_to_refresh');
+              return _loadData();
+            },
+            child: products.isEmpty
+                ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.search_off,
+                    size: 64,
+                    color: Colors.grey,
                   ),
-                )
-                    : GridView.builder(
-                  padding: const EdgeInsets.only(top: 8),
-                  gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.8,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
+                  const SizedBox(height: 16),
+                  Text('Ничего не найдено', style: _textStyleBold),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () {
+                      _safeReportEvent('shop_reset_filters_button');
+                      _resetFilters();
+                    },
+                    child: const Text('Сбросить фильтры', style: _textStyleSemiBold),
                   ),
-                  itemCount: products.length,
-                  itemBuilder: (context, index) {
-                    final product = products[index];
-                    return _buildProductCard(product);
-                  },
-                ),
+                ],
               ),
+            )
+                : GridView.builder(
+              padding: const EdgeInsets.only(top: 8),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.8,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              itemCount: products.length,
+              itemBuilder: (context, index) {
+                final product = products[index];
+                return _buildProductCard(product);
+              },
             ),
-          ],
-        );
-      },
+          ),
+        ),
+      ],
     );
   }
 

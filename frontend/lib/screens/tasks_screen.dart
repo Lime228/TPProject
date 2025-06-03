@@ -606,25 +606,28 @@ class _TasksScreenState extends State<TasksScreen> {
                   listen: false,
                 ).sortTasks(option: value);
               },
-              itemBuilder:
-                  (context) => [
-                     PopupMenuItem<String>(
-                      value: 'date',
-                      child: Text('По дате окончания', style: _textStyleSemiBold),
-                    ),
-                     PopupMenuItem<String>(
-                      value: 'completed',
-                      child: Text('Только выполненные', style: _textStyleSemiBold),
-                    ),
-                     PopupMenuItem<String>(
-                      value: 'pending',
-                      child: Text('Только невыполненные', style: _textStyleSemiBold),
-                    ),
-                     PopupMenuItem<String>(
-                      value: 'default',
-                      child: Text('Обычная сортировка', style: _textStyleSemiBold),
-                    ),
-                  ],
+              itemBuilder: (context) => [
+                const PopupMenuItem<String>(
+                  value: 'date',
+                  child: Text('По дате окончания', style: _textStyleSemiBold),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'completed',
+                  child: Text('Только выполненные', style: _textStyleSemiBold),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'pending',
+                  child: Text('Только невыполненные', style: _textStyleSemiBold),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'unconfirmed',
+                  child: Text('Ожидают подтверждения', style: _textStyleSemiBold),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'default',
+                  child: Text('Обычная сортировка', style: _textStyleSemiBold),
+                ),
+              ],
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -714,13 +717,7 @@ class _TasksScreenState extends State<TasksScreen> {
   Widget _buildTasksList() {
     return Column(
       children: [
-        Consumer<TaskProvider>(
-          builder: (context, taskProvider, child) {
-            return taskProvider.filteredTasks.isNotEmpty
-                ? _buildSearchAndSortBar()
-                : const SizedBox.shrink();
-          },
-        ),
+        _buildSearchAndSortBar(),
         Expanded(
           child: RefreshIndicator(
             onRefresh: _refreshData,
@@ -729,31 +726,62 @@ class _TasksScreenState extends State<TasksScreen> {
                 final authProvider = Provider.of<AuthProvider>(context);
                 final isAdmin = authProvider.user?.role.isAdmin ?? false;
 
-                final tasksToShow =
-                    isAdmin
-                        ? taskProvider.filteredTasks
-                        : taskProvider.filteredTasks
-                            .where(
-                              (task) =>
-                                  task.customerId == authProvider.user?.id,
-                            )
-                            .toList();
+                final tasksToShow = isAdmin
+                    ? taskProvider.filteredTasks
+                    : taskProvider.filteredTasks
+                    .where((task) => task.customerId == authProvider.user?.id)
+                    .toList();
+
+                if (taskProvider.isLoadingTasks) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
                 if (tasksToShow.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
-                          Icons.task_outlined,
-                          size: 64,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Нет задач',
-                          style: _textStyleSemiBold.copyWith(fontSize: 18, color: Colors.grey),
-                        ),
+                        if (_searchController.text.isEmpty) ...[
+                          const Icon(
+                            Icons.task_outlined,
+                            size: 64,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Нет задач',
+                            style: _textStyleSemiBold.copyWith(
+                              fontSize: 18,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ] else ...[
+                          const Icon(
+                            Icons.search_off,
+                            size: 64,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Ничего не найдено',
+                            style: _textStyleBold.copyWith(
+                              fontSize: 18,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: () {
+                              _searchController.clear();
+                              taskProvider.resetFilters();
+                              FocusScope.of(context).unfocus();
+                            },
+                            child: const Text(
+                              'Сбросить фильтры',
+                              style: _textStyleSemiBold,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   );
