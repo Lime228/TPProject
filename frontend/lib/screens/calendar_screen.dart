@@ -806,7 +806,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       child: Container(
         padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.01),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.02),
+          borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.01),
           color: isSelectedMonth ? CalendarStyles.secondaryColor.withOpacity(0.5) : null,
         ),
         child: Column(
@@ -818,11 +818,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 fontSize: CalendarStyles.titleMonthCalendarSize(context),
                 color: isCurrentMonth
                     ? CalendarStyles.todayMonthColor
-                    : (isSelectedMonth ? Colors.white : Colors.white.withOpacity(0.8)),
+                    : (isSelectedMonth ? Colors.white : Colors.white.withOpacity(1)),
               ),
             ),
-            SizedBox(height: MediaQuery.of(context).size.height * 0.005),
-            Expanded(
+            SizedBox(height: MediaQuery.of(context).size.height * 0.0001),
+            // Заменили Expanded на ограниченный по высоте Container
+            Container(
+              height: MediaQuery.of(context).size.width * 0.0001, // Фиксированная высота
               child: _buildMiniCalendar(year, month),
             ),
           ],
@@ -845,6 +847,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Заголовок с днями недели
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'].map((day) {
@@ -854,7 +857,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 child: Text(
                   day,
                   style: _textStyleBold.copyWith(
-                    fontSize: screenWidth * 0.025,
+                    fontSize: screenWidth * 0,
                     color: CalendarStyles.dayLabelColor,
                   ),
                 ),
@@ -862,28 +865,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
             );
           }).toList(),
         ),
-        Wrap(
-          spacing: 0,
-          runSpacing: 0,
+        // Сетка дней
+        GridView.count(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          crossAxisCount: 7,
+          childAspectRatio: 1.1,
+          padding: EdgeInsets.zero,
           children: [
+            // Пустые ячейки для выравнивания
             for (int i = 0; i < startOffset; i++)
-              SizedBox(
-                width: screenWidth / 7,
-                height: screenWidth / 7,
-              ),
+              Container(),
+            // Ячейки с днями месяца
             for (int day = 1; day <= daysInMonth; day++)
-              SizedBox(
-                width: screenWidth / 7,
-                height: screenWidth / 7,
-                child: Center(
-                  child: Text(
-                    '$day',
-                    style: _textStyleSemiBold.copyWith(
-                      fontSize: screenWidth * 0.025,
-                      color: (month == currentMonth && year == currentYear)
-                          ? CalendarStyles.todayMonthColor
-                          : Colors.white,
-                    ),
+              Center(
+                child: Text(
+                  '$day',
+                  style: _textStyleSemiBold.copyWith(
+                    fontSize: screenWidth * 0.025,
+                    color: (month == currentMonth && year == currentYear)
+                        ? CalendarStyles.todayMonthColor
+                        : Colors.white,
                   ),
                 ),
               ),
