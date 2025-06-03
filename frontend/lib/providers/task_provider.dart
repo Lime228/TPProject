@@ -182,10 +182,14 @@ class TaskProvider with ChangeNotifier {
         customerId: 0,
         state: 0,
       );
+
       final apiClient = _getAuthenticatedClient();
       await apiClient.deleteTask(taskToDelete);
 
+      // Удаляем задачу из списка перед обновлением
       _tasks.removeWhere((task) => task.id == taskId);
+      _filteredTasks.removeWhere((task) => task.id == taskId);
+
       _safeNotifyListeners();
 
       debugPrint('Задача $taskId удалена');
