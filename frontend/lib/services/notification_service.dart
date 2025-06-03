@@ -130,13 +130,17 @@ class NotificationService {
     try {
       // Шаг 1: Генерация уведомления
       final generateResponse = await _apiClient!.generateNotification(taskId);
+      debugPrint('Response from API: ${generateResponse.toString()}');
+
       final notificationId = generateResponse['notificationId'] as String;
+      debugPrint('Notification ID: $notificationId');
 
       // Шаг 2: Проверка статуса с интервалом
       while (true) {
-        await Future.delayed(const Duration(minutes: 10));
+        await Future.delayed(const Duration(minutes: 5));
 
         final statusResponse = await _apiClient!.getNotificationStatus(notificationId);
+        debugPrint('Status response: ${statusResponse.toString()}');
 
         if (statusResponse['status'] == 'COMPLETED') {
           final generatedText = statusResponse['generatedText'] as String;

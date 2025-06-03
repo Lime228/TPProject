@@ -527,10 +527,9 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  // В api_client.dart
   @override
   Future<Map<String, dynamic>> generateNotification(int taskId) async {
-    final url = Uri.parse('${ApiEndpoints.notificationCreateUrl}/${taskId}');
+    final url = Uri.parse('${ApiEndpoints.notificationCreateUrl}/$taskId');
     try {
       final response = await _client.post(
         url,
@@ -538,7 +537,7 @@ class ApiClient implements ApiInterface {
       'Authorization': 'Bearer $_authToken'},
       ).timeout(requestTimeout);
 
-      if (response.statusCode != 200) {
+      if (response.statusCode != 200 && response.statusCode != 202) {
         throw Exception('Ошибка генерации уведомления: ${response.statusCode}');
       }
 
@@ -550,7 +549,7 @@ class ApiClient implements ApiInterface {
 
   @override
   Future<Map<String, dynamic>> getNotificationStatus(String notificationId) async {
-    final url = Uri.parse('${ApiEndpoints.notificationGetUrl}/${notificationId}');
+    final url = Uri.parse('${ApiEndpoints.notificationGetUrl}/$notificationId');
     try {
       final response = await _client.get(
         url,
@@ -558,7 +557,7 @@ class ApiClient implements ApiInterface {
       'Authorization': 'Bearer $_authToken'},
       ).timeout(requestTimeout);
 
-      if (response.statusCode != 200) {
+      if (response.statusCode != 200 && response.statusCode != 202) {
         throw Exception('Ошибка получения статуса уведомления: ${response.statusCode}');
       }
 
