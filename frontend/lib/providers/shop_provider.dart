@@ -24,7 +24,6 @@ class ShopProvider with ChangeNotifier {
 
   ShopProvider({required this.authProvider, required this.prefs});
 
-  // Геттеры
   List<ProductModel> get products => _filteredProducts;
   List<ProductModel> get allProducts => _products;
   bool get isLoading => _isLoading;
@@ -36,10 +35,8 @@ class ShopProvider with ChangeNotifier {
     notifyListeners();
   }
 
-
   Future<void> refreshProducts() async {
     if (_currentShopId == null || authProvider?.user == null) return;
-
     if (_isLoading) return;
 
     _setLoading(true);
@@ -48,18 +45,16 @@ class ShopProvider with ChangeNotifier {
     try {
       final apiClient = _getAuthenticatedClient();
       final products = await apiClient.getShopProducts(_currentShopId!);
-      _products = products.where((p) => p.isAvailable).toList();
       debugPrint('Начало обновления товаров для магазина $_currentShopId');
       _products = products;
       _applyFilters();
-      notifyListeners();
     } catch (e) {
       _error = 'Ошибка обновления товаров: ${e.toString()}';
       debugPrint(_error!);
     } finally {
       _setLoading(false);
+      debugPrint('Загружено ${_products.length} товаров');
     }
-    debugPrint('Загружено ${_products.length} товаров');
   }
 
   ApiClient _getAuthenticatedClient() {
@@ -101,7 +96,6 @@ class ShopProvider with ChangeNotifier {
     }
   }
 
-
   Future<bool> createProduct(ProductModel product) async {
     if (_currentShopId == null) {
       _error = 'Магазин не выбран';
@@ -114,7 +108,6 @@ class ShopProvider with ChangeNotifier {
       final newProduct = await apiClient.createShopItem(shop, product);
       _products.add(newProduct);
       _applyFilters();
-      notifyListeners(); // Добавьте это
       return true;
     } catch (e) {
       _error = 'Ошибка добавления товара: $e';
@@ -138,7 +131,6 @@ class ShopProvider with ChangeNotifier {
     }
   }
 
-  // Резервирование товара (первый этап)
   Future<bool> buyProduct(int productId) async {
     try {
       final result = await client.buyShopItem(
@@ -154,6 +146,7 @@ class ShopProvider with ChangeNotifier {
       return false;
     } catch (e) {
       _error = 'Ошибка резервирования: ${e.toString()}';
+      debugPrint(_error!);
       return false;
     }
   }
@@ -161,30 +154,29 @@ class ShopProvider with ChangeNotifier {
   Future<bool> confirmPurchase(int productId) async {
     try {
       final product = _products.firstWhere((p) => p.id == productId);
-
-      // Проверяем что пользователь - покупатель
       if (product.customerId != authProvider!.user!.id) {
         throw Exception('Нельзя подтвердить чужую покупку');
       }
 
-      // Обновляем статус товара
       final updated = await client.updateShopItem(
-          product.copyWith(
-            id: productId, // Убедимся, что ID передается
-            isAvailable: false,
-          )
+        product.copyWith(
+          id: productId,
+          isAvailable: false,
+        ),
       );
 
+      final index = _products.indexWhere((p) => p.id == productId);
+      if (index != -1) _products[index] = updated;
+      _applyFilters();
       return !updated.isAvailable;
     } catch (e) {
       _error = 'Ошибка подтверждения: ${e.toString()}';
+      debugPrint(_error!);
       return false;
     }
   }
 
-
   Future<bool> removeProduct(int productId) async {
-
     if (_currentShopId == null) {
       _error = 'Магазин не выбран';
       return false;
@@ -195,7 +187,6 @@ class ShopProvider with ChangeNotifier {
       await apiClient.deleteShopItem(_currentShopId!, productId);
       _products.removeWhere((p) => p.id == productId);
       _applyFilters();
-      notifyListeners();
       return true;
     } catch (e) {
       _error = 'Ошибка удаления товара: $e';
@@ -229,13 +220,11 @@ class ShopProvider with ChangeNotifier {
   }
 
   void _applyFilters() {
-    // Фильтрация
     _filteredProducts = _products.where((p) {
       return p.name.toLowerCase().contains(_searchQuery) ||
           p.description.toLowerCase().contains(_searchQuery);
     }).toList();
 
-    // Сортировка
     switch (_sortBy) {
       case 'price_asc':
         _filteredProducts.sort((a, b) => a.price.compareTo(b.price));
@@ -243,7 +232,7 @@ class ShopProvider with ChangeNotifier {
       case 'price_desc':
         _filteredProducts.sort((a, b) => b.price.compareTo(a.price));
         break;
-      default: // name
+      default:
         _filteredProducts.sort((a, b) => a.name.compareTo(b.name));
     }
 
@@ -251,12 +240,15 @@ class ShopProvider with ChangeNotifier {
   }
 
   void _setLoading(bool loading) {
-    _isLoading = loading;
-    notifyListeners();
+    if (_isLoading != loading) {
+      _isLoading = loading;
+      notifyListeners();
+    }
   }
+
   @override
   void dispose() {
-    _setLoading(false); // Отменяем текущую загрузку при уничтожении
+    _setLoading(false);
     super.dispose();
   }
 }

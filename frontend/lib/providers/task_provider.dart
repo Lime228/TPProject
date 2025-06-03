@@ -30,11 +30,9 @@ class TaskProvider with ChangeNotifier {
   bool get isLoadingTaskDeletion => _isLoadingTaskDeletion;
   String? get error => _error;
   String _searchQuery = '';
-  String _sortOption = 'all';
+  String _sortOption = 'default'; // ✅ default сортировка
 
-  List<TaskModel> get filteredTasks => _filteredTasks.isNotEmpty && _searchQuery.isNotEmpty
-      ? _filteredTasks
-      : _tasks;
+  List<TaskModel> get filteredTasks => _filteredTasks;
 
   void setUser(UserModel user) {
     if (_user != user) {
@@ -92,6 +90,7 @@ class TaskProvider with ChangeNotifier {
           ? allTasks
           : allTasks.where((task) => task.customerId == _user!.id).toList();
 
+      _applyFilters(); // ✅ применять фильтры и сортировку после загрузки
       _safeNotifyListeners();
     } catch (e) {
       _error = 'Ошибка обновления задач: ${e.toString()}';
@@ -131,6 +130,7 @@ class TaskProvider with ChangeNotifier {
       );
       final apiClient = _getAuthenticatedClient();
       _tasks = await apiClient.getUserTasks(lobby, _user!);
+      _applyFilters(); // ✅ применить фильтрацию
       _safeNotifyListeners();
     } catch (e) {
       _error = 'Ошибка загрузки задач: ${e.toString()}';
@@ -154,6 +154,7 @@ class TaskProvider with ChangeNotifier {
       final apiClient = _getAuthenticatedClient();
       final newTask = await apiClient.createTask(task, lobbyId);
       _tasks.add(newTask);
+      _applyFilters(); // ✅ обновить фильтрацию
       _safeNotifyListeners();
       return true;
     } catch (e) {
@@ -186,10 +187,8 @@ class TaskProvider with ChangeNotifier {
       final apiClient = _getAuthenticatedClient();
       await apiClient.deleteTask(taskToDelete);
 
-      // Удаляем задачу из списка перед обновлением
       _tasks.removeWhere((task) => task.id == taskId);
-      _filteredTasks.removeWhere((task) => task.id == taskId);
-
+      _applyFilters(); // ✅ пересчитать _filteredTasks
       _safeNotifyListeners();
 
       debugPrint('Задача $taskId удалена');
@@ -209,7 +208,7 @@ class TaskProvider with ChangeNotifier {
       final taskEnd = task.deadline ?? DateTime.now();
       return (taskStart.isBefore(end) || DateUtils.isSameDay(taskStart, end)) &&
           (taskEnd.isAfter(start) || DateUtils.isSameDay(taskEnd, start)) &&
-          task.state != 2; // Исключаем только подтвержденные задачи
+          task.state != 2;
     }).toList();
   }
 
@@ -217,9 +216,8 @@ class TaskProvider with ChangeNotifier {
     try {
       final task = _tasks.firstWhere((t) => t.id == taskId);
 
-      // Обновляем endPoint на текущее время
       final updatedTask = task.copyWith(
-        state: 1, // выполнено, но не подтверждено
+        state: 1,
         endPoint: DateTime.now().toIso8601String(),
       );
 
@@ -228,7 +226,7 @@ class TaskProvider with ChangeNotifier {
 
       _tasks.removeWhere((t) => t.id == taskId);
       _tasks.add(serverResponse);
-
+      _applyFilters(); // ✅ обновление после изменений
       _safeNotifyListeners();
     } catch (e) {
       _error = 'Ошибка завершения задачи: ${e.toString()}';
@@ -246,24 +244,23 @@ class TaskProvider with ChangeNotifier {
         TaskModel confirmedTask;
 
         if (task.state == 1) {
-          // Если задача уже выполнена (state=1), просто подтверждаем
           confirmedTask = await apiClient.completeTask(
-            task.copyWith(state: 2), // подтверждено
+            task.copyWith(state: 2),
             _user!,
           );
         } else {
-          // Если задача новая (state=0), сразу подтверждаем и обновляем время
           confirmedTask = await apiClient.completeTask(
             task.copyWith(
-              state: 2, // подтверждено
+              state: 2,
               endPoint: DateTime.now().toIso8601String(),
-              customerId: _user!.id, // назначаем на админа
+              customerId: _user!.id,
             ),
             _user!,
           );
         }
 
         _tasks[index] = confirmedTask;
+        _applyFilters(); // ✅ пересортировка
         _safeNotifyListeners();
       }
     } catch (e) {
@@ -272,8 +269,6 @@ class TaskProvider with ChangeNotifier {
       rethrow;
     }
   }
-
-
 
   Future<void> updateTask(TaskModel task) async {
     try {
@@ -285,6 +280,7 @@ class TaskProvider with ChangeNotifier {
         final apiClient = _getAuthenticatedClient();
         final updatedTask = await apiClient.updateTask(task);
         _tasks[index] = updatedTask;
+        _applyFilters(); // ✅
         _safeNotifyListeners();
       }
     } catch (e) {
@@ -325,18 +321,23 @@ class TaskProvider with ChangeNotifier {
     _safeNotifyListeners();
   }
 
-  void _applyFilters() {
-    // Если поисковый запрос пустой и сортировка по умолчанию, показываем все задачи
-    if (_searchQuery.isEmpty && _sortOption == 'default') {
-      _filteredTasks = _tasks;
-      return;
-    }
+  void resetFilters() {
+    _searchQuery = '';
+    _sortOption = 'default'; // ✅ не "all", а "default"
+    _applyFilters();
+    _safeNotifyListeners();
+  }
 
-    List<TaskModel> result = _tasks.where((task) {
-      final nameMatches = task.name.toLowerCase().contains(_searchQuery);
-      final descMatches = task.description.toLowerCase().contains(_searchQuery);
-      return nameMatches || descMatches;
-    }).toList();
+  void _applyFilters() {
+    List<TaskModel> result = _tasks;
+
+    if (_searchQuery.isNotEmpty) {
+      result = result.where((task) {
+        final nameMatches = task.name.toLowerCase().contains(_searchQuery);
+        final descMatches = task.description.toLowerCase().contains(_searchQuery);
+        return nameMatches || descMatches;
+      }).toList();
+    }
 
     switch (_sortOption) {
       case 'date':
@@ -347,28 +348,18 @@ class TaskProvider with ChangeNotifier {
         });
         break;
       case 'completed':
-        result = result.where((t) => t.state == 2).toList(); // Только подтвержденные
+        result = result.where((t) => t.state == 2).toList();
         break;
       case 'pending':
-        result = result.where((t) => t.state == 0).toList(); // Только в процессе
+        result = result.where((t) => t.state == 0).toList();
         break;
       case 'unconfirmed':
-        result = result.where((t) => t.state == 1).toList(); // Выполненные, но не подтвержденные
+        result = result.where((t) => t.state == 1).toList();
         break;
       default:
-        result.sort((a, b) {
-          // Сначала невыполненные (0), затем ожидающие подтверждения (1), затем подтвержденные (2)
-          return a.state.compareTo(b.state);
-        });
+        result.sort((a, b) => a.state.compareTo(b.state));
     }
 
     _filteredTasks = result;
-  }
-
-  void resetFilters() {
-    _searchQuery = '';
-    _sortOption = 'all';
-    _applyFilters();
-    _safeNotifyListeners();
   }
 }
