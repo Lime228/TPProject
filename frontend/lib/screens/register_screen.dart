@@ -88,7 +88,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _register() async {
-    final apiClient = ApiClient();
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -99,11 +98,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     await _safeReportEvent('register_attempt');
 
     try {
-      await apiClient.register(
+      // Используем переданный apiClient вместо создания нового
+      await widget.apiClient.register(
         UserModel(
           password: _passwordController.text,
           email: _emailController.text,
-          name: '',
+          name: _usernameController.text,
           login: _usernameController.text,
         ),
       );
@@ -126,6 +126,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       );
 
+      // Переход на главный экран или экран входа
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -139,14 +140,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
         message: 'Register error for user: ${_usernameController.text}',
       );
 
+      String errorMessage;
       if (e.toString().contains('email') || e.toString().contains('почт')) {
-        setState(() => _errorMessage = 'Некорректный email');
+        errorMessage = 'Некорректный email';
       } else if (e.toString().contains('парол')) {
-        setState(() => _errorMessage = 'Некорректный пароль');
+        errorMessage = 'Некорректный пароль';
       } else if (e.toString().contains('поля')) {
-        setState(() => _errorMessage = 'Заполните все поля');
+        errorMessage = 'Заполните все поля';
       } else {
-        setState(() => _errorMessage = 'Ошибка регистрации');
+        errorMessage = e.toString().replaceAll('Exception: ', '');
+      }
+
+      if (mounted) {
+        setState(() => _errorMessage = errorMessage);
       }
     } finally {
       if (mounted) {

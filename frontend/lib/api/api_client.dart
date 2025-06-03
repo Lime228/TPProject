@@ -39,7 +39,7 @@ class ApiClient implements ApiInterface {
 
 
 
-  @override // работает проверяли
+  @override
   Future<UserModel> register(UserModel request) async {
     final registerUrl = Uri.parse(ApiEndpoints.registerUrl);
     try {
@@ -56,23 +56,15 @@ class ApiClient implements ApiInterface {
         body: json.encode(request.toRegisterRequest()),
       ).timeout(requestTimeout);
 
-      if (registerResponse.statusCode != 201) {
-        throw Exception('Ошибка регистрации: ${registerResponse.statusCode}');
+      if (registerResponse.statusCode != 201 && registerResponse.statusCode != 200) {
+        final errorData = json.decode(registerResponse.body);
+        throw Exception(errorData['message'] ?? 'Ошибка регистрации: ${registerResponse.statusCode}');
       }
 
       final registerData = json.decode(registerResponse.body);
-      final token = registerData['token'] as String;
-      _authToken = token;
 
-
-      final userDataUrl = Uri.parse('${ApiEndpoints.baseUrl}/api/auth/login/${request.login}');
-      final userResponse = await _client.get(
-        userDataUrl,
-        headers: _getHeaders(),
-      ).timeout(requestTimeout);
-
-
-      return _handleUserResponse(userResponse);
+      // Предполагаем, что сервер возвращает данные пользователя в ответе
+      return UserModel.fromResponse(registerData['user'] ?? registerData);
     } on http.ClientException catch (e) {
       throw Exception('Ошибка подключения: ${e.message}');
     } on Exception catch (e) {
