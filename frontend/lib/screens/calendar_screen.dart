@@ -323,19 +323,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     final double highlightSize = screenWidth * 0.1;
 
-    // Находим самый последний дедлайн среди всех задач
-    final maxDeadline = tasks
-        .map((t) => _safeParseDate(t.endPoint))
-        .where((d) => d != null)
-        .cast<DateTime>()
-        .fold<DateTime?>(null, (prev, curr) =>
-    prev == null || curr.isAfter(prev) ? curr : prev);
-
-    // Проверяем, совпадает ли текущая дата с максимальным дедлайном
-    final showDot = maxDeadline != null &&
-        date.year == maxDeadline.year &&
-        date.month == maxDeadline.month &&
-        date.day == maxDeadline.day;
+    // Проверяем, есть ли задачи с дедлайном в эту дату
+    final hasDeadlineToday = tasks.any((t) {
+      final deadline = _safeParseDate(t.endPoint);
+      return deadline != null &&
+          deadline.year == date.year &&
+          deadline.month == date.month &&
+          deadline.day == date.day;
+    });
 
     return GestureDetector(
       onTap: () {
@@ -381,8 +376,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
               ),
             ),
-            // Красная точка только на крайнем дне дедлайна
-            if (showDot)
+            // Показываем красную точку, если есть задачи с дедлайном на этот день
+            if (hasDeadlineToday)
               Align(
                 alignment: Alignment.topRight,
                 child: Container(
@@ -403,6 +398,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
     );
   }
+
 
   Widget _buildTaskList() {
     final tasks = Provider.of<TaskProvider>(context).tasks;
