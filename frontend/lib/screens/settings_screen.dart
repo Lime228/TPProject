@@ -111,10 +111,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (user.photoBytes != null && user.photoBytes!.isNotEmpty) {
         setState(() => _avatarBytes = user.photoBytes);
         await settingsProvider.updateUserData(avatarBytes: user.photoBytes!);
-      } else if (settingsProvider.avatarBytes != null) {
-        // Очищаем аватар из настроек, если он не принадлежит пользователю
-        await settingsProvider.updateUserData(avatarBytes: '');
+      } else {
         setState(() => _avatarBytes = null);
+        await settingsProvider.updateUserData(avatarBytes: '');
       }
     }
   }
@@ -230,9 +229,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.user;
 
-    // Используем аватар только из данных пользователя
-    final avatar = user?.photoBytes?.isNotEmpty ?? false
-        ? user!.photoBytes
+    // Безопасное получение аватара
+    final avatar = (user != null && user.photoBytes != null && user.photoBytes!.isNotEmpty)
+        ? user.photoBytes
         : null;
 
     return Stack(
@@ -251,28 +250,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
           )
               : null,
         ),
-        Positioned(
-          bottom: 0,
-          right: 0,
-          child: GestureDetector(
-            onTap: () {
-              _safeReportEvent('settings_avatar_change');
-              _pickImage();
-            },
-            child: Container(
-              padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.015),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: titleColor,
-              ),
-              child: Icon(
-                Icons.add,
-                color: Colors.white,
-                size: MediaQuery.of(context).size.width * 0.05,
+        if (authProvider.isAuthorized)
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: GestureDetector(
+              onTap: () {
+                _safeReportEvent('settings_avatar_change');
+                _pickImage();
+              },
+              child: Container(
+                padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.015),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: titleColor,
+                ),
+                child: Icon(
+                  Icons.add,
+                  color: Colors.white,
+                  size: MediaQuery.of(context).size.width * 0.05,
+                ),
               ),
             ),
           ),
-        ),
       ],
     );
   }
@@ -827,15 +827,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
 
         if (authProvider.isAuthorized && authProvider.user != null) {
-          await authProvider.updateUserPhoto(base64Image);
+          try {
+            await authProvider.updateUserPhoto(base64Image);
+            await settingsProvider.updateUserData(avatarBytes: base64Image);
+          } catch (e) {
+            debugPrint('Ошибка при обновлении аватара: $e');
+            // Откатываем изменения, если не удалось обновить
+            setState(() => _avatarBytes = authProvider.user?.photoBytes);
+            rethrow;
+          }
         }
-        await settingsProvider.updateUserData(avatarBytes: base64Image);
       }
     } catch (e) {
       debugPrint('Ошибка при выборе изображения: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Ошибка при загрузке изображения: $e', style: _textStyleSemiBold),
+          content: Text('Ошибка при загрузке изображения: ${e.toString()}', style: _textStyleSemiBold),
           backgroundColor: const Color(0xFF937DF3),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
