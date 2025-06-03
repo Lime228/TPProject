@@ -108,11 +108,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
 
       await settingsProvider.loadSettings();
-      if (settingsProvider.avatarBytes != null) {
-        setState(() => _avatarBytes = settingsProvider.avatarBytes);
-      } else if (user.photoBytes != null && user.photoBytes!.isNotEmpty) {
+      if (user.photoBytes != null && user.photoBytes!.isNotEmpty) {
         setState(() => _avatarBytes = user.photoBytes);
         await settingsProvider.updateUserData(avatarBytes: user.photoBytes!);
+      } else if (settingsProvider.avatarBytes != null) {
+        // Очищаем аватар из настроек, если он не принадлежит пользователю
+        await settingsProvider.updateUserData(avatarBytes: '');
+        setState(() => _avatarBytes = null);
       }
     }
   }
@@ -226,12 +228,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildAvatar() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    final user = authProvider.user;
 
-    final avatar = settingsProvider.avatarBytes ??
-        (authProvider.user?.photoBytes?.isNotEmpty ?? false
-            ? authProvider.user!.photoBytes
-            : null);
+    // Используем аватар только из данных пользователя
+    final avatar = user?.photoBytes?.isNotEmpty ?? false
+        ? user!.photoBytes
+        : null;
 
     return Stack(
       children: [
@@ -824,21 +826,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
 
-        await settingsProvider.updateUserData(avatarBytes: base64Image);
-
         if (authProvider.isAuthorized && authProvider.user != null) {
           await authProvider.updateUserPhoto(base64Image);
         }
+        await settingsProvider.updateUserData(avatarBytes: base64Image);
       }
     } catch (e) {
       debugPrint('Ошибка при выборе изображения: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка при загрузке изображения: $e', style: _textStyleSemiBold),
+        SnackBar(
+          content: Text('Ошибка при загрузке изображения: $e', style: _textStyleSemiBold),
           backgroundColor: const Color(0xFF937DF3),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-          ),),
+          ),
+        ),
       );
     }
   }
