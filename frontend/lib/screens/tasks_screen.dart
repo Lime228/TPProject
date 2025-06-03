@@ -1592,8 +1592,9 @@ class _TasksScreenState extends State<TasksScreen> {
       await _safeReportEvent('task_add_attempt');
       final groupProvider = Provider.of<GroupProvider>(context, listen: false);
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final taskProvider = Provider.of<TaskProvider>(context, listen: false);
 
-      final customerId = _selectedMemberId ?? 0;
+      final customerId = _selectedMemberId ?? authProvider.user?.id ?? 0;
 
       // Получаем текущую дату и время с учетом часового пояса
       final now = DateTime.now();
@@ -1611,32 +1612,31 @@ class _TasksScreenState extends State<TasksScreen> {
         return;
       }
 
-      final newTask = TaskModel(
-        name: _titleController.text.trim(),
-        description: _descController.text.trim(),
-        endPoint: _deadline!.toIso8601String(),
-        // Сохраняем дедлайн как UTC
-        startPoint: currentDateTime.toIso8601String(),
-        // Текущее время как UTC
-        reward: int.tryParse(_rewardController.text) ?? 0,
-        customerId: customerId,
-        state: 0,
-      );
-
-      await _safeReportEvent('task_add_success');
-
       try {
         setState(() => _isLoading = true);
-        final success = await Provider.of<TaskProvider>(
-          context,
-          listen: false,
-        ).addTask(task: newTask, lobbyId: groupProvider.lobbyId);
+
+        final newTask = TaskModel(
+          name: _titleController.text.trim(),
+          description: _descController.text.trim(),
+          endPoint: _deadline!.toIso8601String(),
+          startPoint: currentDateTime.toIso8601String(),
+          reward: int.tryParse(_rewardController.text) ?? 0,
+          customerId: customerId,
+          state: 0,
+        );
+
+        final success = await taskProvider.addTask(
+          task: newTask, 
+          lobbyId: groupProvider.lobbyId
+        );
 
         if (success && mounted) {
+          await _safeReportEvent('task_add_success');
           _resetForm();
           Navigator.of(context).pop();
         }
       } catch (e) {
+        debugPrint('Ошибка создания задачи: $e');
         if (mounted) _showError("Ошибка: ${e.toString()}");
       } finally {
         if (mounted) setState(() => _isLoading = false);

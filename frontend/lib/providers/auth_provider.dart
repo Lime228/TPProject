@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zadachok/models/lobby/lobby_model.dart';
 import 'package:zadachok/providers/shop_provider.dart';
 import 'package:zadachok/providers/task_provider.dart';
+import 'package:zadachok/services/local_state_service.dart';
 import '../api/api_client.dart';
 import '../models/user/user_model.dart';
 import '../services/notification_service.dart';
@@ -22,9 +23,13 @@ class AuthProvider with ChangeNotifier {
   bool get isAdmin => _user?.role.isAdmin ?? false;
 
   final GroupProvider groupProvider;
+  final LocalStateService _localState;
   final apiClient = ApiClient();
 
-  AuthProvider({required this.groupProvider});
+  AuthProvider({
+    required this.groupProvider,
+    required LocalStateService localState,
+  }) : _localState = localState;
 
   Future<void> setAuthData({
     required UserModel user,
@@ -35,9 +40,7 @@ class AuthProvider with ChangeNotifier {
 
     debugPrint('DEBUG[AuthProvider] setAuthData: user.id=${user.id}, token=$token');
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('token', token);
-    await prefs.setString('user', jsonEncode(user.toJson()));
+    await _localState.saveAuthState(user, token);
 
     groupProvider.setCurrentUser(user);
     NotificationService().setAuthToken(token);
@@ -45,28 +48,19 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> checkAuth() async {
-    final prefs = await SharedPreferences.getInstance();
-    _token = prefs.getString('token');
-    final userJson = prefs.getString('user');
-
-    debugPrint('DEBUG[AuthProvider] checkAuth: token=$_token');
-    debugPrint('DEBUG[AuthProvider] checkAuth: raw user json=$userJson');
-
-    if (_token == null || userJson == null) {
+    final authState = await _localState.getAuthState();
+    if (authState == null) {
       debugPrint('DEBUG[AuthProvider] checkAuth: No auth data found. Clearing...');
       await _clearAuthData();
       return;
     }
 
-    try {
-      _user = UserModel.fromJson(jsonDecode(userJson));
-      debugPrint('DEBUG[AuthProvider] checkAuth: parsed user.id=${_user?.id}');
-      groupProvider.setCurrentUser(_user!);
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Auth data parsing error: $e');
-      await _clearAuthData();
-    }
+    _token = authState['token'];
+    _user = authState['user'];
+    
+    debugPrint('DEBUG[AuthProvider] checkAuth: parsed user.id=${_user?.id}');
+    groupProvider.setCurrentUser(_user!);
+    notifyListeners();
   }
 
   Future<void> logout() async {
@@ -92,10 +86,7 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> _clearAuthData() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    await prefs.remove('user');
-
+    await _localState.clearAuthState();
     debugPrint('DEBUG[AuthProvider] _clearAuthData: Auth data cleared');
 
     _user = null;
@@ -113,13 +104,16 @@ class AuthProvider with ChangeNotifier {
       _user = updatedUser;
 
       debugPrint('DEBUG[AuthProvider] refreshUserData: updated user.id=${_user!.id}');
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user', jsonEncode(_user!.toJson()));
+      await _localState.saveAuthState(_user!, _token!);
       notifyListeners();
     } catch (e) {
       debugPrint('Ошибка при обновлении данных пользователя: $e');
-      rethrow;
+      // В случае ошибки используем локальные данные
+      final authState = await _localState.getAuthState();
+      if (authState != null) {
+        _user = authState['user'];
+        notifyListeners();
+      }
     }
   }
 

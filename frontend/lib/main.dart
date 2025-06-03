@@ -13,6 +13,9 @@ import 'package:zadachok/providers/shop_provider.dart';
 import 'package:zadachok/providers/task_provider.dart';
 import 'package:zadachok/screens/splash_screen.dart';
 import 'package:zadachok/services/notification_service.dart';
+import 'package:zadachok/services/connectivity_service.dart';
+import 'package:zadachok/services/local_storage_service.dart';
+import 'package:zadachok/services/local_state_service.dart';
 
 import 'api/endpoints_config_parse.dart';
 
@@ -25,28 +28,46 @@ void main() async {
   final notificationService = NotificationService();
   await notificationService.init();
 
+  // Инициализация сервисов
+  final connectivityService = ConnectivityService();
+  final localStorageService = LocalStorageService();
+  final localStateService = LocalStateService();
+  
+  await localStorageService.init();
+  await localStateService.init();
+
   await AppMetrica.activate(
     const AppMetricaConfig(
       '2781a5e7-fcdf-4212-a9dc-f0985ae15f9a',
-      logs: true, // Включение логов для отладки (опционально)
+      logs: true,
     ),
   );
 
-  // Создаём один экземпляр groupProvider без authProvider
-  final groupProvider = GroupProvider(authProvider: null);
-  // Создаём authProvider, передаём groupProvider
-  final authProvider = AuthProvider(groupProvider: groupProvider);
+  // Создаём провайдеры с новым localStateService
+  final groupProvider = GroupProvider(
+    authProvider: null,
+    localState: localStateService,
+  );
+  
+  final authProvider = AuthProvider(
+    groupProvider: groupProvider,
+    localState: localStateService,
+  );
+  
   await authProvider.checkAuth();
 
   if (authProvider.isAuthorized && authProvider.token != null) {
     notificationService.setAuthToken(authProvider.token);
   }
 
-  // Привязываем authProvider к groupProvider
   groupProvider.setAuthProvider(authProvider);
 
   final shopProvider = ShopProvider(authProvider: authProvider, prefs: prefs);
-  final taskProvider = TaskProvider(authProvider: authProvider);
+  final taskProvider = TaskProvider(
+    authProvider: authProvider,
+    localStorage: localStorageService,
+    connectivity: connectivityService,
+  );
 
   if (authProvider.isAuthorized) {
     await groupProvider.loadGroupData();
@@ -54,8 +75,6 @@ void main() async {
       await groupProvider.refreshGroupData();
     }
   }
-
-
 
   runApp(
     MultiProvider(
@@ -65,13 +84,14 @@ void main() async {
         ChangeNotifierProvider(create: (_) => taskProvider),
         ChangeNotifierProvider(create: (_) => SettingsProvider()..loadSettings()),
         ChangeNotifierProvider(create: (_) => shopProvider),
+        Provider.value(value: connectivityService),
+        Provider.value(value: localStorageService),
+        Provider.value(value: localStateService),
       ],
       child: const MyApp(),
     ),
   );
 }
-
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

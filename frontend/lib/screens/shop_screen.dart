@@ -668,7 +668,7 @@ class _ShopScreenState extends State<ShopScreen> {
                 top: 0,
                 left: 0,
                 right: 0,
-                height: cardWidth * 1.4,
+                height: cardWidth * 0.9,
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.5),
