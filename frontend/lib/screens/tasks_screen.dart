@@ -987,41 +987,55 @@ class _TasksScreenState extends State<TasksScreen> {
                       ),
                     ),
 
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: MediaQuery
-                          .of(context)
-                          .size
-                          .width * 0.25,
-                      child: ClipPath(
-                        clipper: _DiagonalClipper(),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: TaskScreenStyles.cardBorderRadius(
-                              context,
-                            ),
-                            gradient: LinearGradient(
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                              colors: [
-                                const Color(0xFFCCC1FF).withOpacity(0.7),
-                                const Color(0xFF6E44FF),
-                              ],
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF6E44FF).withOpacity(0.3),
-                                blurRadius: 8,
-                                spreadRadius: 2,
-                                offset: const Offset(-5, 0),
+                    Stack(
+                      children: [
+                        // Твой ClipPath и градиентный фон
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          bottom: 0,
+                          width: MediaQuery.of(context).size.width * 0.25,
+                          child: ClipPath(
+                            clipper: _DiagonalClipper(),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: TaskScreenStyles.cardBorderRadius(context),
+                                gradient: LinearGradient(
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                  colors: isOverdue
+                                      ? [const Color(0xFF6E44FF).withOpacity(0.7), const Color(0xFFFF5252)]
+                                      : [const Color(0xFFCCC1FF).withOpacity(0.7), const Color(0xFF6E44FF)],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF6E44FF).withOpacity(0.3),
+                                    blurRadius: 8,
+                                    spreadRadius: 2,
+                                    offset: const Offset(-5, 0),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
+
+                        // Маскировочный элемент (внизу слева)
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          width: 12,
+                          height: 12,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).scaffoldBackgroundColor, // или цвет родителя
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
+
+
 
                     Padding(
                       padding: EdgeInsets.all(
@@ -1161,7 +1175,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                                 0.9,
                                             color:
                                             isOverdue
-                                                ? Colors.red[400]
+                                                ? Colors.white
                                                 : Colors.white,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -1176,7 +1190,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                               0.9,
                                           color:
                                           isOverdue
-                                              ? Colors.red[400]
+                                              ? Colors.white
                                               : Colors.white,
                                           fontWeight: FontWeight.bold,
                                         ),

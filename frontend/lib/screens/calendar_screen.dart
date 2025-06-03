@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:zadachok/models/task/task_model.dart';
 import 'package:zadachok/screens/tasks_screen.dart';
+import '../models/user/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/group_provider.dart';
 import '../providers/task_provider.dart';
@@ -322,13 +323,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     final double highlightSize = screenWidth * 0.1;
 
-    final hasTasks = tasks.any((t) {
-      final start = _safeParseDate(t.startPoint);
-      final end = _safeParseDate(t.endPoint);
-      return (start != null && end != null)
-          ? !date.isBefore(start) && !date.isAfter(end)
-          : false;
-    });
+    // Находим самый последний дедлайн среди всех задач
+    final maxDeadline = tasks
+        .map((t) => _safeParseDate(t.endPoint))
+        .where((d) => d != null)
+        .cast<DateTime>()
+        .fold<DateTime?>(null, (prev, curr) =>
+    prev == null || curr.isAfter(prev) ? curr : prev);
+
+    // Проверяем, совпадает ли текущая дата с максимальным дедлайном
+    final showDot = maxDeadline != null &&
+        date.year == maxDeadline.year &&
+        date.month == maxDeadline.month &&
+        date.day == maxDeadline.day;
 
     return GestureDetector(
       onTap: () {
@@ -336,7 +343,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           'day': day,
           'month': date.month,
           'year': date.year,
-          'has_tasks': hasTasks,
+          'has_tasks': tasks.isNotEmpty,
         });
         setState(() => _selectedDate = date);
       },
@@ -374,7 +381,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
               ),
             ),
-            if (hasTasks)
+            // Красная точка только на крайнем дне дедлайна
+            if (showDot)
               Align(
                 alignment: Alignment.topRight,
                 child: Container(
@@ -432,6 +440,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final startPoint = _safeParseDate(task.startPoint);
     final endPoint = _safeParseDate(task.endPoint);
     final isOverdue = endPoint != null && endPoint.isBefore(DateTime.now());
+    final groupProvider = Provider.of<GroupProvider>(context);
+
 
     return GestureDetector(
       onTap: () {
@@ -479,10 +489,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             gradient: LinearGradient(
                               begin: Alignment.centerLeft,
                               end: Alignment.centerRight,
-                              colors: [
+                              colors: isOverdue
+                                  ? [
+                                const Color(0xFF6E44FF).withOpacity(0.7),
+                                const Color(0xFFFF5252),
+                              ] // просрочено
+                                  : [
                                 const Color(0xFFCCC1FF).withOpacity(0.7),
                                 const Color(0xFF6E44FF),
-                              ],
+                              ], // актуально
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -497,7 +512,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       ),
                     ),
                     Padding(
-                      padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.03),
+                      padding: EdgeInsets.all(
+                        MediaQuery
+                            .of(context)
+                            .size
+                            .width * 0.03,
+                      ),
                       child: Row(
                         children: [
                           Expanded(
@@ -509,33 +529,94 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 Text(
                                   task.name,
                                   style: _textStyleBold.copyWith(
-                                    fontSize: TaskScreenStyles.taskNameFontSize(context),
+                                    fontSize: TaskScreenStyles.taskNameFontSize(
+                                      context,
+                                    ),
                                     color: TaskScreenStyles.primaryColor,
-                                    decoration: task.state == 'Completed'
+                                    decoration:
+                                    task.state == 'Completed'
                                         ? TextDecoration.lineThrough
                                         : null,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                if (task.description.isNotEmpty)
+                                // if (task.description.isNotEmpty)
+                                //   Padding(
+                                //     padding: EdgeInsets.only(
+                                //       top:
+                                //           MediaQuery.of(context).size.height *
+                                //           0.005,
+                                //     ),
+                                //     child: Text(
+                                //       task.description,
+                                //       style: _textStyleSemiBold.copyWith(
+                                //         fontSize: TaskScreenStyles.dateFontSize(
+                                //           context,
+                                //         ),
+                                //         color: Colors.grey[700],
+                                //       ),
+                                //       maxLines: 2,
+                                //       overflow: TextOverflow.ellipsis,
+                                //     ),
+                                //   ),
+                                if (task.customerId != 0)
                                   Padding(
                                     padding: EdgeInsets.only(
-                                      top: MediaQuery.of(context).size.height * 0.005,
+                                      top:
+                                      MediaQuery
+                                          .of(context)
+                                          .size
+                                          .height *
+                                          0.005,
                                     ),
-                                    child: Text(
-                                      task.description,
-                                      style: _textStyleSemiBold.copyWith(
-                                        fontSize: TaskScreenStyles.dateFontSize(context),
-                                        color: Colors.grey[700],
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal:
+                                        MediaQuery
+                                            .of(context)
+                                            .size
+                                            .width *
+                                            0.02,
+                                        vertical:
+                                        MediaQuery
+                                            .of(context)
+                                            .size
+                                            .height *
+                                            0.003,
                                       ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.8),
+                                        borderRadius: BorderRadius.circular(
+                                          MediaQuery
+                                              .of(context)
+                                              .size
+                                              .width *
+                                              0.03,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        'Для: ${groupProvider.members
+                                            .firstWhere((m) =>
+                                        m.id == task.customerId, orElse: () =>
+                                            UserModel(id: 0,
+                                                name: 'Неизвестно',
+                                                email: '',
+                                                login: ''))
+                                            .name}',
+                                        style: _textStyleBold.copyWith(
+                                          fontSize:
+                                          TaskScreenStyles.dateFontSize(
+                                            context,
+                                          ) *
+                                              0.8,
+                                          color: TaskScreenStyles.primaryColor,
+                                        ),
+                                      ),
                                     ),
                                   ),
                               ],
                             ),
                           ),
+
                           Expanded(
                             flex: 3,
                             child: Stack(
@@ -548,29 +629,44 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     children: [
                                       if (startPoint != null)
                                         Text(
-                                          'С ${DateFormat('dd.MM').format(startPoint)}',
+                                          'С ${DateFormat('dd.MM').format(
+                                              startPoint)}',
                                           style: _textStyleSemiBold.copyWith(
-                                            fontSize: TaskScreenStyles.dateFontSize(context) * 0.9,
-                                            color: Colors.white.withOpacity(0.8),
+                                            fontSize: TaskScreenStyles
+                                                .dateFontSize(context) * 0.9,
+                                            color: Colors.white,
                                           ),
                                         ),
                                       if (endPoint != null)
                                         Text(
-                                          'До ${DateFormat('dd.MM').format(endPoint)}',
+                                          'До ${DateFormat('dd.MM').format(
+                                              endPoint)}',
                                           style: _textStyleBold.copyWith(
-                                            fontSize: TaskScreenStyles.dateFontSize(context) * 0.9,
-                                            color: isOverdue
-                                                ? Colors.red[400]
+                                            fontSize:
+                                            TaskScreenStyles.dateFontSize(
+                                              context,
+                                            ) *
+                                                0.9,
+                                            color:
+                                            isOverdue
+                                                ? Colors.white
                                                 : Colors.white,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                       Text(
                                         DateFormat('HH:mm').format(endPoint!),
                                         style: _textStyleBold.copyWith(
-                                          fontSize: TaskScreenStyles.dateFontSize(context) * 0.9,
-                                          color: isOverdue
-                                              ? Colors.red[400]
+                                          fontSize:
+                                          TaskScreenStyles.dateFontSize(
+                                            context,
+                                          ) *
+                                              0.9,
+                                          color:
+                                          isOverdue
+                                              ? Colors.white
                                               : Colors.white,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     ],
@@ -581,6 +677,26 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     top: 0,
                                     right: 0,
                                     child: _buildRewardBadge(task.reward),
+                                  ),
+                                if (task.state == 'Completed')
+                                  Positioned(
+                                    bottom:
+                                    MediaQuery
+                                        .of(context)
+                                        .size
+                                        .height *
+                                        0.025,
+                                    right: 0,
+                                    child: Icon(
+                                      Icons.verified,
+                                      color: Colors.white,
+                                      size:
+                                      MediaQuery
+                                          .of(context)
+                                          .size
+                                          .width *
+                                          0.04,
+                                    ),
                                   ),
                               ],
                             ),
