@@ -825,17 +825,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-
-        if (authProvider.isAuthorized && authProvider.user != null) {
+        if (authProvider.isAuthorized && authProvider.token != null && authProvider.user != null) {
           try {
             await authProvider.updateUserPhoto(base64Image);
             await settingsProvider.updateUserData(avatarBytes: base64Image);
+
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Аватар успешно обновлен', style: _textStyleSemiBold),
+                backgroundColor: const Color(0xFF937DF3),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
           } catch (e) {
             debugPrint('Ошибка при обновлении аватара: $e');
             // Откатываем изменения, если не удалось обновить
             setState(() => _avatarBytes = authProvider.user?.photoBytes);
-            rethrow;
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Ошибка при обновлении аватара', style: _textStyleSemiBold),
+                backgroundColor: const Color(0xFF937DF3),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
           }
+        } else {
+          setState(() => _avatarBytes = null);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Требуется авторизация', style: _textStyleSemiBold),
+              backgroundColor: const Color(0xFF937DF3),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
         }
       }
     } catch (e) {
@@ -855,6 +888,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _updateUserProfile(UserModel updatedUser) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    if (authProvider.token == null) {
+      debugPrint('Токен авторизации отсутствует');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Требуется авторизация', style: _textStyleSemiBold),
+          backgroundColor: const Color(0xFF937DF3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      return;
+    }
+
     final apiClient = ApiClient();
     apiClient.setAuthToken(authProvider.token!);
 
@@ -867,13 +915,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       debugPrint('Ошибка обновления профиля: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка обновления профиля: $e', style: _textStyleSemiBold),
+        SnackBar(content: Text('Ошибка обновления профиля', style: _textStyleSemiBold),
           backgroundColor: const Color(0xFF937DF3),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-          ),),
+          ),
+        ),
       );
+      rethrow;
     }
   }
 
