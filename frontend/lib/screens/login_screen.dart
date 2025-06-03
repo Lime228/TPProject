@@ -16,6 +16,8 @@ import '../providers/group_provider.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'onboarding_screen.dart';
+
 const TextStyle _textStyleSemiBold = TextStyle(
   fontFamily: 'Inter',
   fontWeight: FontWeight.w600, // SemiBold
@@ -324,6 +326,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+                    );
+                  },
+                  child: Text(
+                    'Как пользоваться?',
+                    style: _textStyleBold.copyWith(
+                      color: _colorEnterButton,
+                      fontSize: MediaQuery.of(context).size.width * 0.05,
+                    ),
+                  ),
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

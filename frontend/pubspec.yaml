@@ -85,6 +85,10 @@ flutter:
     - lib/assets/login.svg
     - lib/assets/login_active.svg
     - lib/assets/logo.svg
+    - lib/assets/onboarding/1.jpg
+    - lib/assets/onboarding/2.jpg
+    - lib/assets/onboarding/3.jpg
+    - lib/assets/onboarding/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
