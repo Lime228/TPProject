@@ -4,6 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:zadachok/models/task/task_model.dart';
 
 import '../api/api_client.dart';
 import '../providers/auth_provider.dart';
@@ -79,7 +80,7 @@ class NotificationService {
   }
 
   Future<void> showTaskNotification({
-    required int taskId,
+    required TaskModel task,
   }) async {
     if (!_notificationsEnabled) {
       debugPrint('Уведомления отключены в настройках');
@@ -92,7 +93,7 @@ class NotificationService {
 
     try {
       // Получаем сгенерированный текст
-      final notificationText = await generateAndWaitForNotification(taskId);
+      final notificationText = await generateAndWaitForNotification(task.id);
       if (notificationText == null) return;
 
       const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
@@ -113,7 +114,7 @@ class NotificationService {
 
       await _notificationsPlugin.show(
         0,
-        'Напоминание о задаче',
+        task.name,
         notificationText,
         platformDetails,
       );

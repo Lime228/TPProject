@@ -557,7 +557,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }
 
                 final task = activeTasks.last;
-                await notificationService.showTaskNotification(taskId: task.id);
+                await notificationService.showTaskNotification(task: task);
               },
               child: Text('Отправить тестовое уведомление'),
             ),
