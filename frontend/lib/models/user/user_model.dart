@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/cupertino.dart';
+
 class UserModel {
   final int id;
   final String name;
@@ -70,8 +72,18 @@ class UserModel {
   }
 
   static DateTime? _parseBirthdayDate(Map<String, dynamic> json) {
-    final dateStr = json['birthdayDate'] ?? json['birthday_date'];
-    return dateStr != null ? DateTime.tryParse(dateStr) : null;
+    final dateStr = json['birthday_date'] ?? json['birthday_date'];
+    if (dateStr == null || dateStr.isEmpty) return null;
+
+    debugPrint('Parsing birthday date from server: $dateStr');
+
+    try {
+      // Парсим только дату (без времени)
+      return DateTime.parse(dateStr.substring(0, 10)); // Берем первые 10 символов (ГГГГ-ММ-ДД)
+    } catch (e) {
+      debugPrint('Ошибка парсинга даты рождения: $e. Input: $dateStr');
+      return null;
+    }
   }
 
   static String? _parsePhotoBytes(Map<String, dynamic> json) {
@@ -105,16 +117,23 @@ class UserModel {
     'customerId': id,
     'name': name,
     'email': email,
-    if (birthdayDate != null) 'birthdayDate': birthdayDate!.toIso8601String(),
+    'birthday_date': _formatDateForServer(birthdayDate!),
     if (photoBytes != null && photoBytes!.isNotEmpty) 'photo': photoBytes,
     'admin': role == UserRole.admin ? "ADMIN" : "USER",
   };
+
+  static String _formatDateForServer(DateTime date) {
+    final formatted = '${date.year}-${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
+    debugPrint('Formatted date for server: $formatted');
+    return formatted;
+  }
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
     'email': email,
-    if (birthdayDate != null) 'birthdayDate': birthdayDate!.toIso8601String(),
+    if (birthdayDate != null) 'birthday_date': birthdayDate!.toIso8601String(),
     'login': login,
     'photo': photoBytes,
     'admin': role == UserRole.admin ? "ADMIN" : "USER",

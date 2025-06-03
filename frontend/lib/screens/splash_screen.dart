@@ -100,6 +100,25 @@ class _SplashScreenState extends State<SplashScreen>
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await authProvider.checkAuth();
 
+    if (authProvider.token!=null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Автоматический вход выполнен',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          backgroundColor: const Color(0xFF937DF3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
+
     final groupProvider = authProvider.groupProvider;
     await groupProvider.loadGroupData();
   }

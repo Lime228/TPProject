@@ -8,7 +8,6 @@ class SettingsProvider with ChangeNotifier {
   bool _notificationsEnabled = true;
 
   String? _userName;
-  // String? _userSurname;
   DateTime? _userBirthDate;
   String? _avatarBytes; // Храним как base64 строку
 
@@ -37,10 +36,7 @@ class SettingsProvider with ChangeNotifier {
       case 'userName':
         _userName = value as String;
         break;
-      // case 'userSurname':
-      //   _userSurname = value as String;
-      //   break;
-      case 'birthDate':
+      case 'birthday_date':
         _userBirthDate = value as DateTime?;
         break;
       case 'avatarPath':
@@ -54,9 +50,31 @@ class SettingsProvider with ChangeNotifier {
   Future<void> updateUserData({
     String? name,
     String? birthDate,
-    String? avatarBytes, // Принимаем base64 строку
+    String? avatarBytes,
   }) async {
     final prefs = await SharedPreferences.getInstance();
+
+    if (name != null) {
+      _userName = name;
+      await prefs.setString('userName', name);
+    }
+
+    if (birthDate != null) {
+      try {
+        final parts = birthDate.split('.');
+        if (parts.length == 3) {
+          final date = DateTime(
+            int.parse(parts[2]),
+            int.parse(parts[1]),
+            int.parse(parts[0]),
+          );
+          _userBirthDate = date;
+          await prefs.setString('birthday_date', date.toIso8601String());
+        }
+      } catch (e) {
+        debugPrint('Ошибка сохранения даты рождения: $e');
+      }
+    }
 
     if (avatarBytes != null) {
       _avatarBytes = avatarBytes;

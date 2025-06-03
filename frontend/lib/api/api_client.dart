@@ -202,7 +202,6 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  // Future<UserModel> deleteUserProfile(UserModel user) async {  } ЕЩЕ НЕТУ РЕАЛИЗАЦИИ С БЭКА
 
   // в теории работает
   Future<UserModel> getUserById(UserModel request) async {
@@ -763,6 +762,11 @@ class ApiClient implements ApiInterface {
   UserModel _handleUserResponse(http.Response response) {
     final responseData = json.decode(utf8.decode(response.bodyBytes));
     debugPrint('User response data: $responseData');
+
+    // Добавим специально логирование даты
+    if (responseData['birthday_date'] != null) {
+      debugPrint('Received birthday_date from server: ${responseData['birthday_date']}');
+    }
 
     switch (response.statusCode) {
       case 200:

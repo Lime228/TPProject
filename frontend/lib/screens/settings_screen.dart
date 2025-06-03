@@ -102,7 +102,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (user.birthdayDate != null) {
         _birthDateController.text =
-        '${user.birthdayDate!.day}.${user.birthdayDate!.month}.${user.birthdayDate!.year}';
+        '${user.birthdayDate!.day.toString().padLeft(2, '0')}.'
+            '${user.birthdayDate!.month.toString().padLeft(2, '0')}.'
+            '${user.birthdayDate!.year}';
       }
 
       await settingsProvider.loadSettings();
@@ -357,6 +359,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       final year = int.parse(dateParts[2]);
                       final newDate = DateTime(year, month, day);
 
+                      debugPrint('User entered date: $value');
+                      debugPrint('Parsed DateTime: $newDate');
+
                       final updatedUser = authProvider.user!.copyWith(birthdayDate: newDate);
                       await _updateUserProfile(updatedUser);
 
@@ -364,7 +369,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       await settingsProvider.updateUserData(birthDate: value);
                     }
                   } catch (e) {
-                    debugPrint('Ошибка формата даты: $e');
+                    debugPrint('Ошибка формата даты: $e. Input: $value');
                   }
                 }
               },
@@ -841,19 +846,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       try {
         final dateParts = _birthDateController.text.split('.');
         if (dateParts.length == 3) {
-          birthDate = DateTime(
-            int.parse(dateParts[2]),
-            int.parse(dateParts[1]),
-            int.parse(dateParts[0]),
-          );
+          final day = int.parse(dateParts[0]);
+          final month = int.parse(dateParts[1]);
+          final year = int.parse(dateParts[2]);
+          birthDate = DateTime(year, month, day);
         }
       } catch (e) {
         debugPrint('Ошибка парсинга даты: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Неверный формат даты. Используйте ДД.ММ.ГГГГ')),
+        );
+        return;
       }
 
       final updatedUser = authProvider.user!.copyWith(
         name: _nameController.text,
-        birthdayDate: birthDate,
+        birthdayDate: birthDate, // Отправляем DateTime объект
       );
 
       await _updateUserProfile(updatedUser);

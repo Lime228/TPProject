@@ -112,6 +112,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (!mounted) return;
 
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Регистрация завершена успешно',
+            style: _textStyleSemiBold,
+          ),
+          backgroundColor: colorEnterButton,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(

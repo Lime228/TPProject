@@ -143,6 +143,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Вход выполнен успешно',
+            style: _textStyleSemiBold,
+          ),
+          backgroundColor: _colorEnterButton,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
             (route) => false,

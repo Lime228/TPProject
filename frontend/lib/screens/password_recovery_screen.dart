@@ -415,6 +415,21 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
 
       if (success) {
         await _safeReportEvent('password_recovery_code_sent');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Код восстановления отправлен на почту',
+                style: _textStyleSemiBold,
+              ),
+              backgroundColor: const Color(0xFF937DF3),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
         await _showResetPasswordDialog();
       }
     } catch (e) {
