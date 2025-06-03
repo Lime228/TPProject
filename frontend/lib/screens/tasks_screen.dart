@@ -1788,11 +1788,13 @@ class _TasksScreenState extends State<TasksScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
+                          if (!groupProvider.isOwner) ...[
                           TextButton(
                             onPressed:
                                 () => _handleLeaveGroup(ctx, groupProvider),
                             child: const Text('Выйти из группы', style: _textStyleSemiBold),
                           ),
+                          ],
                           if (groupProvider.isOwner) ...[
                             const SizedBox(width: 8),
                           ],
