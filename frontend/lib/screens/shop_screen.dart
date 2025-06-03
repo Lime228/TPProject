@@ -239,10 +239,10 @@ class _ShopScreenState extends State<ShopScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final groupProvider = Provider.of<GroupProvider>(context);
     final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return FutureBuilder<WalletModel>(
-      future:
-      authProvider.isAuthorized
+      future: authProvider.isAuthorized
           ? authProvider.apiClient.updateWallet(
         WalletModel(
           customerId: authProvider.user!.id,
@@ -256,7 +256,7 @@ class _ShopScreenState extends State<ShopScreen> {
 
         return Container(
           width: double.infinity,
-          height: ShopScreenConstants.headerHeight,
+          height: screenWidth * 0.25, // ~25% от ширины экрана (было 100.0)
           decoration: BoxDecoration(
             color: ShopScreenConstants.primaryColor,
             borderRadius: const BorderRadius.only(
@@ -271,7 +271,12 @@ class _ShopScreenState extends State<ShopScreen> {
               ),
             ],
           ),
-          padding: ShopScreenConstants.headerPadding,
+          padding: EdgeInsets.fromLTRB(
+            screenWidth * 0.06, // ~6% (было 24)
+            screenWidth * 0.1, // ~4% (было 15)
+            screenWidth * 0.06, // ~6% (было 24)
+            screenWidth * 0.02, // ~2.5% (было 10)
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -279,7 +284,7 @@ class _ShopScreenState extends State<ShopScreen> {
               Row(
                 children: [
                   CircleAvatar(
-                    radius: ShopScreenConstants.avatarRadius,
+                    radius: screenWidth * 0.065, // ~6.5% (было 25)
                     backgroundColor: Colors.white,
                     backgroundImage: authProvider.user?.photoBytes != null &&
                         authProvider.user!.photoBytes!.isNotEmpty
@@ -290,16 +295,17 @@ class _ShopScreenState extends State<ShopScreen> {
                         ? Icon(
                       Icons.person,
                       color: theme.colorScheme.secondary,
-                      size: ShopScreenConstants.avatarRadius,
+                      size: screenWidth * 0.065, // Соответствует radius
                     )
                         : null,
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: screenWidth * 0.03), // ~3% (было 12)
                   Text(
                     authProvider.user?.name ?? 'Гость',
                     style: _textStyleBold.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
+                      fontSize: screenWidth * 0.055, // ~4.5% (было ~22)
                     ),
                   ),
                 ],
@@ -308,22 +314,23 @@ class _ShopScreenState extends State<ShopScreen> {
                 children: [
                   if (authProvider.isAuthorized && !authProvider.isAdmin && groupProvider.isInGroup)
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: screenWidth * 0.05, // ~3% (было 12)
+                        vertical: screenWidth * 0.02, // ~1.5% (было 6)
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(screenWidth * 0.05), // ~5% (было 20)
                       ),
                       child: Row(
                         children: [
                           const Icon(Icons.star, color: Colors.amber, size: 16),
-                          const SizedBox(width: 4),
+                          SizedBox(width: screenWidth * 0.01), // ~1% (было 4)
                           Text(
                             balance.toString(),
                             style: _textStyleBold.copyWith(
                               color: Colors.white,
+                              fontSize: screenWidth * 0.035, // ~3.5% (было 14)
                             ),
                           ),
                         ],
@@ -331,32 +338,39 @@ class _ShopScreenState extends State<ShopScreen> {
                     ),
                   if (Provider.of<GroupProvider>(context).isOwner)
                     PopupMenuButton<String>(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.more_vert,
                         color: Colors.white,
-                        size: 25,
+                        size: screenWidth * 0.06, // ~6% (было 25)
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.0),
+                        borderRadius: BorderRadius.circular(screenWidth * 0.03), // ~3% (было 12.0)
                       ),
                       elevation: 4,
                       color: Colors.white,
-                      offset: const Offset(0, 40),
+                      offset: Offset(0, screenWidth * 0.1), // ~10% (было 40)
                       onSelected: _handleMenuSelection,
                       itemBuilder: (context) => [
                         PopupMenuItem<String>(
                           value: 'edit',
                           child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                            padding: EdgeInsets.symmetric(
+                              vertical: screenWidth * 0.02, // ~2% (было 8)
+                              horizontal: screenWidth * 0.03, // ~3% (было 12)
+                            ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.edit, color: ShopScreenConstants.adminColor, size: 22),
-                                const SizedBox(width: 3),
+                                Icon(
+                                  Icons.edit,
+                                  color: ShopScreenConstants.adminColor,
+                                  size: screenWidth * 0.055, // ~5.5% (было 22)
+                                ),
+                                SizedBox(width: screenWidth * 0.008), // ~0.8% (было 3)
                                 Text(
                                   'Управление товарами',
                                   style: _textStyleBold.copyWith(
-                                    fontSize: 14,
+                                    fontSize: screenWidth * 0.035, // ~3.5% (было 14)
                                     fontWeight: FontWeight.w500,
                                     color: Colors.black87,
                                   ),
@@ -417,40 +431,81 @@ class _ShopScreenState extends State<ShopScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.search_off,
-                    size: 64,
+                    size: MediaQuery.of(context).size.width * 0.15, // ~15% ширины
                     color: Colors.grey,
                   ),
-                  const SizedBox(height: 16),
-                  Text('Ничего не найдено', style: _textStyleBold),
-                  const SizedBox(height: 8),
+                  SizedBox(height: MediaQuery.of(context).size.width * 0.04),
+                  Text(
+                    'Ничего не найдено',
+                    style: _textStyleBold.copyWith(
+                      fontSize: MediaQuery.of(context).size.width * 0.045, // ~4.5%
+                    ),
+                  ),
+                  SizedBox(height: MediaQuery.of(context).size.width * 0.02),
                   TextButton(
                     onPressed: () {
                       _safeReportEvent('shop_reset_filters_button');
                       _resetFilters();
                     },
-                    child: const Text('Сбросить фильтры', style: _textStyleSemiBold),
+                    child: Text(
+                      'Сбросить фильтры',
+                      style: _textStyleSemiBold.copyWith(
+                        fontSize: MediaQuery.of(context).size.width * 0.035, // ~3.5%
+                      ),
+                    ),
                   ),
                 ],
               ),
             )
-                : GridView.builder(
-              padding: const EdgeInsets.only(top: 8),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.8,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-              ),
-              itemCount: products.length,
-              itemBuilder: (context, index) {
-                final product = products[index];
-                return _buildProductCard(product);
+                : LayoutBuilder(
+              builder: (context, constraints) {
+                final screenWidth = constraints.maxWidth;
+                final screenHeight = constraints.maxHeight;
+
+                // Адаптивное количество колонок
+                final crossAxisCount = screenWidth > 600 ? 3 : 2;
+
+                // Расчет отступов
+                final horizontalPadding = screenWidth * 0.04;
+                final verticalPadding = screenHeight * 0.02;
+
+                return GridView.builder(
+                  padding: EdgeInsets.only(
+                    top: verticalPadding,
+                    left: horizontalPadding,
+                    right: horizontalPadding,
+                    bottom: verticalPadding,
+                  ),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    childAspectRatio: 0.65,
+                    crossAxisSpacing: screenWidth * 0.05, // ~3% ширины
+                    mainAxisSpacing: screenHeight * 0.02, // ~2% высоты
+                  ),
+                  itemCount: products.length,
+                  itemBuilder: (context, index) {
+                    final product = products[index];
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        // Размер карточки зависит от доступного пространства
+                        final cardWidth = (constraints.maxWidth -
+                            (crossAxisCount - 1) * screenWidth * 0.03) / crossAxisCount;
+
+                        return SizedBox(
+                          width: cardWidth,
+                          height: cardWidth * 1.2,
+                          child: _buildProductCard(product),
+                        );
+                      },
+                    );
+                  },
+                );
               },
             ),
           ),
-        ),
+        )
       ],
     );
   }
@@ -489,17 +544,19 @@ class _ShopScreenState extends State<ShopScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final isReserved = product.customerId != null && product.customerId != authProvider.user?.id;
     final isPurchased = product.customerId == authProvider.user?.id;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth * 0.5; // ~43% ширины экрана (вместо фиксированных 168)
+    const double cardAspectRatio = 1.25; // Соотношение сторон карточки
 
     return GestureDetector(
       onTap: () {
-        // Разрешаем админу нажимать на любой товар, даже зарезервированный
         if (isReserved && !authProvider.isAdmin) return;
         _safeReportEvent('shop_product_card_tap', attributes: {'product_id': product.id});
         _showProductDetails(product);
       },
       child: SizedBox(
-        width: 168,
-        height: 145,
+        width: cardWidth,
+        height: cardWidth * cardAspectRatio,
         child: Stack(
           children: [
             Column(
@@ -511,19 +568,19 @@ class _ShopScreenState extends State<ShopScreen> {
                   margin: EdgeInsets.zero,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
+                      topLeft: Radius.circular(screenWidth * 0.03),
+                      topRight: Radius.circular(screenWidth * 0.03),
+                      bottomRight: Radius.circular(screenWidth * 0.03),
                     ),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
+                      topLeft: Radius.circular(screenWidth * 0.03),
+                      topRight: Radius.circular(screenWidth * 0.03),
                     ),
                     child: SizedBox(
-                      width: 200,
-                      height: 170,
+                      width: cardWidth * 1.8,
+                      height: cardWidth * 0.9,
                       child: product.photoBytes.isNotEmpty
                           ? _buildProductImage(product.photoBytes)
                           : _buildPlaceholderImage(),
@@ -531,8 +588,8 @@ class _ShopScreenState extends State<ShopScreen> {
                   ),
                 ),
                 Container(
-                  width: 145,
-                  height: 50,
+                  width: cardWidth * 0.7,
+                  height: cardWidth * 0.27,
                   decoration: BoxDecoration(
                     color: isPurchased
                         ? Colors.orange
@@ -540,8 +597,8 @@ class _ShopScreenState extends State<ShopScreen> {
                         ? ShopScreenConstants.primaryColor
                         : ShopScreenConstants.primaryColor,
                     borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
+                      bottomLeft: Radius.circular(screenWidth * 0.03),
+                      bottomRight: Radius.circular(screenWidth * 0.03),
                     ),
                     boxShadow: const [
                       BoxShadow(
@@ -551,9 +608,9 @@ class _ShopScreenState extends State<ShopScreen> {
                       ),
                     ],
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: screenWidth * 0.02,
+                    vertical: screenWidth * 0.01,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -563,30 +620,30 @@ class _ShopScreenState extends State<ShopScreen> {
                         product.name,
                         style: _textStyleBold.copyWith(
                           color: Colors.white,
-                          fontSize: 15,
+                          fontSize: screenWidth * 0.038, // ~3.8% ширины экрана
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 0),
+                      SizedBox(height: screenWidth * 0.005),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: screenWidth * 0.015,
+                          vertical: screenWidth * 0.005,
                         ),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(screenWidth * 0.025),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.star,
-                              size: 14,
+                              size: screenWidth * 0.035,
                               color: Colors.amber,
                             ),
-                            const SizedBox(width: 2),
+                            SizedBox(width: screenWidth * 0.005),
                             Text(
                               product.price.toStringAsFixed(
                                 product.price.truncateToDouble() == product.price
@@ -594,7 +651,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                     : 1,
                               ),
                               style: _textStyleBold.copyWith(
-                                fontSize: 12,
+                                fontSize: screenWidth * 0.03,
                                 color: Colors.black87,
                               ),
                             ),
@@ -606,35 +663,35 @@ class _ShopScreenState extends State<ShopScreen> {
                 ),
               ],
             ),
-            if (isReserved) // Показываем "Занято" только если не админ
+            if (isReserved)
               Positioned(
                 top: 0,
                 left: 0,
                 right: 0,
-                height: 170, // Высота изображения товара
+                height: cardWidth * 1.4,
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.5),
                     borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
+                      topLeft: Radius.circular(screenWidth * 0.03),
+                      topRight: Radius.circular(screenWidth * 0.03),
                     ),
                   ),
                   child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.lock_outline,
                           color: Colors.white,
-                          size: 36,
+                          size: screenWidth * 0.09,
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: screenWidth * 0.02),
                         Text(
                           'Занято',
                           style: _textStyleBold.copyWith(
                             color: Colors.white,
-                            fontSize: 16,
+                            fontSize: screenWidth * 0.04,
                           ),
                         ),
                       ],
@@ -647,30 +704,30 @@ class _ShopScreenState extends State<ShopScreen> {
                 top: 0,
                 left: 0,
                 right: 0,
-                height: 170, // Такая же высота как у изображения
+                height: cardWidth * 1.4,
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.5),
                     borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
+                      topLeft: Radius.circular(screenWidth * 0.03),
+                      topRight: Radius.circular(screenWidth * 0.03),
                     ),
                   ),
                   child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.check_circle_outline,
                           color: Colors.white,
-                          size: 36,
+                          size: screenWidth * 0.09,
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: screenWidth * 0.02),
                         Text(
                           'Ваш товар',
                           style: _textStyleBold.copyWith(
                             color: Colors.white,
-                            fontSize: 16,
+                            fontSize: screenWidth * 0.04,
                           ),
                         ),
                       ],
@@ -1078,6 +1135,9 @@ class _ShopScreenState extends State<ShopScreen> {
     _linkController.clear();
     _tempProductImage = null;
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1094,11 +1154,11 @@ class _ShopScreenState extends State<ShopScreen> {
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16.0)),
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.9,
+                  maxHeight: screenHeight * 0.85, // 85% высоты экрана
                 ),
                 child: SingleChildScrollView(
                   child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: EdgeInsets.all(screenWidth * 0.05), // 5% от ширины
                     child: Form(
                       key: _addProductFormKey,
                       child: Column(
@@ -1114,16 +1174,19 @@ class _ShopScreenState extends State<ShopScreen> {
                                   _tempProductImage = null;
                                   Navigator.pop(ctx);
                                 },
-                                child:  Text(
+                                child: Text(
                                   'Отмена',
-                                  style: _textStyleSemiBold.copyWith(color: Colors.grey),
+                                  style: _textStyleSemiBold.copyWith(
+                                    color: Colors.grey,
+                                    fontSize: screenWidth * 0.04, // 4%
+                                  ),
                                 ),
                               ),
                               Text(
                                 'Новый товар',
                                 style: _textStyleBold.copyWith(
                                   color: ShopScreenConstants.primaryColor,
-                                  fontSize: 18,
+                                  fontSize: screenWidth * 0.045, // 4.5%
                                 ),
                               ),
                               TextButton(
@@ -1131,16 +1194,17 @@ class _ShopScreenState extends State<ShopScreen> {
                                   _safeReportEvent('shop_add_product_submit');
                                   _handleAddProduct(ctx);
                                 },
-                                child:  Text(
+                                child: Text(
                                   'Готово',
                                   style: _textStyleBold.copyWith(
                                     color: ShopScreenConstants.primaryColor,
+                                    fontSize: screenWidth * 0.04, // 4%
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: screenHeight * 0.02), // 2%
 
                           GestureDetector(
                             onTap: () async {
@@ -1149,20 +1213,18 @@ class _ShopScreenState extends State<ShopScreen> {
                                 source: ImageSource.gallery,
                               );
                               if (image != null) {
-                                setState(
-                                      () => _tempProductImage = File(image.path),
-                                );
+                                setState(() => _tempProductImage = File(image.path));
                               }
                             },
                             child: Container(
-                              height: 150,
+                              height: screenHeight * 0.25, // 25% высоты
                               decoration: BoxDecoration(
                                 color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(screenWidth * 0.03), // 3%
                               ),
                               child: _tempProductImage != null
                                   ? ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(screenWidth * 0.03),
                                 child: Image.file(
                                   _tempProductImage!,
                                   fit: BoxFit.cover,
@@ -1174,13 +1236,15 @@ class _ShopScreenState extends State<ShopScreen> {
                                   children: [
                                     Icon(
                                       Icons.add_a_photo,
-                                      size: 40,
+                                      size: screenWidth * 0.1, // 10%
                                       color: Colors.grey,
                                     ),
+                                    SizedBox(height: screenHeight * 0.01), // 1%
                                     Text(
                                       'Добавить фото',
                                       style: _textStyleSemiBold.copyWith(
                                         color: Colors.grey,
+                                        fontSize: screenWidth * 0.035, // 3.5%
                                       ),
                                     ),
                                   ],
@@ -1188,7 +1252,7 @@ class _ShopScreenState extends State<ShopScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: screenHeight * 0.025), // 2.5%
 
                           _buildRoundedTextField(
                             controller: _nameController,
@@ -1200,14 +1264,14 @@ class _ShopScreenState extends State<ShopScreen> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: screenHeight * 0.02), // 2%
 
                           _buildRoundedTextField(
                             controller: _descController,
                             labelText: 'Описание',
                             maxLines: 3,
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: screenHeight * 0.02), // 2%
 
                           _buildRoundedTextField(
                             controller: _priceController,
@@ -1223,13 +1287,13 @@ class _ShopScreenState extends State<ShopScreen> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: screenHeight * 0.02), // 2%
 
                           _buildRoundedTextField(
                             controller: _linkController,
                             labelText: 'Ссылка на товар',
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: screenHeight * 0.03), // 3%
                         ],
                       ),
                     ),
@@ -1520,28 +1584,34 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Widget _buildSearchAndSortBar() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Container(
-      width: 352,
-      height: 27,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      width: screenWidth * 0.92, // 92% ширины экрана
+      height: screenHeight * 0.04, // 4.5% высоты экрана
+      margin: EdgeInsets.symmetric(
+        horizontal: screenWidth * 0.04, // 4% отступ по бокам
+        vertical: screenHeight * 0.01, // 1% отступ сверху/снизу
+      ),
       child: Row(
         children: [
+          // Кнопка сортировки
           Container(
-            width: 168,
-            height: 27,
+            width: screenWidth * 0.32, // 32% ширины экрана
+            height: double.infinity,
             decoration: BoxDecoration(
               color: ShopScreenConstants.primaryColor,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(screenWidth * 0.025), // 2.5%
             ),
             child: PopupMenuButton<String>(
               color: Colors.white,
-              offset: const Offset(0, 30),
+              offset: Offset(0, screenHeight * 0.05), // 5% высоты
               onSelected: (value) {
                 _safeReportEvent('shop_sort_select', attributes: {'option': value});
                 _sortProducts(option: value);
               },
-              itemBuilder:
-                  (context) => [
+              itemBuilder: (context) => [
                 const PopupMenuItem<String>(
                   value: 'price_asc',
                   child: Text('По возрастанию цены', style: _textStyleSemiBold),
@@ -1562,50 +1632,77 @@ class _ShopScreenState extends State<ShopScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.sort, color: Colors.white, size: 16),
-                  SizedBox(width: 5),
+                  Icon(
+                    Icons.sort,
+                    color: Colors.white,
+                    size: screenWidth * 0.05, // 4.5%
+                  ),
+                  SizedBox(width: screenWidth * 0.015), // 1.5%
                   Text(
                     'Сортировка',
-                    style: _textStyleSemiBold.copyWith(color: Colors.white, fontSize: 12),
+                    style: _textStyleSemiBold.copyWith(
+                      color: Colors.white,
+                      fontSize: screenWidth * 0.035, // 3.5%
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(width: 8),
+
+          SizedBox(width: screenWidth * 0.03), // 2% промежуток
+
+          // Поле поиска
           Expanded(
             child: Container(
-              height: 27,
+              height: double.infinity,
               decoration: BoxDecoration(
                 color: const Color(0xFFC1FFEB),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(screenWidth * 0.025), // 2.5%
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+              padding: EdgeInsets.symmetric(
+                horizontal: screenWidth * 0.03, // 3%
+              ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.search,
                     color: ShopScreenConstants.primaryColor,
-                    size: 16,
+                    size: screenWidth * 0.045, // 4.5%
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: screenWidth * 0.025), // 2.5%
                   Expanded(
                     child: TextField(
                       controller: _searchController,
-                      style: const TextStyle(
-                        fontSize: 12,
+                      style: _textStyleSemiBold.copyWith(
+                        fontSize: screenWidth * 0.035, // 3.5%
                         color: ShopScreenConstants.primaryColor,
                       ),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: 'Поиск товаров...',
+                        hintStyle: _textStyleSemiBold.copyWith(
+                          fontSize: screenWidth * 0.035, // 3.5%
+                          color: ShopScreenConstants.primaryColor.withOpacity(0.6),
+                        ),
                         border: InputBorder.none,
                         isDense: true,
+                        contentPadding: EdgeInsets.only(
+                          bottom: screenHeight * 0.001, // 1.5%
+                        ),
                       ),
                       onChanged: _searchProducts,
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.close, color: Colors.grey[600], size: 16),
+                    icon: Icon(
+                      Icons.close,
+                      color: Colors.grey[600],
+                      size: screenWidth * 0.045, // 4.5%
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(
+                      maxWidth: screenWidth * 0.08, // 8%
+                    ),
                     onPressed: () {
                       _safeReportEvent('shop_search_clear');
                       _resetFilters();
