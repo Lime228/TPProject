@@ -987,41 +987,45 @@ class _TasksScreenState extends State<TasksScreen> {
                       ),
                     ),
 
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: MediaQuery
-                          .of(context)
-                          .size
-                          .width * 0.25,
-                      child: ClipPath(
-                        clipper: _DiagonalClipper(),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: TaskScreenStyles.cardBorderRadius(
-                              context,
-                            ),
-                            gradient: LinearGradient(
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                              colors: [
-                                const Color(0xFFCCC1FF).withOpacity(0.7),
-                                const Color(0xFF6E44FF),
-                              ],
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF6E44FF).withOpacity(0.3),
-                                blurRadius: 8,
-                                spreadRadius: 2,
-                                offset: const Offset(-5, 0),
+                    Stack(
+                      children: [
+                        // Твой ClipPath и градиентный фон
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          bottom: 0,
+                          width: MediaQuery.of(context).size.width * 0.25,
+                          child: ClipPath(
+                            clipper: _DiagonalClipper(),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: TaskScreenStyles.cardBorderRadius(context),
+                                gradient: LinearGradient(
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                  colors: isOverdue
+                                      ? [const Color(0xFF6E44FF).withOpacity(0.7), const Color(0xFFFF5252)]
+                                      : [const Color(0xFFCCC1FF).withOpacity(0.7), const Color(0xFF6E44FF)],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF6E44FF).withOpacity(0.3),
+                                    blurRadius: 8,
+                                    spreadRadius: 2,
+                                    offset: const Offset(-5, 0),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
+
+                        // Маскировочный элемент (внизу слева)
+                        
+                      ],
                     ),
+
+
 
                     Padding(
                       padding: EdgeInsets.all(
@@ -1038,19 +1042,28 @@ class _TasksScreenState extends State<TasksScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(
-                                  task.name,
-                                  style: _textStyleBold.copyWith(
-                                    fontSize: TaskScreenStyles.taskNameFontSize(
-                                      context,
-                                    ),
-                                    color: TaskScreenStyles.primaryColor,
-                                    decoration:
-                                    task.state == 'Completed'
-                                        ? TextDecoration.lineThrough
-                                        : null,
-                                  ),
+                                LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    return ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        maxWidth: constraints.maxWidth * 0.88, // регулируй при необходимости
+                                      ),
+                                      child: Text(
+                                        task.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: _textStyleBold.copyWith(
+                                          fontSize: TaskScreenStyles.taskNameFontSize(context),
+                                          color: TaskScreenStyles.primaryColor,
+                                          decoration: task.state == 'Completed'
+                                              ? TextDecoration.lineThrough
+                                              : null,
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
+
                                 // if (task.description.isNotEmpty)
                                 //   Padding(
                                 //     padding: EdgeInsets.only(
@@ -1161,7 +1174,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                                 0.9,
                                             color:
                                             isOverdue
-                                                ? Colors.red[400]
+                                                ? Colors.white
                                                 : Colors.white,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -1176,7 +1189,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                               0.9,
                                           color:
                                           isOverdue
-                                              ? Colors.red[400]
+                                              ? Colors.white
                                               : Colors.white,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -1775,11 +1788,13 @@ class _TasksScreenState extends State<TasksScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
+                          if (!groupProvider.isOwner) ...[
                           TextButton(
                             onPressed:
                                 () => _handleLeaveGroup(ctx, groupProvider),
                             child: const Text('Выйти из группы', style: _textStyleSemiBold),
                           ),
+                          ],
                           if (groupProvider.isOwner) ...[
                             const SizedBox(width: 8),
                           ],
@@ -2479,13 +2494,7 @@ class _TasksScreenState extends State<TasksScreen> {
                           color: TaskScreenStyles.dialogPrimaryColor,
                         ),
                       ),
-                      IconButton(
-                        icon: Icon(Icons.close, color: Colors.grey),
-                        onPressed: _isJoining ? null : () {
-                          _safeReportEvent('group_join_cancel');
-                          Navigator.pop(ctx);
-                        },
-                      ),
+
                     ],
                   ),
 
@@ -2517,46 +2526,19 @@ class _TasksScreenState extends State<TasksScreen> {
                     ),
                   ),
 
-                  SizedBox(height: 16),
 
-                  TextField(
+
+                  _buildRoundedTextField(
                     controller: _joinCodeController,
-                    decoration: InputDecoration(
-                      labelText: 'Код группы',
-                      hintText: 'Введите 6-значный код',
-                      errorText: _errorText,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: _errorText != null
-                              ? TaskScreenStyles.dialogErrorColor
-                              : Colors.grey,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: TaskScreenStyles.dialogPrimaryColor,
-                        ),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                    ),
-                    maxLength: 6,
-                    textCapitalization: TextCapitalization.characters,
-                    style: _textStyleSemiBold.copyWith(
-                      letterSpacing: 2,
-                    ),
-                    onChanged: (value) {
-                      if (_errorText != null) {
-                        setState(() => _errorText = null);
-                      }
-                    },
+                    labelText: 'Код группы',
+                    validator:
+                        (value) =>
+                    value?.isEmpty ?? true
+                        ? 'Введите код группы'
+                        : null,
                   ),
 
-                  SizedBox(height: 8),
+                  SizedBox(height: 16),
 
                   if (_isJoining)
                     Center(child: CircularProgressIndicator())

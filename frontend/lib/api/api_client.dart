@@ -171,13 +171,23 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override // в теории работает
+  String _formatDateForServer(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  @override
   Future<UserModel> updateUserProfile(UserModel user) async {
     if (user.name.isEmpty || user.email.isEmpty) {
       throw Exception('Имя и email обязательны');
     }
 
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/api/auth/update'); // напомните добавить эндпоинт по человечески
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/api/auth/update');
+
+    // Добавляем логирование перед отправкой
+    debugPrint('Sending update request with data: ${user.toUpdateRequest()}');
+    debugPrint('Birthday date in model: ${user.birthdayDate}');
+    debugPrint('Formatted birthday date: ${user.birthdayDate != null ?
+    _formatDateForServer(user.birthdayDate!) : null}');
 
     try {
       final response = await _client.put(
@@ -186,10 +196,15 @@ class ApiClient implements ApiInterface {
         body: json.encode(user.toUpdateRequest()),
       ).timeout(requestTimeout);
 
+      // Логируем сырой ответ
+      debugPrint('Raw response: ${response.statusCode} ${response.body}');
+
       return _handleUserResponse(response);
     } on http.ClientException catch (e) {
+      debugPrint('Network error in updateUserProfile: ${e.message}');
       throw Exception('Ошибка сети: ${e.message}');
     } on Exception catch (e) {
+      debugPrint('Error in updateUserProfile: ${e.toString()}');
       throw Exception('Ошибка: ${e.toString()}');
     }
   }

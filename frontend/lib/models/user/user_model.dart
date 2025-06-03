@@ -122,7 +122,7 @@ class UserModel {
     'admin': role == UserRole.admin ? "ADMIN" : "USER",
   };
 
-  static String _formatDateForServer(DateTime date) {
+  String _formatDateForServer(DateTime date) {
     final formatted = '${date.year}-${date.month.toString().padLeft(2, '0')}-'
         '${date.day.toString().padLeft(2, '0')}';
     debugPrint('Formatted date for server: $formatted');

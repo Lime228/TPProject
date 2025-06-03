@@ -48,6 +48,7 @@ class ShopProvider with ChangeNotifier {
     try {
       final apiClient = _getAuthenticatedClient();
       final products = await apiClient.getShopProducts(_currentShopId!);
+      _products = products.where((p) => p.isAvailable).toList();
       debugPrint('Начало обновления товаров для магазина $_currentShopId');
       _products = products;
       _applyFilters();
