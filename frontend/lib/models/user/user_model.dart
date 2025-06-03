@@ -113,14 +113,26 @@ class UserModel {
     'newPassword': newPassword
   };
 
-  Map<String, dynamic> toUpdateRequest() => {
-    'customerId': id,
-    'name': name,
-    'email': email,
-    'birthday_date': _formatDateForServer(birthdayDate!),
-    if (photoBytes != null && photoBytes!.isNotEmpty) 'photo': photoBytes,
-    'admin': role == UserRole.admin ? "ADMIN" : "USER",
-  };
+  Map<String, dynamic> toUpdateRequest() {
+    final request = {
+      'customerId': id,
+      'name': name,
+      'email': email,
+      'admin': role == UserRole.admin ? "ADMIN" : "USER",
+    };
+
+    // Добавляем дату рождения только если она есть
+    if (birthdayDate != null) {
+      request['birthday_date'] = _formatDateForServer(birthdayDate!);
+    }
+
+    // Добавляем фото только если оно есть и не пустое
+    if (photoBytes != null && photoBytes!.isNotEmpty) {
+      request['photo'] = photoBytes!;
+    }
+
+    return request;
+  }
 
   String _formatDateForServer(DateTime date) {
     final formatted = '${date.year}-${date.month.toString().padLeft(2, '0')}-'

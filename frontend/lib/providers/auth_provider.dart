@@ -124,25 +124,38 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> updateUserPhoto(String base64Image) async {
-    if (_user != null) {
-      try {
-        debugPrint('DEBUG[AuthProvider] updateUserPhoto: user.id=${_user!.id}');
-        final updatedUser = _user!.copyWith(photoBytes: base64Image);
-        await apiClient.updateUserProfile(updatedUser);
-
-        _user = updatedUser;
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user', jsonEncode(_user!.toJson()));
-
-        notifyListeners();
-      } catch (e) {
-        debugPrint('Ошибка обновления фото: $e');
-        rethrow;
+    try {
+      if (_user == null) {
+        debugPrint('User is null');
+        throw Exception('User not loaded');
       }
+
+      if (_token == null || _token!.isEmpty) {
+        debugPrint('Token is null or empty');
+        throw Exception('Not authenticated');
+      }
+
+      debugPrint('Updating photo for user ${_user!.id} with token length ${_token!.length}');
+      apiClient.setAuthToken(_token!);
+      final updatedUser = _user!.copyWith(photoBytes: base64Image);
+      final responseUser = await apiClient.updateUserProfile(updatedUser);
+      _user = responseUser;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user', jsonEncode(_user!.toJson()));
+
+      notifyListeners();
+      debugPrint('Photo updated successfully');
+    } catch (e, stack) {
+      debugPrint('Error updating photo: $e\n$stack');
+      rethrow;
     }
   }
-
   Future<void> updateUserProfile(UserModel updatedUser) async {
+    if (_token == null) {
+      debugPrint('DEBUG[AuthProvider] updateUserProfile: Token is null');
+      throw Exception('User not authenticated');
+    }
+
     apiClient.setAuthToken(_token!);
 
     try {
