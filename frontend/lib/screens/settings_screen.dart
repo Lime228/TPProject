@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:appmetrica_plugin/appmetrica_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -57,6 +58,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
     'аккаунт': GlobalKey(),
   };
 
+  Future<void> _safeReportEvent(String eventName, {Map<String, dynamic>? attributes}) async {
+    try {
+      await AppMetrica.reportEvent(eventName);
+    } catch (e) {
+      debugPrint('Ошибка отправки события в AppMetrica: $e');
+      await _reportErrorToAppMetrica(
+        message: 'Failed to report event: $eventName',
+        error: e,
+      );
+    }
+  }
+
+  Future<void> _reportErrorToAppMetrica({
+    required dynamic error,
+    String? message,
+  }) async {
+    try {
+      await AppMetrica.reportError(
+        message: message ?? 'Error occurred in SettingsScreen',
+        errorDescription: AppMetricaErrorDescription(
+          (error is Exception ? error : Exception(error.toString())) as StackTrace,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Ошибка отправки ошибки в AppMetrica: $e');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -105,9 +134,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Text(
                     'Настройки',
-                style: _textStyleBold.copyWith(
+                    style: _textStyleBold.copyWith(
                       fontSize: titleFontSize * 1.4,
-
                       color: titleColor,
                     ),
                   ),
@@ -132,7 +160,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildSearchField() {
     return GestureDetector(
-      onTap: () => _scrollToBlock(_searchController.text),
+      onTap: () {
+        _safeReportEvent('settings_search', attributes: {'query': _searchController.text});
+        _scrollToBlock(_searchController.text);
+      },
       child: Container(
         width: blockWidth,
         height: MediaQuery.of(context).size.height * 0.045,
@@ -220,7 +251,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           bottom: 0,
           right: 0,
           child: GestureDetector(
-            onTap: _pickImage,
+            onTap: () {
+              _safeReportEvent('settings_avatar_change');
+              _pickImage();
+            },
             child: Container(
               padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.015),
               decoration: BoxDecoration(
@@ -367,7 +401,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     vertical: MediaQuery.of(context).size.height * 0.015,
                   ),
                 ),
-                onPressed: _updateAllFields,
+                onPressed: () {
+                  _safeReportEvent('settings_save_changes');
+                  _updateAllFields();
+                },
                 child: Text(
                   'Сохранить изменения',
                   style: _textStyleSemiBold.copyWith(
@@ -483,6 +520,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SwitchListTile(
             value: settings.notificationsEnabled,
             onChanged: (val) {
+              _safeReportEvent('settings_notifications_toggle', attributes: {'enabled': val});
               settings.update('notificationsEnabled', val);
               notificationService.setNotificationsEnabled(val);
               // Убедимся, что токен установлен
@@ -502,6 +540,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             child: TextButton(
               onPressed: () async {
+                _safeReportEvent('settings_test_notification');
                 if (authProvider.token == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Требуется авторизация')),
@@ -550,6 +589,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             child: TextButton(
               onPressed: () async {
+                _safeReportEvent('settings_refresh_data');
                 try {
                   await authProvider.refreshAll(groupProvider, taskProvider, shopProvider);
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -581,6 +621,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             child: TextButton(
               onPressed: () {
+                _safeReportEvent('settings_logout');
                 authProvider.logout();
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
@@ -620,6 +661,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             child: TextButton(
               onPressed: () {
+                _safeReportEvent('settings_login_prompt');
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
                 );

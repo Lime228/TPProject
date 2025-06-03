@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:appmetrica_plugin/appmetrica_plugin.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:zadachok/models/shop/product/product_model.dart';
@@ -11,7 +13,6 @@ import 'package:zadachok/providers/shop_provider.dart';
 import 'dart:typed_data';
 
 import '../models/wallet/wallet_model.dart';
-
 
 const TextStyle _textStyleSemiBold = TextStyle(
   fontFamily: 'Inter',
@@ -39,6 +40,12 @@ class ShopScreenConstants {
   static const double productCardWidth = 137.0;
   static const double productCardHeight = 137.0;
   static const double productInfoHeight = 4.0;
+  static const double dialogBorderRadius = 16.0;
+  static const EdgeInsets dialogPadding = EdgeInsets.all(24.0);
+  static const Color dialogPrimaryColor = Color(0xFF937DF3);
+  static const Color dialogSecondaryColor = Color(0xFF6E44FF);
+  static const Color dialogErrorColor = Color(0xFFE57373);
+  static const Color dialogSuccessColor = Color(0xFF81C784);
 }
 
 class ShopScreen extends StatefulWidget {
@@ -67,6 +74,34 @@ class _ShopScreenState extends State<ShopScreen> {
   bool _isMounted = false;
 
   File? _avatarImage;
+
+  Future<void> _safeReportEvent(String eventName, {Map<String, dynamic>? attributes}) async {
+    try {
+      await AppMetrica.reportEvent(eventName);
+    } catch (e) {
+      debugPrint('Ошибка отправки события в AppMetrica: $e');
+      await _reportErrorToAppMetrica(
+        message: 'Failed to report event: $eventName',
+        error: e,
+      );
+    }
+  }
+
+  Future<void> _reportErrorToAppMetrica({
+    required dynamic error,
+    String? message,
+  }) async {
+    try {
+      await AppMetrica.reportError(
+          message: message ?? 'Error occurred in ShopScreen',
+        errorDescription: AppMetricaErrorDescription(
+          (error is Exception ? error : Exception(error.toString())) as StackTrace,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Ошибка отправки ошибки в AppMetrica: $e');
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -98,7 +133,6 @@ class _ShopScreenState extends State<ShopScreen> {
     _loadData();
   }
 
-
   @override
   void dispose() {
     _joinCodeController.dispose();
@@ -112,6 +146,7 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   void _searchProducts(String query) {
+    _safeReportEvent('shop_search', attributes: {'query': query});
     Provider.of<ShopProvider>(context, listen: false).search(query);
   }
 
@@ -123,10 +158,12 @@ class _ShopScreenState extends State<ShopScreen> {
     setState(() {
       _sortOption = option ?? 'all';
     });
+    _safeReportEvent('shop_sort', attributes: {'option': option ?? 'all'});
     Provider.of<ShopProvider>(context, listen: false).sort(option: option);
   }
 
   void _resetFilters() {
+    _safeReportEvent('shop_reset_filters');
     _searchController.clear();
     _sortOption = 'all';
     Provider.of<ShopProvider>(context, listen: false).resetFilters();
@@ -170,7 +207,6 @@ class _ShopScreenState extends State<ShopScreen> {
           body: Column(
             children: [
               _buildHeader(userName, settingsProvider.avatarBytes),
-
               Expanded(child: _buildMainContent()),
             ],
           ),
@@ -187,15 +223,15 @@ class _ShopScreenState extends State<ShopScreen> {
 
     return FutureBuilder<WalletModel>(
       future:
-          authProvider.isAuthorized
-              ? authProvider.apiClient.updateWallet(
-                WalletModel(
-                  customerId: authProvider.user!.id,
-                  lobbyId: Provider.of<GroupProvider>(context).lobbyId,
-                  balance: 0,
-                ),
-              )
-              : null,
+      authProvider.isAuthorized
+          ? authProvider.apiClient.updateWallet(
+        WalletModel(
+          customerId: authProvider.user!.id,
+          lobbyId: Provider.of<GroupProvider>(context).lobbyId,
+          balance: 0,
+        ),
+      )
+          : null,
       builder: (context, snapshot) {
         final balance = snapshot.hasData ? snapshot.data!.balance : 0;
 
@@ -286,7 +322,7 @@ class _ShopScreenState extends State<ShopScreen> {
                       ),
                       elevation: 4,
                       color: Colors.white,
-                      offset: const Offset(0, 40), // Смещение меню относительно кнопки
+                      offset: const Offset(0, 40),
                       onSelected: _handleMenuSelection,
                       itemBuilder: (context) => [
                         PopupMenuItem<String>(
@@ -312,7 +348,6 @@ class _ShopScreenState extends State<ShopScreen> {
                         ),
                       ],
                     )
-
                 ],
               ),
             ],
@@ -352,8 +387,6 @@ class _ShopScreenState extends State<ShopScreen> {
     return FutureBuilder(
       future: shopProvider.isLoading ? null : Future.value(true),
       builder: (context, snapshot) {
-
-
         if (shopProvider.error != null) {
           return Center(
             child: Column(
@@ -361,7 +394,10 @@ class _ShopScreenState extends State<ShopScreen> {
               children: [
                 Text(shopProvider.error!, style: _textStyleBold),
                 ElevatedButton(
-                  onPressed: _loadData,
+                  onPressed: () {
+                    _safeReportEvent('shop_retry_load');
+                    _loadData();
+                  },
                   child: Text('Повторить попытку', style: _textStyleSemiBold),
                 ),
               ],
@@ -374,49 +410,58 @@ class _ShopScreenState extends State<ShopScreen> {
             _buildSearchAndSortBar(),
             Expanded(
               child: RefreshIndicator(
-                onRefresh: _loadData,
+                onRefresh: () {
+                  _safeReportEvent('shop_pull_to_refresh');
+                  return _loadData();
+                },
                 child:
-                    shopProvider.products.isEmpty
-                        ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.search_off,
-                                size: 64,
-                                color: Colors.grey,
-                              ),
-                              const SizedBox(height: 16),
-                              Text('Ничего не найдено', style: _textStyleBold),
-                              const SizedBox(height: 8),
-                              TextButton(
-                                onPressed: _resetFilters,
-                                child: const Text('Сбросить фильтры', style: _textStyleSemiBold),
-                              ),
-                            ],
-                          ),
-                        )
-                        : GridView.builder(
-                          padding: const EdgeInsets.only(top: 8),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                childAspectRatio: 0.8,
-                                crossAxisSpacing: 8,
-                                mainAxisSpacing: 8,
-                              ),
-                          itemCount: shopProvider.products.length,
-                          itemBuilder: (context, index) {
-                            final product = shopProvider.products[index];
-                            return GestureDetector(
-                              onTap: () => _showProductDetails(product),
-                              child: Padding(
-                                padding: const EdgeInsets.all(4),
-                                child: _buildProductCard(product),
-                              ),
-                            );
-                          },
-                        ),
+                shopProvider.products.isEmpty
+                    ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.search_off,
+                        size: 64,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(height: 16),
+                      Text('Ничего не найдено', style: _textStyleBold),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: () {
+                          _safeReportEvent('shop_reset_filters_button');
+                          _resetFilters();
+                        },
+                        child: const Text('Сбросить фильтры', style: _textStyleSemiBold),
+                      ),
+                    ],
+                  ),
+                )
+                    : GridView.builder(
+                  padding: const EdgeInsets.only(top: 8),
+                  gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.8,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: shopProvider.products.length,
+                  itemBuilder: (context, index) {
+                    final product = shopProvider.products[index];
+                    return GestureDetector(
+                      onTap: () {
+                        _safeReportEvent('shop_product_tap', attributes: {'product_id': product.id});
+                        _showProductDetails(product);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: _buildProductCard(product),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ],
@@ -433,10 +478,13 @@ class _ShopScreenState extends State<ShopScreen> {
     if (!auth.isAuthorized || !group.isInGroup) return null;
     return groupProvider.isOwner
         ? FloatingActionButton(
-          backgroundColor: ShopScreenConstants.primaryColor,
-          onPressed: () => _showAddProductDialog(),
-          child: const Icon(Icons.add, color: Colors.white),
-        )
+      backgroundColor: ShopScreenConstants.primaryColor,
+      onPressed: () {
+        _safeReportEvent('shop_add_product_button');
+        _showAddProductDialog();
+      },
+      child: const Icon(Icons.add, color: Colors.white),
+    )
         : null;
   }
 
@@ -456,7 +504,10 @@ class _ShopScreenState extends State<ShopScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     return GestureDetector(
-      onTap: () => _showProductDetails(product),
+      onTap: () {
+        _safeReportEvent('shop_product_card_tap', attributes: {'product_id': product.id});
+        _showProductDetails(product);
+      },
       child: SizedBox(
         width: 168,
         height: 145,
@@ -599,35 +650,41 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   void _showPurchaseDialog(ProductModel product, ShopProvider shopProvider) {
+    _safeReportEvent('shop_purchase_dialog_show', attributes: {'product_id': product.id});
+
     showDialog(
       context: context,
       builder:
           (ctx) => AlertDialog(
-            title: Text('Купить ${product.name}?', style: _textStyleBold),
-            content: Text('Цена: ${product.price} звёзд', style: _textStyleBold),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text('Отмена', style: _textStyleBold),
-              ),
-              TextButton(
-                onPressed: () async {
-                  Navigator.pop(ctx);
-                  final success = await shopProvider.buyProduct(product.id);
-                  if (success && mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Товар успешно куплен!', style: _textStyleSemiBold)),
-                    );
-                  } else if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Ошибка: ${shopProvider.error}', style: _textStyleSemiBold)),
-                    );
-                  }
-                },
-                child: const Text('Купить', style: _textStyleBold),
-              ),
-            ],
+        title: Text('Купить ${product.name}?', style: _textStyleBold),
+        content: Text('Цена: ${product.price} звёзд', style: _textStyleBold),
+        actions: [
+          TextButton(
+            onPressed: () {
+              _safeReportEvent('shop_purchase_cancel', attributes: {'product_id': product.id});
+              Navigator.pop(ctx);
+            },
+            child: Text('Отмена', style: _textStyleBold),
           ),
+          TextButton(
+            onPressed: () async {
+              _safeReportEvent('shop_purchase_confirm', attributes: {'product_id': product.id});
+              Navigator.pop(ctx);
+              final success = await shopProvider.buyProduct(product.id);
+              if (success && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Товар успешно куплен!', style: _textStyleSemiBold)),
+                );
+              } else if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Ошибка: ${shopProvider.error}', style: _textStyleSemiBold)),
+                );
+              }
+            },
+            child: const Text('Купить', style: _textStyleBold),
+          ),
+        ],
+      ),
     );
   }
 
@@ -649,20 +706,23 @@ class _ShopScreenState extends State<ShopScreen> {
           children: [
             const Icon(Icons.group_add, size: 64, color: Color(0xFF937DF3)),
             const SizedBox(height: 20),
-             Text(
+            Text(
               'Магазин доступен только для участников групп',
               style:  _textStyleBold.copyWith(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 10),
-             Text(
+            Text(
               'Создайте новую группу или вступите в существующую, чтобы получить доступ к магазину',
               textAlign: TextAlign.center,
               style: _textStyleSemiBold.copyWith(fontSize: 16, color: Colors.grey),
             ),
             const SizedBox(height: 30),
             ElevatedButton(
-              onPressed: _showCreateGroupDialog,
+              onPressed: () {
+                _safeReportEvent('shop_create_group_button');
+                _showCreateGroupDialog();
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: ShopScreenConstants.secondaryColor,
                 padding: const EdgeInsets.symmetric(
@@ -680,7 +740,10 @@ class _ShopScreenState extends State<ShopScreen> {
             ),
             const SizedBox(height: 15),
             TextButton(
-              onPressed: _showJoinGroupDialog,
+              onPressed: () {
+                _safeReportEvent('shop_join_group_button');
+                _showJoinGroupDialog();
+              },
               child:  Text(
                 'Вступить в существующую группу',
                 style: _textStyleBold.copyWith(color: Color(0xFF937DF3)),
@@ -695,6 +758,7 @@ class _ShopScreenState extends State<ShopScreen> {
   void _handleMenuSelection(String value) {
     switch (value) {
       case 'edit':
+        _safeReportEvent('shop_manage_products');
         _showProductListForEdit();
         break;
     }
@@ -703,6 +767,8 @@ class _ShopScreenState extends State<ShopScreen> {
   void _showProductDetails(ProductModel product) {
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    _safeReportEvent('shop_product_details', attributes: {'product_id': product.id});
 
     showModalBottomSheet(
       context: context,
@@ -729,7 +795,10 @@ class _ShopScreenState extends State<ShopScreen> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () => Navigator.pop(ctx),
+                    onPressed: () {
+                      _safeReportEvent('shop_product_details_close');
+                      Navigator.pop(ctx);
+                    },
                     child: Text(
                       'Закрыть',
                       style: _textStyleSemiBold.copyWith(color: Colors.grey),
@@ -739,7 +808,6 @@ class _ShopScreenState extends State<ShopScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Изображение товара
               Container(
                 height: 200,
                 decoration: BoxDecoration(
@@ -766,7 +834,6 @@ class _ShopScreenState extends State<ShopScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Цена товара
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
@@ -789,7 +856,6 @@ class _ShopScreenState extends State<ShopScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Описание товара
               if (product.description.isNotEmpty) ...[
                 Text(
                     'Описание:',
@@ -809,14 +875,16 @@ class _ShopScreenState extends State<ShopScreen> {
                 const SizedBox(height: 16),
               ],
 
-              // Ссылка на товар
               if (product.link?.isNotEmpty ?? false) ...[
                 Text(
                     'Ссылка:',
                     style: _textStyleBold.copyWith(fontSize: 16)),
                 const SizedBox(height: 8),
                 InkWell(
-                  onTap: () => _openProductLink(product.link!),
+                  onTap: () {
+                    _safeReportEvent('shop_product_link_open', attributes: {'product_id': product.id});
+                    _openProductLink(product.link!);
+                  },
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -835,7 +903,6 @@ class _ShopScreenState extends State<ShopScreen> {
                 const SizedBox(height: 16),
               ],
 
-              // Кнопка покупки/подтверждения
               if (authProvider.isAuthorized && !authProvider.isAdmin)
                 Column(
                   children: [
@@ -849,6 +916,7 @@ class _ShopScreenState extends State<ShopScreen> {
                           ),
                         ),
                         onPressed: () async {
+                          _safeReportEvent('shop_product_buy', attributes: {'product_id': product.id});
                           Navigator.pop(ctx);
                           final success = await shopProvider.buyProduct(product.id);
                           if (success && mounted) {
@@ -890,6 +958,7 @@ class _ShopScreenState extends State<ShopScreen> {
                               ),
                             ),
                             onPressed: () async {
+                              _safeReportEvent('shop_product_confirm', attributes: {'product_id': product.id});
                               Navigator.pop(ctx);
                               final success = await shopProvider.confirmPurchase(product.id);
                               if (success && mounted) {
@@ -943,6 +1012,7 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   void _reserveProduct(int productId) async {
+    _safeReportEvent('shop_product_reserve', attributes: {'product_id': productId});
     final success = await Provider.of<ShopProvider>(context, listen: false)
         .buyProduct(productId);
 
@@ -954,6 +1024,7 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   void _confirmPurchase(int productId) async {
+    _safeReportEvent('shop_product_confirm', attributes: {'product_id': productId});
     final success = await Provider.of<ShopProvider>(context, listen: false)
         .confirmPurchase(productId);
 
@@ -965,6 +1036,7 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   void _showAddProductDialog() {
+    _safeReportEvent('shop_add_product_dialog_show');
     _nameController.clear();
     _descController.clear();
     _priceController.clear();
@@ -1003,6 +1075,7 @@ class _ShopScreenState extends State<ShopScreen> {
                             children: [
                               TextButton(
                                 onPressed: () {
+                                  _safeReportEvent('shop_add_product_cancel');
                                   _tempProductImage = null;
                                   Navigator.pop(ctx);
                                 },
@@ -1011,15 +1084,18 @@ class _ShopScreenState extends State<ShopScreen> {
                                   style: _textStyleSemiBold.copyWith(color: Colors.grey),
                                 ),
                               ),
-                               Text(
+                              Text(
                                 'Новый товар',
-                                 style: _textStyleBold.copyWith(
+                                style: _textStyleBold.copyWith(
                                   color: ShopScreenConstants.primaryColor,
                                   fontSize: 18,
                                 ),
                               ),
                               TextButton(
-                                onPressed: () => _handleAddProduct(ctx),
+                                onPressed: () {
+                                  _safeReportEvent('shop_add_product_submit');
+                                  _handleAddProduct(ctx);
+                                },
                                 child:  Text(
                                   'Готово',
                                   style: _textStyleBold.copyWith(
@@ -1033,6 +1109,7 @@ class _ShopScreenState extends State<ShopScreen> {
 
                           GestureDetector(
                             onTap: () async {
+                              _safeReportEvent('shop_add_product_image_pick');
                               final image = await _picker.pickImage(
                                 source: ImageSource.gallery,
                               );
@@ -1177,7 +1254,7 @@ class _ShopScreenState extends State<ShopScreen> {
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
 
     try {
-      Uint8List imageBytes = Uint8List(0); // Пустой массив по умолчанию
+      Uint8List imageBytes = Uint8List(0);
 
       if (_tempProductImage != null) {
         imageBytes = await _tempProductImage!.readAsBytes();
@@ -1245,7 +1322,7 @@ class _ShopScreenState extends State<ShopScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                   Text(
+                  Text(
                     'Управление товарами',
                     style: _textStyleBold.copyWith(
                       fontSize: 18,
@@ -1253,7 +1330,10 @@ class _ShopScreenState extends State<ShopScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(ctx),
+                    onPressed: () {
+                      _safeReportEvent('shop_manage_products_close');
+                      Navigator.pop(ctx);
+                    },
                   ),
                 ],
               ),
@@ -1278,6 +1358,7 @@ class _ShopScreenState extends State<ShopScreen> {
                         IconButton(
                           icon: const Icon(Icons.edit),
                           onPressed: () {
+                            _safeReportEvent('shop_product_edit', attributes: {'product_id': product.id});
                             Navigator.pop(ctx);
                             _showEditProductDialog(product);
                           },
@@ -1288,6 +1369,7 @@ class _ShopScreenState extends State<ShopScreen> {
                             color: Colors.red,
                           ),
                           onPressed: () async {
+                            _safeReportEvent('shop_product_delete_attempt', attributes: {'product_id': product.id});
                             final confirm = await showModalBottomSheet<bool>(
                               context: context,
                               builder: (ctx) => Material(
@@ -1299,7 +1381,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                       Text(
+                                      Text(
                                         'Удалить этот товар?',
                                         style: _textStyleBold.copyWith(
                                           fontSize: 18,
@@ -1311,7 +1393,10 @@ class _ShopScreenState extends State<ShopScreen> {
                                         children: [
                                           Expanded(
                                             child: OutlinedButton(
-                                              onPressed: () => Navigator.pop(ctx, false),
+                                              onPressed: () {
+                                                _safeReportEvent('shop_product_delete_cancel', attributes: {'product_id': product.id});
+                                                Navigator.pop(ctx, false);
+                                              },
                                               child: const Text('Отмена', style: _textStyleSemiBold),
                                             ),
                                           ),
@@ -1321,7 +1406,10 @@ class _ShopScreenState extends State<ShopScreen> {
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor: Colors.red,
                                               ),
-                                              onPressed: () => Navigator.pop(ctx, true),
+                                              onPressed: () {
+                                                _safeReportEvent('shop_product_delete_confirm', attributes: {'product_id': product.id});
+                                                Navigator.pop(ctx, true);
+                                              },
                                               child: const Text('Удалить', style: _textStyleSemiBold),
                                             ),
                                           ),
@@ -1348,7 +1436,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        'Ошибка: ${shopProvider.error}',
+                                          'Ошибка: ${shopProvider.error}',
                                           style: _textStyleSemiBold
                                       ),
                                     ),
@@ -1387,26 +1475,29 @@ class _ShopScreenState extends State<ShopScreen> {
             child: PopupMenuButton<String>(
               color: Colors.white,
               offset: const Offset(0, 30),
-              onSelected: (value) => _sortProducts(option: value),
+              onSelected: (value) {
+                _safeReportEvent('shop_sort_select', attributes: {'option': value});
+                _sortProducts(option: value);
+              },
               itemBuilder:
                   (context) => [
-                    const PopupMenuItem<String>(
-                      value: 'price_asc',
-                      child: Text('По возрастанию цены', style: _textStyleSemiBold),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'price_desc',
-                      child: Text('По убыванию цены', style: _textStyleSemiBold),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'name',
-                      child: Text('По названию', style: _textStyleSemiBold),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'all',
-                      child: Text('Обычная сортировка', style: _textStyleSemiBold),
-                    ),
-                  ],
+                const PopupMenuItem<String>(
+                  value: 'price_asc',
+                  child: Text('По возрастанию цены', style: _textStyleSemiBold),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'price_desc',
+                  child: Text('По убыванию цены', style: _textStyleSemiBold),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'name',
+                  child: Text('По названию', style: _textStyleSemiBold),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'all',
+                  child: Text('Обычная сортировка', style: _textStyleSemiBold),
+                ),
+              ],
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -1454,7 +1545,10 @@ class _ShopScreenState extends State<ShopScreen> {
                   ),
                   IconButton(
                     icon: Icon(Icons.close, color: Colors.grey[600], size: 16),
-                    onPressed: _resetFilters,
+                    onPressed: () {
+                      _safeReportEvent('shop_search_clear');
+                      _resetFilters();
+                    },
                   ),
                 ],
               ),
@@ -1466,6 +1560,7 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   void _showEditProductDialog(ProductModel product) {
+    _safeReportEvent('shop_edit_product_dialog_show', attributes: {'product_id': product.id});
     _nameController.text = product.name;
     _descController.text = product.description;
     _priceController.text = product.price.toString();
@@ -1498,6 +1593,7 @@ class _ShopScreenState extends State<ShopScreen> {
                         children: [
                           TextButton(
                             onPressed: () {
+                              _safeReportEvent('shop_edit_product_cancel', attributes: {'product_id': product.id});
                               _tempProductImage = null;
                               Navigator.pop(ctx);
                             },
@@ -1506,15 +1602,18 @@ class _ShopScreenState extends State<ShopScreen> {
                               style: _textStyleSemiBold.copyWith(color: Colors.grey),
                             ),
                           ),
-                           Text(
+                          Text(
                             'Редактировать товар',
-                               style: _textStyleBold.copyWith(
-                              fontSize: 18,
-                              color: ShopScreenConstants.primaryColor
+                            style: _textStyleBold.copyWith(
+                                fontSize: 18,
+                                color: ShopScreenConstants.primaryColor
                             ),
                           ),
                           TextButton(
-                            onPressed: () => _handleEditProduct(ctx, product),
+                            onPressed: () {
+                              _safeReportEvent('shop_edit_product_save', attributes: {'product_id': product.id});
+                              _handleEditProduct(ctx, product);
+                            },
                             child:  Text(
                               'Сохранить',
                               style: _textStyleBold.copyWith( color: ShopScreenConstants.primaryColor),
@@ -1526,6 +1625,7 @@ class _ShopScreenState extends State<ShopScreen> {
 
                       GestureDetector(
                         onTap: () async {
+                          _safeReportEvent('shop_edit_product_image_pick', attributes: {'product_id': product.id});
                           final image = await _picker.pickImage(
                             source: ImageSource.gallery,
                           );
@@ -1619,9 +1719,9 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Future<void> _handleEditProduct(
-    BuildContext dialogContext,
-    ProductModel product,
-  ) async {
+      BuildContext dialogContext,
+      ProductModel product,
+      ) async {
     if (!_editProductFormKey.currentState!.validate()) return;
 
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
@@ -1630,9 +1730,9 @@ class _ShopScreenState extends State<ShopScreen> {
       name: _nameController.text,
       description: _descController.text,
       photoBytes:
-          _tempProductImage != null
-              ? await _tempProductImage!.readAsBytes()
-              : product.photoBytes,
+      _tempProductImage != null
+          ? await _tempProductImage!.readAsBytes()
+          : product.photoBytes,
       price: int.parse(_priceController.text),
       link: _linkController.text,
     );
@@ -1661,119 +1761,459 @@ class _ShopScreenState extends State<ShopScreen> {
     }
   }
 
-  void _showJoinGroupDialog() {
-    showDialog(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text("Вступить в группу", style: _textStyleBold),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _joinCodeController,
-                  decoration: const InputDecoration(
-                    labelText: "Код группы",
-                    hintText: "Введите 6-значный код",
-                  ),
-                  maxLength: 6,
-                  textCapitalization: TextCapitalization.characters,
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text("Отмена", style: _textStyleSemiBold),
-              ),
-              TextButton(
-                onPressed: () async {
-                  final code = _joinCodeController.text.trim();
-                  if (code.length != 6) {
-                    ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(
-                        content: Text("Код должен содержать 6 символов", style: _textStyleSemiBold),
-                      ),
-                    );
-                    return;
-                  }
 
-                  final success = await Provider.of<GroupProvider>(
-                    context,
-                    listen: false,
-                  ).joinGroup(code);
-
-                  if (success && mounted) {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Вы успешно присоединились!", style: _textStyleSemiBold),
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(content: Text("Ошибка присоединения", style: _textStyleSemiBold)),
-                    );
-                  }
-                },
-                child: const Text("Присоединиться", style: _textStyleBold),
-              ),
-            ],
-          ),
-    );
-  }
 
   void _showCreateGroupDialog() {
+    _safeReportEvent('shop_create_group_dialog_show');
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
 
     if (groupProvider.isInGroup) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Вы уже в группе', style: _textStyleSemiBold)));
+      _showError('Вы уже в группе');
       return;
     }
 
+    bool _isCreating = false;
+
     showDialog(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text("Создать новую группу", style: _textStyleBold),
-            content: const Text(
-              "Нажмите 'Создать' для генерации группы с уникальным кодом",
-                style: _textStyleSemiBold
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(ShopScreenConstants.dialogBorderRadius),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text("Отмена", style: _textStyleSemiBold),
-              ),
-              TextButton(
-                onPressed: () async {
-                  Navigator.pop(ctx);
-                  try {
-                    await groupProvider.createGroup();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Группа создана! Код: ${groupProvider.groupCode}',
-                            style: _textStyleSemiBold
+            backgroundColor: Colors.white,
+            elevation: 8,
+            child: Padding(
+              padding: ShopScreenConstants.dialogPadding,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Заголовок
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Создать группу',
+                        style: _textStyleBold.copyWith(
+                          fontSize: 20,
+                          color: ShopScreenConstants.dialogPrimaryColor,
                         ),
                       ),
-                    );
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Ошибка: ${e.toString()}', style: _textStyleSemiBold)),
-                    );
-                  }
+                      IconButton(
+                        icon: Icon(Icons.close, color: Colors.grey),
+                        onPressed: _isCreating ? null : () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+
+                  // Иконка + описание
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.group_add,
+                          size: 64,
+                          color: ShopScreenConstants.dialogPrimaryColor,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Создайте свою группу',
+                          style: _textStyleSemiBold.copyWith(fontSize: 16),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'После создания вы получите код для приглашения друзей',
+                          style: _textStyleSemiBold.copyWith(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Кнопки
+                  if (_isCreating)
+                    CircularProgressIndicator()
+                  else
+                    Row(
+                      children: [
+                        // Кнопка "Отмена"
+                        Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              side: BorderSide(
+                                color: ShopScreenConstants.dialogPrimaryColor,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: () => Navigator.pop(ctx),
+                            child: Text(
+                              'Отмена',
+                              style: _textStyleSemiBold.copyWith(
+                                color: ShopScreenConstants.dialogPrimaryColor,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        // Кнопка "Создать"
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: ShopScreenConstants.dialogPrimaryColor,
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: () async {
+                              setState(() => _isCreating = true);
+                              try {
+                                await groupProvider.createGroup();
+                                if (mounted) {
+                                  Navigator.pop(ctx);
+                                  _showGroupCreatedDialog(groupProvider.groupCode!);
+                                }
+                              } catch (e) {
+                                _showError('Ошибка: ${e.toString()}');
+                                setState(() => _isCreating = false);
+                              }
+                            },
+                            child: Text(
+                              'Создать',
+                              style: _textStyleBold.copyWith(color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showGroupCreatedDialog(String groupCode) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ShopScreenConstants.dialogBorderRadius),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 8,
+        child: Padding(
+          padding: ShopScreenConstants.dialogPadding,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Иконка успеха
+              Icon(
+                Icons.check_circle,
+                size: 64,
+                color: ShopScreenConstants.dialogSuccessColor,
+              ),
+              SizedBox(height: 16),
+
+              // Заголовок
+              Text(
+                'Группа создана!',
+                style: _textStyleBold.copyWith(
+                  fontSize: 20,
+                  color: ShopScreenConstants.primaryColor,
+                ),
+              ),
+              SizedBox(height: 16),
+
+              // Код группы
+              Text(
+                'Код для присоединения:',
+                style: _textStyleSemiBold,
+              ),
+              SizedBox(height: 8),
+              Container(
+                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                decoration: BoxDecoration(
+                  color: ShopScreenConstants.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  groupCode,
+                  style: _textStyleBold.copyWith(
+                    fontSize: 24,
+                    letterSpacing: 2,
+                    color: ShopScreenConstants.primaryColor,
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+
+              // Подсказка
+              Text(
+                'Дайте этот код участникам, чтобы они могли присоединиться',
+                style: _textStyleSemiBold.copyWith(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 24),
+
+              // Кнопка "Скопировать"
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ShopScreenConstants.primaryColor,
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: groupCode));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Код скопирован!', style: _textStyleSemiBold))
+                  );
+                  Navigator.pop(ctx);
                 },
-                child: const Text("Создать",style: _textStyleBold),
+                child: Text(
+                  'Скопировать код',
+                  style: _textStyleBold.copyWith(color: Colors.white),
+                ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showJoinGroupDialog() {
+    _safeReportEvent('shop_join_group_dialog_show');
+    bool _isJoining = false;
+    String? _errorText;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(ShopScreenConstants.dialogBorderRadius),
+            ),
+            backgroundColor: Colors.white,
+            elevation: 8,
+            child: Padding(
+              padding: ShopScreenConstants.dialogPadding,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Заголовок
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Вступить в группу',
+                        style: _textStyleBold.copyWith(
+                          fontSize: 20,
+                          color: ShopScreenConstants.primaryColor,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: Colors.grey),
+                        onPressed: _isJoining ? null : () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+
+                  // Иконка
+                  Icon(
+                    Icons.group,
+                    size: 48,
+                    color: ShopScreenConstants.primaryColor,
+                  ),
+                  SizedBox(height: 16),
+
+                  // Поле ввода
+                  TextField(
+                    controller: _joinCodeController,
+                    decoration: InputDecoration(
+                      labelText: 'Код группы',
+                      hintText: 'Введите 6-значный код',
+                      errorText: _errorText,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: ShopScreenConstants.primaryColor,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                    maxLength: 6,
+                    textCapitalization: TextCapitalization.characters,
+                    style: _textStyleSemiBold.copyWith(letterSpacing: 2),
+                  ),
+                  SizedBox(height: 16),
+
+                  // Кнопки
+                  if (_isJoining)
+                    CircularProgressIndicator()
+                  else
+                    Row(
+                      children: [
+                        // Отмена
+                        Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              side: BorderSide(
+                                color: ShopScreenConstants.primaryColor,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: () => Navigator.pop(ctx),
+                            child: Text(
+                              'Отмена',
+                              style: _textStyleSemiBold.copyWith(
+                                color: ShopScreenConstants.primaryColor,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        // Присоединиться
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: ShopScreenConstants.primaryColor,
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: () async {
+                              final code = _joinCodeController.text.trim();
+                              if (code.length != 6) {
+                                setState(() => _errorText = 'Нужно 6 символов');
+                                return;
+                              }
+
+                              setState(() => _isJoining = true);
+                              try {
+                                final success = await Provider.of<GroupProvider>(
+                                  context,
+                                  listen: false,
+                                ).joinGroup(code);
+
+                                if (success && mounted) {
+                                  Navigator.pop(ctx);
+                                  _showJoinSuccessDialog();
+                                } else {
+                                  setState(() {
+                                    _errorText = 'Неверный код';
+                                    _isJoining = false;
+                                  });
+                                }
+                              } catch (e) {
+                                setState(() {
+                                  _errorText = 'Ошибка: ${e.toString()}';
+                                  _isJoining = false;
+                                });
+                              }
+                            },
+                            child: Text(
+                              'Присоединиться',
+                              style: _textStyleBold.copyWith(color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showJoinSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ShopScreenConstants.dialogBorderRadius),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 8,
+        child: Padding(
+          padding: ShopScreenConstants.dialogPadding,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.check_circle,
+                size: 64,
+                color: ShopScreenConstants.dialogSuccessColor,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Вы в группе!',
+                style: _textStyleBold.copyWith(
+                  fontSize: 20,
+                  color: ShopScreenConstants.primaryColor,
+                ),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Теперь вы можете покупать товары в магазине',
+                style: _textStyleSemiBold.copyWith(color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 24),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ShopScreenConstants.primaryColor,
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  'Отлично!',
+                  style: _textStyleBold.copyWith(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   void _openProductLink(String url) async {
+    _safeReportEvent('shop_product_link_open', attributes: {'url': url});
     // TODO: Реализовать открытие ссылки
   }
 }

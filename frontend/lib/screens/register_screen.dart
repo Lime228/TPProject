@@ -1,3 +1,4 @@
+import 'package:appmetrica_plugin/appmetrica_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:zadachok/api/api_client.dart';
@@ -53,7 +54,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  void _togglePasswordVisibility() => setState(() => _obscureText = !_obscureText);
+  Future<void> _safeReportEvent(String eventName, {Map<String, dynamic>? attributes}) async {
+    try {
+      await AppMetrica.reportEvent(eventName);
+    } catch (e) {
+      debugPrint('Ошибка отправки события в AppMetrica: $e');
+      await _reportErrorToAppMetrica(
+        message: 'Failed to report event: $eventName',
+        error: e,
+      );
+    }
+  }
+
+  Future<void> _reportErrorToAppMetrica({
+    required dynamic error,
+    String? message,
+  }) async {
+    try {
+      await AppMetrica.reportError(
+        message: message ?? 'Error occurred in RegisterScreen',
+        errorDescription: AppMetricaErrorDescription(
+          (error is Exception ? error : Exception(error.toString())) as StackTrace,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Ошибка отправки ошибки в AppMetrica: $e');
+    }
+  }
+
+  void _togglePasswordVisibility() {
+    _safeReportEvent('toggle_password_visibility');
+    setState(() => _obscureText = !_obscureText);
+  }
 
   Future<void> _register() async {
     final apiClient = ApiClient();
@@ -64,13 +96,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _errorMessage = null;
     });
 
-    widget.apiClient.register(UserModel(
-      password: _passwordController.text,
-      email: _emailController.text,
-      name: _usernameController.text,
-      login: _usernameController.text,
-      birthdayDate: DateTime.tryParse('1990-01-01')
-    ));
+    await _safeReportEvent('register_attempt');
 
     try {
       await apiClient.register(
@@ -79,9 +105,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           email: _emailController.text,
           name: '',
           login: _usernameController.text,
-
         ),
       );
+
+      await _safeReportEvent('register_success');
 
       if (!mounted) return;
 
@@ -92,21 +119,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       );
     } catch (e) {
+      debugPrint("Ошибка регистрации: ${e.toString()}");
+      await _reportErrorToAppMetrica(
+        error: e,
+        message: 'Register error for user: ${_usernameController.text}',
+      );
 
       if (e.toString().contains('email') || e.toString().contains('почт')) {
-        return;
+        setState(() => _errorMessage = 'Некорректный email');
       } else if (e.toString().contains('парол')) {
-        return;
+        setState(() => _errorMessage = 'Некорректный пароль');
       } else if (e.toString().contains('поля')) {
-        return;
+        setState(() => _errorMessage = 'Заполните все поля');
+      } else {
+        setState(() => _errorMessage = 'Ошибка регистрации');
       }
-
-
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  Future<void> _navigateToLogin() async {
+    await _safeReportEvent('navigate_to_login');
+    Navigator.pop(context);
   }
 
   @override
@@ -317,7 +354,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
         GestureDetector(
-          onTap: () => Navigator.pop(context),
+          onTap: _navigateToLogin,
           child: Text(
             "Войти",
             style: _textStyleSemiBold.copyWith(
