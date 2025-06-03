@@ -1,7 +1,9 @@
+import 'package:appmetrica_plugin/appmetrica_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zadachok/api/api_interface.dart';
 import 'package:zadachok/models/user/user_model.dart';
+import 'package:zadachok/screens/tasks_screen.dart';
 
 const TextStyle _textStyleSemiBold = TextStyle(
   fontFamily: 'Inter',
@@ -32,6 +34,10 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  // Перенесенные переменные из диалога
+  bool _isDialogLoading = false;
+  String? _dialogErrorMessage;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -39,135 +45,352 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
     super.dispose();
   }
 
+  Future<void> _safeReportEvent(String eventName, {Map<String, dynamic>? attributes}) async {
+    try {
+      await AppMetrica.reportEvent(eventName);
+    } catch (e) {
+      debugPrint('Ошибка отправки события в AppMetrica: $e');
+      await _reportErrorToAppMetrica(
+        message: 'Failed to report event: $eventName',
+        error: e,
+      );
+    }
+  }
+
+  Future<void> _reportErrorToAppMetrica({
+    required dynamic error,
+    String? message,
+  }) async {
+    try {
+      await AppMetrica.reportError(
+        message: message ?? 'Error occurred in PasswordRecoveryScreen',
+        errorDescription: AppMetricaErrorDescription(
+          (error is Exception ? error : Exception(error.toString())) as StackTrace,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Ошибка отправки ошибки в AppMetrica: $e');
+    }
+  }
+
   Future<void> _showResetPasswordDialog() async {
+    await _safeReportEvent('show_reset_password_dialog');
+
     final codeController = TextEditingController();
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
-    bool _isDialogLoading = false;
-    String? _dialogErrorMessage;
 
     await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Сброс пароля',
-          style: _textStyleBold.copyWith(
-            fontSize: MediaQuery.of(context).size.width * 0.05,
-          ),
-        ),
-        content: SingleChildScrollView(
-          child: Form(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Код отправлен на ${_emailController.text}',
-                  style: _textStyleBold.copyWith(
-                    fontSize: MediaQuery.of(context).size.width * 0.035,
-                  ),
-                ),
-                SizedBox(height: MediaQuery.of(context).size.height * 0.02),
-                TextFormField(
-                  controller: codeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Код подтверждения',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) =>
-                  value?.isEmpty ?? true ? 'Введите код' : null,
-                ),
-                SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-                TextFormField(
-                  controller: newPasswordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Новый пароль',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) => (value?.length ?? 0) < 6
-                      ? 'Минимум 6 символов'
-                      : null,
-                ),
-                SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-                TextFormField(
-                  controller: confirmPasswordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Подтвердите пароль',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) => value != newPasswordController.text
-                      ? 'Пароли не совпадают'
-                      : null,
-                ),
-                if (_dialogErrorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: Text(
-                      _dialogErrorMessage!,
-                      style: _textStyleSemiBold.copyWith(color: Colors.red),
+      builder: (context) {
+        bool _obscureNewPassword = true;
+        bool _obscureConfirmPassword = true;
+
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setDialogState) {
+            return Dialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Сброс пароля',
+                      style: _textStyleBold.copyWith(
+                        fontSize: 22,
+                        color: TaskScreenStyles.primaryColor,
+                      ),
                     ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Отмена', style: _textStyleSemiBold),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (newPasswordController.text != confirmPasswordController.text) {
-                setState(() {
-                  _dialogErrorMessage = 'Пароли не совпадают';
-                });
-                return;
-              }
-
-              try {
-                setState(() {
-                  _isDialogLoading = true;
-                  _dialogErrorMessage = null;
-                });
-
-                final user = UserModel(
-                  login: _loginController.text,
-                  email: _emailController.text,
-                  name: '',
-                );
-
-                final success = await widget.apiClient.resetPassword(
-                  user,
-                  codeController.text,
-                  newPasswordController.text,
-                );
-
-                if (success) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Пароль успешно изменен', style: _textStyleSemiBold),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Код отправлен на ${_emailController.text}',
+                      style: _textStyleSemiBold.copyWith(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
                     ),
-                  );
-                  Navigator.pop(context);
-                }
-              } catch (e) {
-                setState(() {
-                  _dialogErrorMessage = e.toString().replaceFirst('Exception: ', '');
-                });
-              } finally {
-                setState(() => _isDialogLoading = false);
-              }
-            },
-            child: _isDialogLoading
-                ? const CircularProgressIndicator()
-                : const Text('Сохранить', style: _textStyleSemiBold),
-          ),
-        ],
-      ),
+                    const SizedBox(height: 24),
+
+                    // Поле для кода подтверждения
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextFormField(
+                        controller: codeController,
+                        decoration: InputDecoration(
+                          labelText: 'Код подтверждения',
+                          labelStyle: _textStyleSemiBold.copyWith(
+                            color: Colors.black54,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                        ),
+                        style: _textStyleSemiBold,
+                        validator: (value) =>
+                        value?.isEmpty ?? true ? 'Введите код' : null,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Поле для нового пароля
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextFormField(
+                        controller: newPasswordController,
+                        obscureText: _obscureNewPassword,
+                        decoration: InputDecoration(
+                          labelText: 'Новый пароль',
+                          labelStyle: _textStyleSemiBold.copyWith(
+                            color: Colors.black54,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureNewPassword
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: TaskScreenStyles.primaryColor,
+                            ),
+                            onPressed: () {
+                              setDialogState(() {
+                                _obscureNewPassword = !_obscureNewPassword;
+                              });
+                            },
+                          ),
+                        ),
+                        style: _textStyleSemiBold,
+                        validator: (value) => (value?.length ?? 0) < 6
+                            ? 'Минимум 6 символов'
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Поле для подтверждения пароля
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextFormField(
+                        controller: confirmPasswordController,
+                        obscureText: _obscureConfirmPassword,
+                        decoration: InputDecoration(
+                          labelText: 'Подтвердите пароль',
+                          labelStyle: _textStyleSemiBold.copyWith(
+                            color: Colors.black54,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureConfirmPassword
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: TaskScreenStyles.primaryColor,
+                            ),
+                            onPressed: () {
+                              setDialogState(() {
+                                _obscureConfirmPassword = !_obscureConfirmPassword;
+                              });
+                            },
+                          ),
+                        ),
+                        style: _textStyleSemiBold,
+                        validator: (value) => value != newPasswordController.text
+                            ? 'Пароли не совпадают'
+                            : null,
+                      ),
+                    ),
+
+                    if (_dialogErrorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: Text(
+                          _dialogErrorMessage!,
+                          style: _textStyleSemiBold.copyWith(
+                            color: Colors.red,
+                            fontSize: 13,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    const SizedBox(height: 24),
+
+                    // Кнопки действий
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            _safeReportEvent('reset_password_cancel');
+                            Navigator.pop(context);
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.grey,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Отмена',
+                            style: _textStyleSemiBold.copyWith(
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () async {
+                            if (newPasswordController.text !=
+                                confirmPasswordController.text) {
+                              setDialogState(() {
+                                _dialogErrorMessage = 'Пароли не совпадают';
+                              });
+                              return;
+                            }
+
+                            try {
+                              await _safeReportEvent('reset_password_attempt');
+                              setDialogState(() {
+                                _isDialogLoading = true;
+                                _dialogErrorMessage = null;
+                              });
+
+                              final user = UserModel(
+                                login: _loginController.text,
+                                email: _emailController.text,
+                                name: '',
+                              );
+
+                              final success = await widget.apiClient.resetPassword(
+                                user,
+                                codeController.text,
+                                newPasswordController.text,
+                              );
+
+                              if (success) {
+                                await _safeReportEvent('reset_password_success');
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Пароль успешно изменен',
+                                      style: _textStyleSemiBold,
+                                    ),
+                                    backgroundColor: TaskScreenStyles.primaryColor,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                );
+                                await _safeReportEvent(
+                                    'password_changed_successfully');
+                                Navigator.pop(context);
+                              }
+                            } catch (e) {
+                              await _reportErrorToAppMetrica(
+                                error: e,
+                                message:
+                                'Password reset error for user: ${_loginController.text}',
+                              );
+                              setDialogState(() {
+                                _dialogErrorMessage =
+                                    e.toString().replaceFirst('Exception: ', '');
+                              });
+                            } finally {
+                              setDialogState(() => _isDialogLoading = false);
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: TaskScreenStyles.primaryColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                          ),
+                          child: _isDialogLoading
+                              ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                              : Text(
+                            'Сохранить',
+                            style: _textStyleSemiBold.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -180,6 +403,8 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
     });
 
     try {
+      await _safeReportEvent('password_recovery_attempt');
+
       final user = UserModel(
         login: _loginController.text,
         email: _emailController.text,
@@ -189,13 +414,23 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
       final success = await widget.apiClient.restorePassword(user);
 
       if (success) {
+        await _safeReportEvent('password_recovery_code_sent');
         await _showResetPasswordDialog();
       }
     } catch (e) {
+      await _reportErrorToAppMetrica(
+        error: e,
+        message: 'Password recovery error for user: ${_loginController.text}',
+      );
       setState(() => _errorMessage = e.toString().replaceFirst('Exception: ', ''));
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _navigateToLogin() async {
+    await _safeReportEvent('navigate_to_login');
+    Navigator.pop(context);
   }
 
   String? _validateEmail(String? value) {
@@ -339,7 +574,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                     ),
                     child: _isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
-                        :  Text(
+                        : Text(
                       "Восстановить пароль",
                       style: _textStyleSemiBold.copyWith(
                         color: Colors.white,
@@ -349,8 +584,8 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                 ),
                 SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                 GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child:  Text(
+                  onTap: _navigateToLogin,
+                  child: Text(
                     "Вернуться к входу",
                     style: _textStyleSemiBold.copyWith(
                       color: Color(0xFF937DF3),

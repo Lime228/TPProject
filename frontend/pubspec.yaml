@@ -32,7 +32,7 @@ dependencies:
   http: ^1.1.0
   table_calendar: ^3.0.9
   image_picker: ^1.0.7
-  appmetrica_sdk: ^3.0.0
+  appmetrica_plugin: ^3.0.0
   shared_preferences: ^2.5.3
   flutter_local_notifications: ^18.0.0
   permission_handler: ^11.0.0  # Обновлено до последней версии

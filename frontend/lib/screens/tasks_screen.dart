@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:appmetrica_plugin/appmetrica_plugin.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/cupertino.dart' as ui;
 import 'package:flutter/material.dart';
@@ -45,6 +46,15 @@ class TaskScreenStyles {
       MediaQuery.of(context).size.width * 0.035;
   static const Color primaryColor = Color(0xFF937DF3);
   static const Color secondaryColor = Color(0xFF6E44FF);
+
+  static const Color dialogBackgroundColor = Colors.white;
+  static const Color dialogPrimaryColor = Color(0xFF937DF3);
+  static const Color dialogSecondaryColor = Color(0xFF6E44FF);
+  static const Color dialogErrorColor = Color(0xFFE57373);
+  static const Color dialogSuccessColor = Color(0xFF81C784);
+  static const double dialogBorderRadius = 16.0;
+  static const EdgeInsets dialogPadding = EdgeInsets.all(24.0);
+  static const EdgeInsets dialogContentPadding = EdgeInsets.symmetric(vertical: 16);
 
   static double avatarRadius(BuildContext context) =>
       MediaQuery.of(context).size.width * 0.07;
@@ -111,9 +121,38 @@ class _TasksScreenState extends State<TasksScreen> {
   DateTime? _deadline;
   bool _isFormVisible = false;
 
+  Future<void> _safeReportEvent(String eventName, {Map<String, dynamic>? attributes}) async {
+    try {
+      await AppMetrica.reportEvent(eventName);
+    } catch (e) {
+      debugPrint('Ошибка отправки события в AppMetrica: $e');
+      await _reportErrorToAppMetrica(
+        message: 'Failed to report event: $eventName',
+        error: e,
+      );
+    }
+  }
+
+  Future<void> _reportErrorToAppMetrica({
+    required dynamic error,
+    String? message,
+  }) async {
+    try {
+      await AppMetrica.reportError(
+        message: message ?? 'Error occurred in TasksScreen',
+        errorDescription: AppMetricaErrorDescription(
+          (error is Exception ? error : Exception(error.toString())) as StackTrace,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Ошибка отправки ошибки в AppMetrica: $e');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _safeReportEvent('tasks_screen_open');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_isInitialized) {
         _isInitialized = true;
@@ -147,8 +186,6 @@ class _TasksScreenState extends State<TasksScreen> {
       taskProvider.setUser(authProvider.user!);
       taskProvider.setLobbyId(groupProvider.lobbyId);
     }
-
-
   }
 
   @override
@@ -1339,6 +1376,7 @@ class _TasksScreenState extends State<TasksScreen> {
 
   Future<void> _addTask() async {
     if (_formKey.currentState!.validate()) {
+      await _safeReportEvent('task_add_attempt');
       final groupProvider = Provider.of<GroupProvider>(context, listen: false);
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
@@ -1371,6 +1409,8 @@ class _TasksScreenState extends State<TasksScreen> {
         customerId: customerId,
         state: 0,
       );
+
+      await _safeReportEvent('task_add_success');
 
       try {
         setState(() => _isLoading = true);
@@ -1421,6 +1461,7 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   Future<void> _completeTask(TaskProvider taskProvider, int taskId) async {
+    await _safeReportEvent('task_complete_attempt');
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
 
@@ -1440,7 +1481,7 @@ class _TasksScreenState extends State<TasksScreen> {
               : 1; // Админ сразу подтверждает (2), пользователь - отмечает выполнение (1)
       final updatedTask = task.copyWith(state: newState);
       await taskProvider.updateTask(updatedTask);
-
+      await _safeReportEvent('task_complete_success');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1596,6 +1637,7 @@ class _TasksScreenState extends State<TasksScreen> {
     BuildContext ctx,
     GroupProvider groupProvider,
   ) async {
+    _safeReportEvent('group_leave_attempt');
     final shouldLeave = await showDialog<bool>(
       context: context,
       builder:
@@ -1733,6 +1775,7 @@ class _TasksScreenState extends State<TasksScreen> {
   Future<void> _showGroupMembersDialog(BuildContext context) async {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
 
     // Показываем индикатор загрузки
     showDialog(
@@ -1777,7 +1820,7 @@ class _TasksScreenState extends State<TasksScreen> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                        child:  Text(
+                        child: Text(
                           'Участники группы',
                           style: _textStyleSemiBold.copyWith(
                             fontSize: 18,
@@ -1801,11 +1844,20 @@ class _TasksScreenState extends State<TasksScreen> {
                                 contentPadding: EdgeInsets.zero,
                                 leading: CircleAvatar(
                                   radius: 20,
-                                  child: Text(member.name[0], style: _textStyleSemiBold,),
+                                  backgroundColor: Colors.white,
+                                  backgroundImage: member.photoBytes != null
+                                      ? MemoryImage(base64Decode(member.photoBytes!))
+                                      : null,
+                                  child: member.photoBytes == null
+                                      ? Text(
+                                    member.name.isNotEmpty ? member.name[0] : '',
+                                    style: _textStyleSemiBold,
+                                  )
+                                      : null,
                                 ),
                                 title: Text(
                                   member.name,
-                                  style:  _textStyleBold.copyWith(fontSize: 14),
+                                  style: _textStyleBold.copyWith(fontSize: 14),
                                 ),
                                 subtitle: Text(
                                   member.role.isAdmin
@@ -1814,30 +1866,29 @@ class _TasksScreenState extends State<TasksScreen> {
                                   style: _textStyleSemiBold.copyWith(
                                     fontSize: 12,
                                     color:
-                                        member.role.isAdmin
-                                            ? Colors.green
-                                            : Colors.grey[600],
+                                    member.role.isAdmin
+                                        ? Colors.green
+                                        : Colors.grey[600],
                                   ),
                                 ),
                                 trailing:
-                                    groupProvider.isOwner &&
-                                            !member.role.isAdmin &&
-                                            member.id != authProvider.user?.id
-                                        ? IconButton(
-                                          icon: const Icon(
-                                            Icons.delete,
-
-                                            color: Colors.red,
-                                            size: 20,
-                                          ),
-                                          onPressed:
-                                              () => _removeMember(
-                                                ctx,
-                                                groupProvider,
-                                                member,
-                                              ),
-                                        )
-                                        : null,
+                                groupProvider.isOwner &&
+                                    !member.role.isAdmin &&
+                                    member.id != authProvider.user?.id
+                                    ? IconButton(
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
+                                    size: 20,
+                                  ),
+                                  onPressed:
+                                      () => _removeMember(
+                                    ctx,
+                                    groupProvider,
+                                    member,
+                                  ),
+                                )
+                                    : null,
                               ),
                             );
                           },
@@ -1951,129 +2002,534 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   void _showCreateGroupDialog() {
+    _safeReportEvent('group_create_dialog_open');
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
-    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-    final shopProvider = Provider.of<ShopProvider>(context, listen: false);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    groupProvider.refreshGroupData();
 
     if (groupProvider.isInGroup) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Вы уже в группе', style: _textStyleSemiBold,)));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Вы уже в группе', style: _textStyleSemiBold))
+      );
       return;
     }
 
+    bool _isCreating = false;
+
     showDialog(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text("Создать новую группу", style: _textStyleBold),
-            content: const Text(
-              "Нажмите 'Создать' для генерации группы с уникальным кодом",
-                style: _textStyleSemiBold
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(TaskScreenStyles.dialogBorderRadius),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text("Отмена", style: _textStyleSemiBold),
-              ),
-              TextButton(
-                onPressed: () async {
-                  Navigator.pop(ctx);
-                  try {
-                    await groupProvider.createGroup();
-                    await groupProvider.isInGroup;
-                    await groupProvider.authProvider!.refreshAll(
-                      groupProvider,
-                      taskProvider,
-                      shopProvider,
-                    );
-                    await groupProvider.authProvider!.refreshUserData();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Группа создана! Код: ${groupProvider.groupCode}',
-                            style: _textStyleSemiBold
+            elevation: 8,
+            backgroundColor: TaskScreenStyles.dialogBackgroundColor,
+            child: Padding(
+              padding: TaskScreenStyles.dialogPadding,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Создать группу',
+                        style: _textStyleBold.copyWith(
+                          fontSize: 20,
+                          color: TaskScreenStyles.dialogPrimaryColor,
                         ),
                       ),
-                    );
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Ошибка: ${e.toString()}')),
-                    );
-                  }
-                },
-                child: const Text("Создать", style: _textStyleBold),
+                      IconButton(
+                        icon: Icon(Icons.close, color: Colors.grey),
+                        onPressed: _isCreating ? null : () {
+                          _safeReportEvent('group_create_cancel');
+                          Navigator.pop(ctx);
+                        },
+                      ),
+                    ],
+                  ),
+
+                  Padding(
+                    padding: TaskScreenStyles.dialogContentPadding,
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.group_add,
+                          size: 64,
+                          color: TaskScreenStyles.dialogPrimaryColor,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Вы создаёте новую группу',
+                          style: _textStyleSemiBold.copyWith(fontSize: 16),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'После создания вы получите уникальный код для приглашения участников',
+                          style: _textStyleSemiBold.copyWith(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: 24),
+
+                  if (_isCreating)
+                    Center(child: CircularProgressIndicator())
+                  else
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              side: BorderSide(
+                                color: TaskScreenStyles.dialogPrimaryColor,
+                              ),
+                            ),
+                            onPressed: () {
+                              _safeReportEvent('group_create_cancel');
+                              Navigator.pop(ctx);
+                            },
+                            child: Text(
+                              'Отмена',
+                              style: _textStyleSemiBold.copyWith(
+                                color: TaskScreenStyles.dialogPrimaryColor,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: TaskScreenStyles.dialogPrimaryColor,
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                            ),
+                            onPressed: () async {
+                              _safeReportEvent('group_create_confirm');
+                              setState(() => _isCreating = true);
+                              try {
+                                await groupProvider.createGroup();
+                                if (mounted) {
+                                  Navigator.pop(ctx);
+                                  _showGroupCreatedDialog(groupProvider.groupCode);
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  setState(() => _isCreating = false);
+                                  _showError('Ошибка создания группы: ${e.toString()}');
+                                }
+                              }
+                            },
+                            child: Text(
+                              'Создать',
+                              style: _textStyleBold.copyWith(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
               ),
-            ],
-          ),
+            ),
+          );
+        },
+      ),
     );
   }
 
-  void _showJoinGroupDialog() {
+// Добавьте этот метод для показа диалога после создания группы
+  void _showGroupCreatedDialog(String? groupCode) {
+    if (groupCode == null) {
+      _showError('Не удалось получить код группы');
+      return;
+    }
     showDialog(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text("Вступить в группу", style: _textStyleBold),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _joinCodeController,
-                  decoration: const InputDecoration(
-                    labelText: "Код группы",
-                    hintText: "Введите 6-значный код",
-                  ),
-                  maxLength: 6,
-                  textCapitalization: TextCapitalization.characters,
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text("Отмена", style: _textStyleBold),
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(TaskScreenStyles.dialogBorderRadius),
+        ),
+        elevation: 8,
+        backgroundColor: TaskScreenStyles.dialogBackgroundColor,
+        child: Padding(
+          padding: TaskScreenStyles.dialogPadding,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Icon(
+                Icons.check_circle,
+                size: 64,
+                color: TaskScreenStyles.dialogSuccessColor,
               ),
-              TextButton(
-                onPressed: () async {
-                  final code = _joinCodeController.text.trim();
-                  if (code.length != 6) {
-                    ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(
-                        content: Text("Код должен содержать 6 символов", style: _textStyleSemiBold),
-                      ),
-                    );
-                    return;
-                  }
-
-                  final success = await Provider.of<GroupProvider>(
-                    context,
-                    listen: false,
-                  ).joinGroup(code);
-
-                  if (success && mounted) {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Вы успешно присоединились!", style: _textStyleSemiBold),
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(content: Text("Ошибка присоединения", style: _textStyleSemiBold)),
-                    );
-                  }
+              SizedBox(height: 16),
+              Text(
+                'Группа создана!',
+                style: _textStyleBold.copyWith(
+                  fontSize: 20,
+                  color: TaskScreenStyles.dialogPrimaryColor,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Код для приглашения:',
+                style: _textStyleSemiBold.copyWith(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 8),
+              Container(
+                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: TaskScreenStyles.dialogPrimaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  groupCode,
+                  style: _textStyleBold.copyWith(
+                    fontSize: 24,
+                    color: TaskScreenStyles.dialogPrimaryColor,
+                    letterSpacing: 2,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Поделитесь этим кодом с участниками, чтобы они могли присоединиться',
+                style: _textStyleSemiBold.copyWith(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 24),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: TaskScreenStyles.dialogPrimaryColor,
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () {
+                  _safeReportEvent('group_created_dialog_close');
+                  Navigator.pop(ctx);
+                  // Копируем код в буфер обмена
+                  Clipboard.setData(ClipboardData(text: groupCode));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Код скопирован в буфер обмена', style: _textStyleSemiBold))
+                  );
                 },
-                child: const Text("Присоединиться", style: _textStyleBold),
+                child: Text(
+                  'Скопировать код',
+                  style: _textStyleBold.copyWith(
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+// Обновите метод _showJoinGroupDialog в tasks_screen.dart
+  void _showJoinGroupDialog() {
+    _safeReportEvent('group_join_dialog_open');
+    bool _isJoining = false;
+    String? _errorText;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(TaskScreenStyles.dialogBorderRadius),
+            ),
+            elevation: 8,
+            backgroundColor: TaskScreenStyles.dialogBackgroundColor,
+            child: Padding(
+              padding: TaskScreenStyles.dialogPadding,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Присоединиться к группе',
+                        style: _textStyleBold.copyWith(
+                          fontSize: 20,
+                          color: TaskScreenStyles.dialogPrimaryColor,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: Colors.grey),
+                        onPressed: _isJoining ? null : () {
+                          _safeReportEvent('group_join_cancel');
+                          Navigator.pop(ctx);
+                        },
+                      ),
+                    ],
+                  ),
+
+                  Padding(
+                    padding: TaskScreenStyles.dialogContentPadding,
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.group,
+                          size: 64,
+                          color: TaskScreenStyles.dialogPrimaryColor,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Введите код группы',
+                          style: _textStyleSemiBold.copyWith(fontSize: 16),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Попросите код у администратора группы',
+                          style: _textStyleSemiBold.copyWith(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: 16),
+
+                  TextField(
+                    controller: _joinCodeController,
+                    decoration: InputDecoration(
+                      labelText: 'Код группы',
+                      hintText: 'Введите 6-значный код',
+                      errorText: _errorText,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: _errorText != null
+                              ? TaskScreenStyles.dialogErrorColor
+                              : Colors.grey,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: TaskScreenStyles.dialogPrimaryColor,
+                        ),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                    ),
+                    maxLength: 6,
+                    textCapitalization: TextCapitalization.characters,
+                    style: _textStyleSemiBold.copyWith(
+                      letterSpacing: 2,
+                    ),
+                    onChanged: (value) {
+                      if (_errorText != null) {
+                        setState(() => _errorText = null);
+                      }
+                    },
+                  ),
+
+                  SizedBox(height: 8),
+
+                  if (_isJoining)
+                    Center(child: CircularProgressIndicator())
+                  else
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              side: BorderSide(
+                                color: TaskScreenStyles.dialogPrimaryColor,
+                              ),
+                            ),
+                            onPressed: () {
+                              _safeReportEvent('group_join_cancel');
+                              Navigator.pop(ctx);
+                            },
+                            child: Text(
+                              'Отмена',
+                              style: _textStyleSemiBold.copyWith(
+                                color: TaskScreenStyles.dialogPrimaryColor,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: TaskScreenStyles.dialogPrimaryColor,
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                            ),
+                            onPressed: () async {
+                              final code = _joinCodeController.text.trim();
+                              if (code.length != 6) {
+                                setState(() {
+                                  _errorText = 'Код должен содержать 6 символов';
+                                });
+                                return;
+                              }
+
+                              _safeReportEvent('group_join_attempt');
+                              setState(() => _isJoining = true);
+
+                              try {
+                                final success = await Provider.of<GroupProvider>(
+                                  context,
+                                  listen: false,
+                                ).joinGroup(code);
+
+                                if (success && mounted) {
+                                  _safeReportEvent('group_join_success');
+                                  Navigator.pop(ctx);
+                                  _showJoinSuccessDialog();
+                                } else {
+                                  setState(() {
+                                    _errorText = 'Неверный код группы';
+                                    _isJoining = false;
+                                  });
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  setState(() {
+                                    _errorText = 'Ошибка: ${e.toString()}';
+                                    _isJoining = false;
+                                  });
+                                }
+                              }
+                            },
+                            child: Text(
+                              'Присоединиться',
+                              style: _textStyleBold.copyWith(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+// Добавьте этот метод для показа диалога после успешного присоединения
+  void _showJoinSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(TaskScreenStyles.dialogBorderRadius),
+        ),
+        elevation: 8,
+        backgroundColor: TaskScreenStyles.dialogBackgroundColor,
+        child: Padding(
+          padding: TaskScreenStyles.dialogPadding,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Icon(
+                Icons.check_circle,
+                size: 64,
+                color: TaskScreenStyles.dialogSuccessColor,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Вы успешно присоединились!',
+                style: _textStyleBold.copyWith(
+                  fontSize: 20,
+                  color: TaskScreenStyles.dialogPrimaryColor,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Теперь вы можете участвовать в задачах группы и использовать магазин',
+                style: _textStyleSemiBold.copyWith(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 24),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: TaskScreenStyles.dialogPrimaryColor,
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () {
+                  _safeReportEvent('group_join_success_close');
+                  Navigator.pop(ctx);
+                },
+                child: Text(
+                  'Продолжить',
+                  style: _textStyleBold.copyWith(
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   void _showEditTaskDialog(TaskModel task) {
+    _safeReportEvent('task_edit_dialog_open');
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final isAdmin = authProvider.user?.role.isAdmin ?? false;
 
@@ -2397,6 +2853,7 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   void _showTaskInfoDialog(TaskModel task) {
+    _safeReportEvent('task_info_dialog_open');
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
     final theme = Theme.of(context);
     final assignedUser = groupProvider.members.firstWhere(

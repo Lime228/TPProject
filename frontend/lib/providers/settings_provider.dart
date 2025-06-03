@@ -9,12 +9,12 @@ class SettingsProvider with ChangeNotifier {
 
   String? _userName;
   // String? _userSurname;
-  String? _birthDate;
+  DateTime? _userBirthDate;
   String? _avatarBytes; // Храним как base64 строку
 
   String? get avatarBytes => _avatarBytes;
   String? get userName => _userName;
-  String? get birthDate => _birthDate;
+  DateTime? get userBirthDate => _userBirthDate;
 
   bool get notificationsEnabled => _notificationsEnabled;
 
@@ -41,7 +41,7 @@ class SettingsProvider with ChangeNotifier {
       //   _userSurname = value as String;
       //   break;
       case 'birthDate':
-        _birthDate = value as String;
+        _userBirthDate = value as DateTime?;
         break;
       case 'avatarPath':
         _avatarBytes = File(value as String) as String?;
@@ -65,4 +65,6 @@ class SettingsProvider with ChangeNotifier {
 
     notifyListeners();
   }
+
+
 }
