@@ -2494,13 +2494,7 @@ class _TasksScreenState extends State<TasksScreen> {
                           color: TaskScreenStyles.dialogPrimaryColor,
                         ),
                       ),
-                      IconButton(
-                        icon: Icon(Icons.close, color: Colors.grey),
-                        onPressed: _isJoining ? null : () {
-                          _safeReportEvent('group_join_cancel');
-                          Navigator.pop(ctx);
-                        },
-                      ),
+
                     ],
                   ),
 
@@ -2532,46 +2526,19 @@ class _TasksScreenState extends State<TasksScreen> {
                     ),
                   ),
 
-                  SizedBox(height: 16),
 
-                  TextField(
+
+                  _buildRoundedTextField(
                     controller: _joinCodeController,
-                    decoration: InputDecoration(
-                      labelText: 'Код группы',
-                      hintText: 'Введите 6-значный код',
-                      errorText: _errorText,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: _errorText != null
-                              ? TaskScreenStyles.dialogErrorColor
-                              : Colors.grey,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: TaskScreenStyles.dialogPrimaryColor,
-                        ),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                    ),
-                    maxLength: 6,
-                    textCapitalization: TextCapitalization.characters,
-                    style: _textStyleSemiBold.copyWith(
-                      letterSpacing: 2,
-                    ),
-                    onChanged: (value) {
-                      if (_errorText != null) {
-                        setState(() => _errorText = null);
-                      }
-                    },
+                    labelText: 'Код группы',
+                    validator:
+                        (value) =>
+                    value?.isEmpty ?? true
+                        ? 'Введите код группы'
+                        : null,
                   ),
 
-                  SizedBox(height: 8),
+                  SizedBox(height: 16),
 
                   if (_isJoining)
                     Center(child: CircularProgressIndicator())
