@@ -522,19 +522,28 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(
-                                  task.name,
-                                  style: _textStyleBold.copyWith(
-                                    fontSize: TaskScreenStyles.taskNameFontSize(
-                                      context,
-                                    ),
-                                    color: TaskScreenStyles.primaryColor,
-                                    decoration:
-                                    task.state == 'Completed'
-                                        ? TextDecoration.lineThrough
-                                        : null,
-                                  ),
+                                LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    return ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        maxWidth: constraints.maxWidth * 0.88, // регулируй при необходимости
+                                      ),
+                                      child: Text(
+                                        task.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: _textStyleBold.copyWith(
+                                          fontSize: TaskScreenStyles.taskNameFontSize(context),
+                                          color: TaskScreenStyles.primaryColor,
+                                          decoration: task.state == 'Completed'
+                                              ? TextDecoration.lineThrough
+                                              : null,
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
+
                                 // if (task.description.isNotEmpty)
                                 //   Padding(
                                 //     padding: EdgeInsets.only(

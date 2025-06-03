@@ -1021,17 +1021,7 @@ class _TasksScreenState extends State<TasksScreen> {
                         ),
 
                         // Маскировочный элемент (внизу слева)
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          width: 12,
-                          height: 12,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).scaffoldBackgroundColor, // или цвет родителя
-                            ),
-                          ),
-                        ),
+                        
                       ],
                     ),
 
@@ -1052,19 +1042,28 @@ class _TasksScreenState extends State<TasksScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(
-                                  task.name,
-                                  style: _textStyleBold.copyWith(
-                                    fontSize: TaskScreenStyles.taskNameFontSize(
-                                      context,
-                                    ),
-                                    color: TaskScreenStyles.primaryColor,
-                                    decoration:
-                                    task.state == 'Completed'
-                                        ? TextDecoration.lineThrough
-                                        : null,
-                                  ),
+                                LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    return ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        maxWidth: constraints.maxWidth * 0.88, // регулируй при необходимости
+                                      ),
+                                      child: Text(
+                                        task.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: _textStyleBold.copyWith(
+                                          fontSize: TaskScreenStyles.taskNameFontSize(context),
+                                          color: TaskScreenStyles.primaryColor,
+                                          decoration: task.state == 'Completed'
+                                              ? TextDecoration.lineThrough
+                                              : null,
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
+
                                 // if (task.description.isNotEmpty)
                                 //   Padding(
                                 //     padding: EdgeInsets.only(
