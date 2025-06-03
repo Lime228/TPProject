@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:zadachok/api/api_client.dart';
 import 'package:zadachok/models/shop/product/product_model.dart';
 import 'package:zadachok/providers/auth_provider.dart';
 import 'package:zadachok/providers/group_provider.dart';
@@ -12,6 +13,7 @@ import 'package:zadachok/providers/settings_provider.dart';
 import 'package:zadachok/providers/shop_provider.dart';
 import 'dart:typed_data';
 
+import '../models/user/user_model.dart';
 import '../models/wallet/wallet_model.dart';
 
 const TextStyle _textStyleSemiBold = TextStyle(
@@ -216,12 +218,15 @@ class _ShopScreenState extends State<ShopScreen> {
 
     return Consumer<ShopProvider>(
       builder: (context, shopProvider, child) {
+        // Фильтруем товары, чтобы не показывать те, у которых isAvailable = false
+        final filteredProducts = shopProvider.products.where((product) => product.isAvailable).toList();
+
         return Scaffold(
           backgroundColor: Colors.white,
           body: Column(
             children: [
               _buildHeader(userName, settingsProvider.avatarBytes),
-              Expanded(child: _buildMainContent()),
+              Expanded(child: _buildMainContent(filteredProducts)),
             ],
           ),
           floatingActionButton: _buildFloatingActionButton(),
@@ -371,7 +376,7 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
-  Widget _buildMainContent() {
+  Widget _buildMainContent(List<ProductModel> products) {
     final authProvider = Provider.of<AuthProvider>(context);
     final groupProvider = Provider.of<GroupProvider>(context);
     final shopProvider = Provider.of<ShopProvider>(context);
@@ -380,7 +385,7 @@ class _ShopScreenState extends State<ShopScreen> {
       return _buildNoGroupView();
     }
 
-    if (!shopProvider.isLoading && shopProvider.products.isEmpty) {
+    if (!shopProvider.isLoading && products.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -429,7 +434,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   return _loadData();
                 },
                 child:
-                shopProvider.products.isEmpty
+                products.isEmpty
                     ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -461,19 +466,10 @@ class _ShopScreenState extends State<ShopScreen> {
                     crossAxisSpacing: 8,
                     mainAxisSpacing: 8,
                   ),
-                  itemCount: shopProvider.products.length,
+                  itemCount: products.length,
                   itemBuilder: (context, index) {
-                    final product = shopProvider.products[index];
-                    return GestureDetector(
-                      onTap: () {
-                        _safeReportEvent('shop_product_tap', attributes: {'product_id': product.id});
-                        _showProductDetails(product);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: _buildProductCard(product),
-                      ),
-                    );
+                    final product = products[index];
+                    return _buildProductCard(product);
                   },
                 ),
               ),
@@ -516,9 +512,13 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Widget _buildProductCard(ProductModel product) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isReserved = product.customerId != null && product.customerId != authProvider.user?.id;
+    final isPurchased = product.customerId == authProvider.user?.id;
 
     return GestureDetector(
       onTap: () {
+        // Разрешаем админу нажимать на любой товар, даже зарезервированный
+        if (isReserved && !authProvider.isAdmin) return;
         _safeReportEvent('shop_product_card_tap', attributes: {'product_id': product.id});
         _showProductDetails(product);
       },
@@ -559,8 +559,10 @@ class _ShopScreenState extends State<ShopScreen> {
                   width: 145,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: product.customerId != null
+                    color: isPurchased
                         ? Colors.orange
+                        : isReserved
+                        ? ShopScreenConstants.primaryColor
                         : ShopScreenConstants.primaryColor,
                     borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(12),
@@ -629,30 +631,74 @@ class _ShopScreenState extends State<ShopScreen> {
                 ),
               ],
             ),
-            if (!product.isAvailable)
-              Positioned.fill(
+            if (isReserved) // Показываем "Занято" только если не админ
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 170, // Высота изображения товара
                 child: Container(
-                  color: Colors.black54,
-                  child: const Center(
-                    child: Icon(
-                      Icons.check_circle,
-                      color: Colors.white,
-                      size: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      topRight: Radius.circular(12),
+                    ),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.lock_outline,
+                          color: Colors.white,
+                          size: 36,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Занято',
+                          style: _textStyleBold.copyWith(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-            if (product.customerId != null && product.customerId != authProvider.user?.id)
-              Positioned.fill(
+            if (isPurchased)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 170, // Такая же высота как у изображения
                 child: Container(
-                  color: Colors.black38,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      topRight: Radius.circular(12),
+                    ),
+                  ),
                   child: Center(
-                    child: Text(
-                      'Занято',
-                      style: _textStyleBold.copyWith(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.check_circle_outline,
+                          color: Colors.white,
+                          size: 36,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Ваш товар',
+                          style: _textStyleBold.copyWith(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -663,58 +709,7 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
-  void _showPurchaseDialog(ProductModel product, ShopProvider shopProvider) {
-    _safeReportEvent('shop_purchase_dialog_show', attributes: {'product_id': product.id});
 
-    showDialog(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-        title: Text('Купить ${product.name}?', style: _textStyleBold),
-        content: Text('Цена: ${product.price} звёзд', style: _textStyleBold),
-        actions: [
-          TextButton(
-            onPressed: () {
-              _safeReportEvent('shop_purchase_cancel', attributes: {'product_id': product.id});
-              Navigator.pop(ctx);
-            },
-            child: Text('Отмена', style: _textStyleBold),
-          ),
-          TextButton(
-            onPressed: () async {
-              _safeReportEvent('shop_purchase_confirm', attributes: {'product_id': product.id});
-              Navigator.pop(ctx);
-              final success = await shopProvider.buyProduct(product.id);
-              if (success && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Товар успешно куплен!', style: _textStyleSemiBold),
-                    backgroundColor: ShopScreenConstants.primaryColor,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                );
-              } else if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Ошибка: ${shopProvider.error}', style: _textStyleSemiBold),
-                    backgroundColor: ShopScreenConstants.primaryColor,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                );
-              }
-            },
-            child: const Text('Купить', style: _textStyleBold),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildPlaceholderImage() {
     return Container(
@@ -795,6 +790,7 @@ class _ShopScreenState extends State<ShopScreen> {
   void _showProductDetails(ProductModel product) {
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final groupProvider = Provider.of<GroupProvider>(context, listen: false);
 
     _safeReportEvent('shop_product_details', attributes: {'product_id': product.id});
 
@@ -884,6 +880,28 @@ class _ShopScreenState extends State<ShopScreen> {
               ),
               const SizedBox(height: 16),
 
+              // Добавленная секция для админа - информация о покупателе
+              if (authProvider.isAdmin && product.customerId != null)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Покупатель:',
+                      style: _textStyleBold.copyWith(fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: _buildBuyerInfo(product.customerId!, groupProvider),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+
               if (product.description.isNotEmpty) ...[
                 Text(
                     'Описание:',
@@ -931,127 +949,114 @@ class _ShopScreenState extends State<ShopScreen> {
                 const SizedBox(height: 16),
               ],
 
+
               if (authProvider.isAuthorized && !authProvider.isAdmin)
                 Column(
                   children: [
                     if (product.customerId == null)
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: ShopScreenConstants.primaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: ShopScreenConstants.primaryColor,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                        ),
-                        onPressed: () async {
-                          _safeReportEvent('shop_product_buy', attributes: {'product_id': product.id});
-                          Navigator.pop(ctx);
-                          final success = await shopProvider.buyProduct(product.id);
-                          if (success && mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Товар зарезервирован! Подтвердите покупку.',
-                                    style: _textStyleSemiBold),
-                                backgroundColor: ShopScreenConstants.primaryColor,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                          onPressed: () async {
+                            _safeReportEvent('shop_product_buy', attributes: {'product_id': product.id});
+                            Navigator.pop(ctx);
+                            final success = await shopProvider.buyProduct(product.id);
+                            if (success && mounted) {
+                              await shopProvider.refreshProducts(); // Добавлено обновление списка
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Товар зарезервирован! Подтвердите покупку.', style: _textStyleSemiBold),
+                                  backgroundColor: ShopScreenConstants.primaryColor,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
-                              ),
-                            );
-                          } else if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Ошибка: ${shopProvider.error}',
-                                  style: _textStyleSemiBold),
-                                backgroundColor: ShopScreenConstants.primaryColor,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                              );
+                            } else if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Ошибка: ${shopProvider.error}', style: _textStyleSemiBold),
+                                  backgroundColor: ShopScreenConstants.primaryColor,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
-                              ),
-                            );
-                          }
-                        },
-                        child: Text(
-                          'Купить',
-                          style: _textStyleBold.copyWith(
-                            fontSize: 16,
-                            color: Colors.white,
+                              );
+                            }
+                          },
+                          child: Text(
+                            'Купить',
+                            style: _textStyleBold.copyWith(
+                              fontSize: 16,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       )
                     else if (product.customerId == authProvider.user?.id)
                       Column(
                         children: [
-                          Text(
-                            'Ожидает подтверждения',
-                            style: _textStyleSemiBold.copyWith(color: Colors.orange),
-                          ),
-                          const SizedBox(height: 8),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orange,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
-                            ),
-                            onPressed: () async {
-                              _safeReportEvent('shop_product_confirm', attributes: {'product_id': product.id});
-                              Navigator.pop(ctx);
-                              final success = await shopProvider.confirmPurchase(product.id);
-                              if (success && mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                   SnackBar(
-                                    content: Text('Покупка подтверждена!',
-                                        style: _textStyleSemiBold),
-                                    backgroundColor: ShopScreenConstants.primaryColor,
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                              onPressed: () async {
+                                _safeReportEvent('shop_product_confirm', attributes: {'product_id': product.id});
+                                Navigator.pop(ctx);
+                                final success = await shopProvider.confirmPurchase(product.id);
+                                if (success && mounted) {
+                                  await shopProvider.refreshProducts(); // Добавлено обновление списка
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Покупка подтверждена!', style: _textStyleSemiBold),
+                                      backgroundColor: ShopScreenConstants.primaryColor,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
                                     ),
-                                  ),
-                                );
-                              } else if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Ошибка: ${shopProvider.error}',
-                                      style: _textStyleSemiBold),
-                                    backgroundColor: ShopScreenConstants.primaryColor,
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),),
-
-                                );
-                              }
-                            },
-                            child: Text(
-                              'Подтвердить покупку',
-                              style: _textStyleBold.copyWith(
-                                fontSize: 16,
-                                color: Colors.white,
+                                  );
+                                } else if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Ошибка: ${shopProvider.error}', style: _textStyleSemiBold),
+                                      backgroundColor: ShopScreenConstants.primaryColor,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Text(
+                                'Подтвердить покупку',
+                                style: _textStyleBold.copyWith(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
                         ],
                       )
-                    else
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Center(
-                          child: Text(
-                            'Товар зарезервирован другим пользователем',
-                            style: _textStyleSemiBold.copyWith(
-                              fontSize: 16,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                      ),
+
+
                   ],
                 ),
             ],
@@ -1061,39 +1066,34 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
-  void _reserveProduct(int productId) async {
-    _safeReportEvent('shop_product_reserve', attributes: {'product_id': productId});
-    final success = await Provider.of<ShopProvider>(context, listen: false)
-        .buyProduct(productId);
+  Widget _buildBuyerInfo(int customerId, GroupProvider groupProvider) {
+    // Ищем пользователя в списке участников группы
+    final buyer = groupProvider.members.firstWhere(
+          (user) => user.id == customerId,
+      orElse: () => UserModel(id: customerId, name: 'Неизвестный', email: '', login: ''),
+    );
 
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Товар зарезервирован! Подтвердите покупку.'),
-            backgroundColor: ShopScreenConstants.primaryColor,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),)
-      );
-    }
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 20,
+          backgroundImage: buyer.photoBytes?.isNotEmpty ?? false
+              ? MemoryImage(base64Decode(buyer.photoBytes!))
+              : null,
+          child: buyer.photoBytes?.isEmpty ?? true
+              ? const Icon(Icons.person)
+              : null,
+        ),
+        const SizedBox(width: 12),
+        Text(
+          buyer.name,
+          style: _textStyleSemiBold.copyWith(fontSize: 14),
+        ),
+      ],
+    );
   }
 
-  void _confirmPurchase(int productId) async {
-    _safeReportEvent('shop_product_confirm', attributes: {'product_id': productId});
-    final success = await Provider.of<ShopProvider>(context, listen: false)
-        .confirmPurchase(productId);
 
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Покупка подтверждена!'),
-            backgroundColor: ShopScreenConstants.primaryColor,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),)
-      );
-    }
-  }
 
   void _showAddProductDialog() {
     _safeReportEvent('shop_add_product_dialog_show');
@@ -2324,6 +2324,3 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 }
 
-class _uploadAvatarToServer {
-  _uploadAvatarToServer(File file);
-}
