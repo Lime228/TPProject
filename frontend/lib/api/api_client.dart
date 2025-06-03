@@ -569,7 +569,7 @@ class ApiClient implements ApiInterface {
 
 
 
-  @override // в теории работает
+  @override
   Future<void> deleteTask(TaskModel task) async {
     if (task.id <= 0) {
       throw Exception('ID задачи не может быть меньше 1');
