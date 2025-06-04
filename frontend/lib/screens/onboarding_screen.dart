@@ -14,6 +14,20 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  bool _isFirstLaunch = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFirstLaunch();
+  }
+
+  Future<void> _checkFirstLaunch() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isFirstLaunch = prefs.getBool('first_launch') ?? true;
+    });
+  }
 
   void _completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
@@ -107,21 +121,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: TextButton(
-                onPressed: _skipOnboarding,
-                child: Text(
-                  'Пропустить',
-                  style: TextStyle(
-                    fontSize: MediaQuery.of(context).size.width * 0.04,
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey,
+            if (!_isFirstLaunch)
+              Align(
+                alignment: Alignment.topRight,
+                child: TextButton(
+                  onPressed: _skipOnboarding,
+                  child: Text(
+                    'Пропустить',
+                    style: TextStyle(
+                      fontSize: MediaQuery.of(context).size.width * 0.04,
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey,
+                    ),
                   ),
                 ),
               ),
-            ),
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
