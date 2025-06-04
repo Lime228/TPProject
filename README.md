@@ -26,6 +26,7 @@
 - Курсовая работа по проекту ([PDF](https://github.com/Lime228/TPProject/blob/main/Documentation/course_work_(1.2).pdf)) ([DOCX](https://github.com/Lime228/TPProject/blob/main/Documentation/course_work_(1.2).docx))
 - [Swagger ZадачOk API](https://api.zadachok.ru/swagger-ui/index.html#/)
 - [Ссылка на APK](https://github.com/Lime228/TPProject/releases/tag/Pre-release)
+- [Гайд по запуску в Android Studio](https://github.com/Lime228/TPProject/blob/main/frontend/README.md)
 
 ### Доска задач
 - [YouTrack](https://youtrack.zadachok.ru/agiles)
