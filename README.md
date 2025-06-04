@@ -20,7 +20,7 @@
 ### Всё к защите
 - [Отчет о тестировании](https://github.com/Lime228/TPProject/blob/main/Documentation/Отчет%20о%20тестировании%20от%204%20июня.pdf)
 - [Финальный ПМ-отчет](https://github.com/Lime228/TPProject/blob/main/Documentation/Финальный%20ПМ-отчет.pdf)
-- Сопроводительное письмо
+- [Сопроводительное письмо](https://github.com/Lime228/TPProject/blob/main/Documentation/Сопроводительное%20письмо%20ZадачOk.pdf)
 - Презентация ([PDF](https://github.com/Lime228/TPProject/blob/main/Documentation/Финальная%20защита.pdf)) ([PPTX](https://github.com/Lime228/TPProject/blob/main/Documentation/Финальная%20защита.pptx))
 - [Презентация мобильной части](https://rutube.ru/video/private/9695434dfa4a2eb09cd4f4a66bf90107/?p=1-fBNsO8MlilVk6_Uge5IQ) ([Я.Диск](https://disk.yandex.ru/i/WWsBPWqtR3EYQQ))
 - [Курсовая работа по проекту](https://github.com/Lime228/TPProject/blob/main/Documentation/course_work_(1.1).pdf)
