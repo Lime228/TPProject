@@ -422,6 +422,8 @@ class _ShopScreenState extends State<ShopScreen> {
         _buildSearchAndSortBar(), // Всегда показываем строку поиска и сортировки
         Expanded(
           child: RefreshIndicator(
+            color: Color(0xFF937DF3),
+            backgroundColor: Colors.white,
             onRefresh: () {
               _safeReportEvent('shop_pull_to_refresh');
               return _loadData();
@@ -1456,7 +1458,7 @@ class _ShopScreenState extends State<ShopScreen> {
             const Divider(height: 1),
             Expanded(
               child: shopProvider.isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF937DF3),))
                   : shopProvider.products.isEmpty
                   ? const Center(child: Text('Нет товаров для отображения', style: _textStyleSemiBold))
                   : ListView.builder(

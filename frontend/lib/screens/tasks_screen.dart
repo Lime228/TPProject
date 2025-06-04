@@ -720,6 +720,8 @@ class _TasksScreenState extends State<TasksScreen> {
         _buildSearchAndSortBar(),
         Expanded(
           child: RefreshIndicator(
+            color: Color(0xFF937DF3),
+            backgroundColor: Colors.white,
             onRefresh: _refreshData,
             child: Consumer<TaskProvider>(
               builder: (context, taskProvider, child) {
@@ -733,7 +735,7 @@ class _TasksScreenState extends State<TasksScreen> {
                     .toList();
 
                 if (taskProvider.isLoadingTasks) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator(color: Color(0xFF937DF3),));
                 }
 
                 if (tasksToShow.isEmpty) {
