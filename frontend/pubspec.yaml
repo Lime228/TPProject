@@ -93,7 +93,7 @@ flutter:
 #    - lib/assets/onboarding/1.jpg
 #    - lib/assets/onboarding/2.jpg
 #    - lib/assets/onboarding/3.jpg
-#    - lib/assets/onboarding/
+    - lib/assets/onboarding/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

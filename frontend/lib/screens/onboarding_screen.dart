@@ -45,11 +45,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     'lib/assets/onboarding/3.jpg', // Заглушка - замените на реальное изображение
     'lib/assets/onboarding/4.jpg',
     'lib/assets/onboarding/5.jpg',
-    'lib/assets/onboarding/6.jpg',
-    'lib/assets/onboarding/7.jpg',
-    'lib/assets/onboarding/8.jpg',
-    'lib/assets/onboarding/9.jpg',
-    'lib/assets/onboarding/10.jpg',
+    'lib/assets/onboarding/castom.jpg',
+    'lib/assets/onboarding/filtr_task.jpg',
   ];
 
   final List<String> _onboardingTitles = [
@@ -59,10 +56,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     'Награды и достижения',
     'Статистика прогресса',
     'Кастомизация профиля',
-    'Уведомления',
-    'Безопасность данных',
-    'Кроссплатформенность',
-    'Начните прямо сейчас!'
+    'Сортировка задач и магазина',
   ];
 
   // Описания для каждого экрана
@@ -74,9 +68,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     'Анализируйте свою продуктивность с помощью статистики',
     'Настройте профиль под свои предпочтения',
     'Будьте в курсе важных событий и дедлайнов',
-    'Ваши данные надежно защищены',
-    'Доступ к задачам с любого устройства',
-    'Зарегистрируйтесь и начните использовать все возможности'
   ];
 
   @override
