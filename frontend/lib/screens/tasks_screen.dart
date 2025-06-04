@@ -1348,10 +1348,6 @@ class _TasksScreenState extends State<TasksScreen> {
                         ),
                       ),
                       items: [
-                        DropdownMenuItem<int>(
-                          value: null,
-                          child: Text('Для всех участников', style: _textStyleSemiBold),
-                        ),
                         ...groupProvider.members.map((member) {
                           return DropdownMenuItem<int>(
                             value: member.id,
@@ -1614,6 +1610,11 @@ class _TasksScreenState extends State<TasksScreen> {
 
     try {
       final task = taskProvider.tasks.firstWhere((t) => t.id == taskId);
+
+      if (task.state == 2) {
+        _showError("Задача уже подтверждена и не может быть изменена");
+        return;
+      }
 
       if (task.customerId != 0 &&
           task.customerId != authProvider.user?.id &&
@@ -2683,8 +2684,7 @@ class _TasksScreenState extends State<TasksScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final isAdmin = authProvider.user?.role.isAdmin ?? false;
 
-    if (!isAdmin) {
-      // Для обычного пользователя показываем только информацию о задаче
+    if (task.state == 2 || !isAdmin) {
       _showTaskInfoDialog(task);
       return;
     }
@@ -2890,13 +2890,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                 fontSize: 16,
                               ),
                               items: [
-                                DropdownMenuItem<int>(
-                                  value: 0,
-                                  child: Text(
-                                    'Для всех участников',
-                                    style: _textStyleSemiBold.copyWith(color: Colors.black),
-                                  ),
-                                ),
+
                                 ...Provider.of<GroupProvider>(
                                   context,
                                   listen: false,
