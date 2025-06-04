@@ -420,28 +420,31 @@ class ApiClient implements ApiInterface {
 
 
 
-  @override // в теории работает
+  @override
   Future<ProductModel> createShopItem(ShopModel shop, ProductModel product) async {
     final url = Uri.parse(ApiEndpoints.shopProductCreateUrl);
-    debugPrint(product.id.toString());
-    debugPrint(shop.id.toString());
-    debugPrint(product.name);
-    debugPrint(product.description);
-    debugPrint(product.isAvailable.toString());
-    debugPrint(product.price.toString());
-    debugPrint(product.link);
-    debugPrint(product.customerId.toString());
+
+    // Добавьте логирование
+    debugPrint('=== Creating product with link: ${product.link}');
 
     try {
+      final requestBody = shop.createProductRequest(product);
+      debugPrint('Request body with link: ${requestBody['link']}');
+
       final response = await _client.post(
         url,
         headers: _getHeaders(),
-        body: json.encode(shop.createProductRequest(product)),
+        body: json.encode(requestBody),
       ).timeout(requestTimeout);
 
-      return _handleProductResponse(response);
+      debugPrint('Raw response: ${response.body}');
+
+      final result = _handleProductResponse(response);
+      debugPrint('Product created with link: ${result.link}');
+      return result;
     } catch (e) {
-      throw Exception('Error creating shop product: ${e.toString()}');
+      debugPrint('Error creating product: $e');
+      rethrow;
     }
   }
 
@@ -536,7 +539,7 @@ class ApiClient implements ApiInterface {
           'productid': product.id,
           'name': product.name,
           'description': product.description,
-          'photo': product.photoBytes,
+          'photo': base64Encode(product.photoBytes),
           'state': product.isAvailable,
           'price': product.price,
           'link': product.link,
@@ -844,20 +847,14 @@ class ApiClient implements ApiInterface {
 
   ProductModel _handleProductResponse(http.Response response) {
     final responseData = json.decode(utf8.decode(response.bodyBytes));
+    debugPrint('Full response data: $responseData'); // Добавьте это
 
-    switch (response.statusCode) {
-      case 200:
-      case 201:
-        return ProductModel.fromJson(responseData);
-      case 400:
-        throw Exception('Неверный запрос: ${utf8.decode(response.bodyBytes)}');
-      case 401:
-        throw Exception('Ошибка авторизации');
-      case 500:
-        throw Exception('Ошибка сервера: ${utf8.decode(response.bodyBytes)}');
-      default:
-        throw Exception('Ошибка: ${response.statusCode}');
+    // Проверьте, есть ли ссылка в ответе
+    if (responseData['link'] == null) {
+      debugPrint('WARNING: Link is null in server response!');
     }
+
+    return ProductModel.fromJson(responseData);
   }
 
 

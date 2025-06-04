@@ -19,7 +19,7 @@ class ShopModel {
     'state': product.isAvailable,
     'price': product.price,
     'shopid': id,
-    if (product.link != null) 'link': product.link,
+    'link': product.link,
   };
 
   // Запрос на покупку продукта

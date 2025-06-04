@@ -97,15 +97,20 @@ class ShopProvider with ChangeNotifier {
   }
 
   Future<bool> createProduct(ProductModel product) async {
-    if (_currentShopId == null) {
-      _error = 'Магазин не выбран';
-      return false;
-    }
-
     try {
       final shop = ShopModel(id: _currentShopId!, productIds: []);
       final apiClient = _getAuthenticatedClient();
-      final newProduct = await apiClient.createShopItem(shop, product);
+
+      // Сначала создаем товар без ссылки
+      var newProduct = await apiClient.createShopItem(shop, product.copyWith(link: null));
+
+      // Затем обновляем товар, добавляя ссылку
+      if (product.link != null) {
+        newProduct = await apiClient.updateShopItem(
+            newProduct.copyWith(link: product.link)
+        );
+      }
+
       _products.add(newProduct);
       _applyFilters();
       return true;

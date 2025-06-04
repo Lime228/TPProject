@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 
 class ProductModel {
   final int id;
@@ -23,7 +24,11 @@ class ProductModel {
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
-    return ProductModel(
+    debugPrint('=== ProductModel.fromJson ===');
+    debugPrint('Raw JSON: $json');
+    debugPrint('Link in JSON: ${json['link']}');
+    
+    final model = ProductModel(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
       description: json['description'] ?? '',
@@ -33,6 +38,9 @@ class ProductModel {
       link: json['link'],
       customerId: json['customerId'],
     );
+    
+    debugPrint('Created model link: ${model.link}');
+    return model;
   }
 
   Map<String, dynamic> toJson() => {

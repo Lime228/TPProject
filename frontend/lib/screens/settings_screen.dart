@@ -33,8 +33,8 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final _scrollController = ScrollController();
   final _searchController = TextEditingController();
-  final _nameController = TextEditingController(text: 'Имя');
-  final _birthDateController = TextEditingController(text: 'ДД.ММ.ГГГГ');
+  final _nameController = TextEditingController();
+  final _birthDateController = TextEditingController();
   final _picker = ImagePicker();
   String? _avatarBytes;
 

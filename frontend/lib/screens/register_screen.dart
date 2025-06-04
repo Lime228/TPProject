@@ -37,6 +37,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureText = true;
   String? _errorMessage;
 
+  // Регулярное выражение для проверки на русские буквы
+  final _cyrillicPattern = RegExp(r'[а-яА-ЯёЁ]');
+
+  // Проверка на наличие русских букв
+  bool _containsCyrillic(String text) {
+    return _cyrillicPattern.hasMatch(text);
+  }
+
   // Адаптивные размеры
   double get borderRadius => MediaQuery.of(context).size.width * 0.035;
   double get buttonWidth => MediaQuery.of(context).size.width * 0.6;
@@ -98,7 +106,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     await _safeReportEvent('register_attempt');
 
     try {
-      // Используем переданный apiClient вместо создания нового
+      // Дополнительная проверка на русские буквы перед отправкой
+      if (_containsCyrillic(_usernameController.text) ||
+          _containsCyrillic(_passwordController.text) ||
+          _containsCyrillic(_emailController.text)) {
+        throw Exception('Поля не должны содержать русские буквы');
+      }
+
       await widget.apiClient.register(
         UserModel(
           password: _passwordController.text,
@@ -200,40 +214,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                   _buildInputField(
-                    hintText: 'Логин',
                     controller: _usernameController,
+                    hintText: 'Логин',
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Введите логин';
                       }
+                      if (_containsCyrillic(value)) {
+                        return 'Логин не должен содержать русские буквы';
+                      }
                       return null;
                     },
                   ),
                   SizedBox(height: MediaQuery.of(context).size.height * 0.015),
                   _buildInputField(
-                    hintText: 'Почта',
                     controller: _emailController,
+                    hintText: 'Email',
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Введите email';
                       }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                        return 'Некорректный email';
+                      if (!value.contains('@') || !value.contains('.')) {
+                        return 'Введите корректный email';
+                      }
+                      if (_containsCyrillic(value)) {
+                        return 'Email не должен содержать русские буквы';
                       }
                       return null;
                     },
                   ),
                   SizedBox(height: MediaQuery.of(context).size.height * 0.015),
                   _buildInputField(
-                    hintText: 'Пароль',
                     controller: _passwordController,
+                    hintText: 'Пароль',
                     isPassword: true,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Введите пароль';
                       }
                       if (value.length < 6) {
-                        return 'Пароль должен быть не менее 6 символов';
+                        return 'Пароль должен содержать минимум 6 символов';
+                      }
+                      if (_containsCyrillic(value)) {
+                        return 'Пароль не должен содержать русские буквы';
                       }
                       return null;
                     },
@@ -272,8 +295,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildInputField({
-    required String hintText,
     required TextEditingController controller,
+    required String hintText,
     bool isPassword = false,
     Widget? suffixIcon,
     String? Function(String?)? validator,

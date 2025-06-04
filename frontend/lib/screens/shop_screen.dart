@@ -12,6 +12,8 @@ import 'package:zadachok/providers/group_provider.dart';
 import 'package:zadachok/providers/settings_provider.dart';
 import 'package:zadachok/providers/shop_provider.dart';
 import 'dart:typed_data';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 import '../models/user/user_model.dart';
 import '../models/wallet/wallet_model.dart';
@@ -336,7 +338,7 @@ class _ShopScreenState extends State<ShopScreen> {
                         ],
                       ),
                     ),
-                  if (Provider.of<GroupProvider>(context).isOwner)
+                  if (Provider.of<GroupProvider>(context).isOwner && Provider.of<GroupProvider>(context).isInGroup)
                     PopupMenuButton<String>(
                       icon: Icon(
                         Icons.more_vert,
@@ -970,13 +972,36 @@ class _ShopScreenState extends State<ShopScreen> {
                     decoration: BoxDecoration(
                       color: Colors.blue[50],
                       borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      product.link!,
-                      style: _textStyleSemiBold.copyWith(
-                        color: Colors.blue,
-                        decoration: TextDecoration.underline,
+                      border: Border.all(
+                        color: Colors.blue.withOpacity(0.3),
+                        width: 1,
                       ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.link,
+                          color: Colors.blue[700],
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            product.link!,
+                            style: _textStyleSemiBold.copyWith(
+                              color: Colors.blue[700],
+                              decoration: TextDecoration.underline,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Icon(
+                          Icons.open_in_new,
+                          color: Colors.blue[700],
+                          size: 16,
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -1361,16 +1386,36 @@ class _ShopScreenState extends State<ShopScreen> {
         imageBytes = await _tempProductImage!.readAsBytes();
       }
 
+      // Проверяем и форматируем ссылку
+      String? formattedLink = _linkController.text.trim();
+      debugPrint('=== Link Debug ===');
+      debugPrint('Raw link from controller: "${_linkController.text}"');
+      debugPrint('Trimmed link: "$formattedLink"');
+      debugPrint('Link is empty: ${formattedLink.isEmpty}');
+      
+      if (formattedLink.isNotEmpty) {
+        if (!formattedLink.startsWith('http://') && !formattedLink.startsWith('https://')) {
+          formattedLink = 'https://$formattedLink';
+          debugPrint('Formatted link with https: "$formattedLink"');
+        }
+      } else {
+        formattedLink = null;
+        debugPrint('Link set to null because it was empty');
+      }
+
       final newProduct = ProductModel(
         name: _nameController.text,
         description: _descController.text,
         photoBytes: imageBytes,
         isAvailable: true,
         price: int.parse(_priceController.text),
-        link: _linkController.text.isEmpty ? null : _linkController.text,
+        link: formattedLink,
       );
+      
+      debugPrint('Link in new product: "${newProduct.link}"');
 
       final success = await shopProvider.createProduct(newProduct);
+      debugPrint('Product creation success: $success');
 
       if (success && mounted) {
         Navigator.pop(dialogContext);
@@ -1388,17 +1433,15 @@ class _ShopScreenState extends State<ShopScreen> {
       }
     } catch (e) {
       debugPrint('Ошибка при добавлении товара: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка: ${e.toString()}', style: _textStyleSemiBold),
-            backgroundColor: ShopScreenConstants.primaryColor,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          )
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ошибка: ${e.toString()}', style: _textStyleSemiBold),
+          backgroundColor: ShopScreenConstants.primaryColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
       );
     }
   }
@@ -1941,6 +1984,8 @@ class _ShopScreenState extends State<ShopScreen> {
   void _showCreateGroupDialog() {
     _safeReportEvent('shop_create_group_dialog_show');
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+    final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     if (groupProvider.isInGroup) {
       _showError('Вы уже в группе');
@@ -2054,6 +2099,16 @@ class _ShopScreenState extends State<ShopScreen> {
                               try {
                                 await groupProvider.createGroup();
                                 if (mounted) {
+                                  // Сначала обновляем данные группы
+                                  await groupProvider.refreshGroupData();
+                                  // Затем обновляем данные пользователя, чтобы получить актуальный статус админа
+                                  await authProvider.refreshUserData();
+                                  // И только потом обновляем товары
+                                  await shopProvider.refreshProducts();
+                                  
+                                  // Принудительно обновляем UI
+                                  setState(() {});
+                                  
                                   Navigator.pop(ctx);
                                   _showGroupCreatedDialog(groupProvider.groupCode!);
                                 }
@@ -2290,32 +2345,42 @@ class _ShopScreenState extends State<ShopScreen> {
                               ),
                             ),
                             onPressed: () async {
-                              final code = _joinCodeController.text.trim();
-                              if (code.length != 6) {
-                                setState(() => _errorText = 'Нужно 6 символов');
-                                return;
-                              }
+                              setState(() {
+                                _isJoining = true;
+                                _errorText = null;
+                              });
 
-                              setState(() => _isJoining = true);
                               try {
-                                final success = await Provider.of<GroupProvider>(
-                                  context,
-                                  listen: false,
-                                ).joinGroup(code);
-
-                                if (success && mounted) {
+                                final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+                                final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+                                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                                
+                                await groupProvider.joinGroup(_joinCodeController.text);
+                                
+                                if (mounted) {
+                                  // Обновляем все данные после присоединения к группе
+                                  await Future.wait([
+                                    groupProvider.refreshGroupData(),
+                                    shopProvider.refreshProducts(),
+                                    authProvider.refreshUserData(),
+                                  ]);
+                                  
                                   Navigator.pop(ctx);
-                                  _showJoinSuccessDialog();
-                                } else {
-                                  setState(() {
-                                    _errorText = 'Неверный код';
-                                    _isJoining = false;
-                                  });
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Вы присоединились к группе!', style: _textStyleSemiBold),
+                                      backgroundColor: ShopScreenConstants.primaryColor,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  );
                                 }
                               } catch (e) {
                                 setState(() {
-                                  _errorText = 'Ошибка: ${e.toString()}';
                                   _isJoining = false;
+                                  _errorText = e.toString();
                                 });
                               }
                             },
@@ -2394,7 +2459,63 @@ class _ShopScreenState extends State<ShopScreen> {
 
   void _openProductLink(String url) async {
     _safeReportEvent('shop_product_link_open', attributes: {'url': url});
-    // TODO: Реализовать открытие ссылки
+    try {
+      // Форматируем URL если нужно
+      String formattedUrl = url.trim();
+      debugPrint('Original URL: $formattedUrl');
+
+      if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+        formattedUrl = 'https://$formattedUrl';
+      }
+      debugPrint('Formatted URL: $formattedUrl');
+
+      if (await canLaunchUrlString(formattedUrl)) {
+        final result = await launchUrlString(
+          formattedUrl,
+          mode: LaunchMode.externalApplication,
+        );
+        
+        if (!result && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Не удалось открыть ссылку', style: _textStyleSemiBold),
+              backgroundColor: ShopScreenConstants.primaryColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Невозможно открыть ссылку', style: _textStyleSemiBold),
+              backgroundColor: ShopScreenConstants.primaryColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error opening URL: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка при открытии ссылки', style: _textStyleSemiBold),
+            backgroundColor: ShopScreenConstants.primaryColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    }
   }
 }
 
