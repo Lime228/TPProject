@@ -2,11 +2,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zadachok/routes/main_navigation.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/group_provider.dart';
 import 'login_screen.dart';
+import 'onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -30,6 +32,36 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _textController;
   late Animation<double> _textOpacity;
   late Animation<Offset> _textSlide;
+
+  Future<void> _checkFirstLaunchAndNavigate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isFirstLaunch = prefs.getBool('first_launch') ?? true;
+
+    if (!mounted) return;
+
+    if (isFirstLaunch) {
+      await prefs.setBool('first_launch', false);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+      );
+    } else {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.checkAuth();
+
+      if (authProvider.isAuthorized) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+        );
+      }
+    }
+  }
 
   Future<void> _initializeAndAnimate() async {
     await _initializeApp();
@@ -143,11 +175,12 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(TRANSITION_DURATION);
 
     if (!mounted) return;
+    await _checkFirstLaunchAndNavigate();
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
-    );
+    // Navigator.pushReplacement(
+    //   context,
+    //   MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+    // );
   }
 
   @override

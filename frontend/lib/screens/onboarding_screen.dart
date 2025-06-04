@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../routes/main_navigation.dart';
+import 'login_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({Key? key}) : super(key: key);
@@ -10,6 +14,14 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+
+  void _completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('first_launch', false);
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+    );
+  }
 
   // Поместите изображения в папку lib/assets/onboarding/
   // и укажите правильные пути (например: 'lib/assets/onboarding/slide1.png')
@@ -191,7 +203,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         curve: Curves.easeIn,
                       );
                     } else {
-                      _skipOnboarding();
+                      _completeOnboarding();
+
                     }
                   },
                   style: ElevatedButton.styleFrom(
