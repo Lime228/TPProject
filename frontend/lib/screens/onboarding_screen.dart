@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zadachok/screens/splash_screen.dart';
 
 import '../routes/main_navigation.dart';
 import 'login_screen.dart';
@@ -84,7 +85,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _skipOnboarding() {
     if (!_isFirstLaunch) {
-      Navigator.of(context).pop();
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const SplashScreen()),
+      );
     }else{
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('В первый раз пропустить ЧаВо нельзя!'),
