@@ -94,10 +94,11 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> refreshUserData() async {
-    if (_user == null) return;
+    if (_user == null || _token == null) return;
 
     try {
       debugPrint('DEBUG[AuthProvider] refreshUserData: fetching user by id=${_user!.id}');
+      apiClient.setAuthToken(_token!);
       final updatedUser = await apiClient.getUserById(
         UserModel(id: _user!.id, name: '', email: '', login: ''),
       );
@@ -108,7 +109,7 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Ошибка при обновлении данных пользователя: $e');
-      // В случае ошибки используем локальные данные
+
       final authState = await _localState.getAuthState();
       if (authState != null) {
         _user = authState['user'];

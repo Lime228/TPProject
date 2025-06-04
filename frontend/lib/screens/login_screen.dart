@@ -45,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _errorMessage;
   bool _obscureText = true;
 
-  // Адаптивные константы
+
   double get _borderRadius => MediaQuery.of(context).size.width * 0.035;
   Offset get _shadowOffset => Offset(0, MediaQuery.of(context).size.height * 0.005);
   double get _shadowBlur => MediaQuery.of(context).size.width * 0.015;
@@ -120,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
           password: _passwordController.text,
           name: '',
           email: '',
-          birthdayDate: DateTime.now(), // Исправлено с timestamp() на now()
+          birthdayDate: DateTime.now(),
         ),
       );
 
@@ -135,13 +135,9 @@ class _LoginScreenState extends State<LoginScreen> {
       final shopProvider = Provider.of<ShopProvider>(context, listen: false);
 
       await authProvider.setAuthData(user: user, token: token);
+      
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        groupProvider.setCurrentUser(user);
-        if (groupProvider.isInGroup) {
-          groupProvider.refreshGroupData();
-        }
-      });
+      await authProvider.refreshAll(groupProvider, taskProvider, shopProvider);
 
       if (!mounted) return;
 

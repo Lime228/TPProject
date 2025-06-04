@@ -38,7 +38,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _picker = ImagePicker();
   String? _avatarBytes;
 
-  // Адаптивные размеры
+
   double get blockWidth => MediaQuery.of(context).size.width * 0.9;
   double get blockPadding => MediaQuery.of(context).size.width * 0.04;
   double get blockBorderRadius => MediaQuery.of(context).size.width * 0.035;
@@ -229,7 +229,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.user;
 
-    // Безопасное получение аватара
+
     final avatar = (user != null && user.photoBytes != null && user.photoBytes!.isNotEmpty)
         ? user.photoBytes
         : null;
@@ -360,12 +360,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       final month = int.parse(dateParts[1]);
                       final year = int.parse(dateParts[2]);
                       
-                      // Проверяем валидность даты
+
                       if (month < 1 || month > 12) {
                         throw Exception('Неверный месяц');
                       }
                       
-                      // Получаем количество дней в месяце
+
                       final daysInMonth = DateTime(year, month + 1, 0).day;
                       if (day < 1 || day > daysInMonth) {
                         throw Exception('Неверный день месяца');
@@ -396,7 +396,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 hintText: 'ДД.ММ.ГГГГ',
                 hintStyle: TextStyle(
                   fontSize: MediaQuery.of(context).size.width * 0.04,
-                  color: Colors.grey[400], // Делаем подсказку более светлой
+                  color: Colors.grey[400],
                 ),
               ),
               style: TextStyle(
@@ -541,13 +541,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _safeReportEvent('settings_notifications_toggle', attributes: {'enabled': val});
               settings.update('notificationsEnabled', val);
               notificationService.setNotificationsEnabled(val);
-              // Убедимся, что токен установлен
+
               if (authProvider.token != null) {
                 notificationService.setAuthToken(authProvider.token);
               }
             },
             title: Text('Получать уведомления'),
-            activeColor: const Color(0xFF937DF3), // Цвет активного переключателя
+            activeColor: const Color(0xFF937DF3),
           ),
           SizedBox(height: MediaQuery.of(context).size.height * 0.02),
           Container(
@@ -559,7 +559,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(blockBorderRadius),
                 ),
-                elevation: 0, // Убираем тень
+                elevation: 0,
               ),
               onPressed: () async {
                 _safeReportEvent('settings_test_notification');
@@ -629,23 +629,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onPressed: () async {
                 _safeReportEvent('settings_refresh_data');
                 try {
-                  await authProvider.refreshAll(groupProvider, taskProvider, shopProvider);
+
+                  await authProvider.refreshUserData();
+                  
+
+                  try {
+                    await groupProvider.loadGroupData();
+                    if (groupProvider.isInGroup) {
+                      await Future.wait([
+                        groupProvider.refreshGroupData(),
+                        taskProvider.refreshTasks(),
+                        shopProvider.refreshProducts(),
+                      ]);
+                    }
+                  } catch (e) {
+                    debugPrint('Некритичная ошибка при обновлении дополнительных данных: $e');
+                  }
+
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Данные успешно обновлены', style: _textStyleSemiBold),
+                    SnackBar(
+                      content: Text(
+                        'Данные успешно обновлены',
+                        style: _textStyleSemiBold,
+                      ),
                       backgroundColor: const Color(0xFF937DF3),
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
-                      ),),
+                      ),
+                    ),
                   );
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Ошибка обновления: $e', style: _textStyleSemiBold),
+                    SnackBar(
+                      content: Text(
+                        'Ошибка обновления данных пользователя',
+                        style: _textStyleSemiBold,
+                      ),
                       backgroundColor: const Color(0xFF937DF3),
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
-                      ),),
+                      ),
+                    ),
                   );
                 }
               },
@@ -851,7 +877,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             await authProvider.updateUserPhoto(base64Image);
             await settingsProvider.updateUserData(avatarBytes: base64Image);
 
-            // Show success message
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Аватар успешно обновлен', style: _textStyleSemiBold),
@@ -864,7 +890,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             );
           } catch (e) {
             debugPrint('Ошибка при обновлении аватара: $e');
-            // Откатываем изменения, если не удалось обновить
+
             setState(() => _avatarBytes = authProvider.user?.photoBytes);
 
             ScaffoldMessenger.of(context).showSnackBar(
@@ -969,12 +995,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             final month = int.parse(dateParts[1]);
             final year = int.parse(dateParts[2]);
             
-            // Проверяем валидность даты
+
             if (month < 1 || month > 12) {
               throw Exception('Неверный месяц');
             }
             
-            // Получаем количество дней в месяце
+
             final daysInMonth = DateTime(year, month + 1, 0).day;
             if (day < 1 || day > daysInMonth) {
               throw Exception('Неверный день месяца');

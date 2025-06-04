@@ -63,7 +63,7 @@ class ApiClient implements ApiInterface {
 
       final registerData = json.decode(registerResponse.body);
 
-      // Предполагаем, что сервер возвращает данные пользователя в ответе
+
       return UserModel.fromResponse(registerData['user'] ?? registerData);
     } on http.ClientException catch (e) {
       throw Exception('Ошибка подключения: ${e.message}');
@@ -88,27 +88,39 @@ class ApiClient implements ApiInterface {
 
       final loginData = json.decode(loginResponse.body);
 
-
       final token = loginData['token'] as String?;
       if (token == null) {
         throw Exception('Токен не получен от сервера');
       }
-      _authToken = token;
+      
+
+      setAuthToken(token);
+
+
+      if (_authToken == null) {
+        throw Exception('Ошибка установки токена авторизации');
+      }
 
       //блок ниже можно заменить getbylogin но чето стремно пока надо подумать
       final userDataUrl = Uri.parse('${ApiEndpoints.loginUrl}/${request.login}');
 
       final userResponse = await _client.get(
         userDataUrl,
-        headers: {'Content-Type': 'application/json; charset=utf-8',
-          'Authorization': 'Bearer $_authToken'},
+        headers: _getHeaders(),
       ).timeout(requestTimeout);
 
       if (userResponse.statusCode != 200) {
         throw Exception('Ошибка получения данных пользователя: ${userResponse.statusCode}');
       }
 
-      return _handleUserResponse(userResponse);
+      final user = _handleUserResponse(userResponse);
+      
+
+      if (user.id == 0) {
+        throw Exception('Ошибка получения данных пользователя: ID не установлен');
+      }
+
+      return user;
     } on http.ClientException catch (e) {
       throw Exception('Ошибка подключения: ${e.message}');
     } on FormatException catch (e) {
@@ -263,7 +275,7 @@ class ApiClient implements ApiInterface {
     }
   }
 
-  @override // еще не существует
+  @override
   Future<void> recoverPassword({required String email, required String login}) async {
     final url = Uri.parse(ApiEndpoints.recoverPasswordUrl);
 
@@ -521,7 +533,7 @@ class ApiClient implements ApiInterface {
         url,
         headers: _getHeaders(),
         body: json.encode({
-          'productid': product.id, // Убедимся, что ID передается
+          'productid': product.id,
           'name': product.name,
           'description': product.description,
           'photo': product.photoBytes,
@@ -774,7 +786,7 @@ class ApiClient implements ApiInterface {
     final responseData = json.decode(utf8.decode(response.bodyBytes));
     debugPrint('User response data: $responseData');
 
-    // Добавим специально логирование даты
+    
     if (responseData['birthday_date'] != null) {
       debugPrint('Received birthday_date from server: ${responseData['birthday_date']}');
     }

@@ -21,6 +21,21 @@ import 'api/endpoints_config_parse.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.edgeToEdge,
+    overlays: [SystemUiOverlay.top],
+  );
+  
+
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarDividerColor: Colors.transparent,
+    ),
+  );
+
   await initializeDateFormatting('ru');
   final prefs = await SharedPreferences.getInstance();
   await EndpointsConfigParse.load();
@@ -28,7 +43,7 @@ void main() async {
   final notificationService = NotificationService();
   await notificationService.init();
 
-  // Инициализация сервисов
+
   final connectivityService = ConnectivityService();
   final localStorageService = LocalStorageService();
   final localStateService = LocalStateService();
@@ -43,7 +58,7 @@ void main() async {
     ),
   );
 
-  // Создаём провайдеры с новым localStateService
+
   final groupProvider = GroupProvider(
     authProvider: null,
     localState: localStateService,
