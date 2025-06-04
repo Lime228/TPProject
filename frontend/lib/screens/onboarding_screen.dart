@@ -40,34 +40,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // Поместите изображения в папку lib/assets/onboarding/
   // и укажите правильные пути (например: 'lib/assets/onboarding/slide1.png')
   final List<String> _onboardingImages = [
-    'lib/assets/onboarding/1.jpg', // Заглушка - замените на реальное изображение
-    'lib/assets/onboarding/2.jpg', // Заглушка - замените на реальное изображение
-    'lib/assets/onboarding/3.jpg', // Заглушка - замените на реальное изображение
-    'lib/assets/onboarding/4.jpg',
-    'lib/assets/onboarding/5.jpg',
-    'lib/assets/onboarding/castom.jpg',
-    'lib/assets/onboarding/filtr_task.jpg',
+    'lib/assets/onboarding/dobro.png', // Заглушка - замените на реальное изображение
+    'lib/assets/onboarding/tasks.png', // Заглушка - замените на реальное изображение
+    'lib/assets/onboarding/tasks_manage.png', // Заглушка - замените на реальное изображение
+    'lib/assets/onboarding/shop.png',
+    'lib/assets/onboarding/products.png',
+    'lib/assets/onboarding/profile.png',
+    'lib/assets/onboarding/goodbye.png',
   ];
 
   final List<String> _onboardingTitles = [
     'Добро пожаловать!',
+    'Задачи',
     'Управление задачами',
-    'Командная работа',
-    'Награды и достижения',
-    'Статистика прогресса',
-    'Кастомизация профиля',
-    'Сортировка задач и магазина',
+    'Магазин',
+    'Товары',
+    'Профиль',
+    'Приятного пользования!'
   ];
 
   // Описания для каждого экрана
   final List<String> _onboardingDescriptions = [
-    'Приложение поможет вам организовать работу и личные задачи',
-    'Создавайте, редактируйте и отслеживайте выполнение задач',
-    'Работайте вместе с коллегами над общими проектами',
-    'Получайте награды за выполнение целей',
-    'Анализируйте свою продуктивность с помощью статистики',
-    'Настройте профиль под свои предпочтения',
-    'Будьте в курсе важных событий и дедлайнов',
+    'После первой авторизации, вы сможете создать группу или присоединиться к уже существующей по коду группы',
+    'Задачи бывают невыполненные, выполненные (оранжевые), подтвержденные (зеленые) и просроченные (красные). Выполнить или подтвердить задачу можно нажав на кружок слева от карточки задачи.',
+    'Через кнопку справа снизу на экране задач можно добавить задачу. Нажав на карточку задачи можно посмотреть информацию о ней, или же отредактировать.',
+    'После подтверждения администратором задач, участнику начисляются "звездочки", которые можно потратить в магазине. Баланс звёздочек отображается справа сверху. Наполнение магазина а так же цену предметов выставляет администратор.',
+    'Редактировать товары администратор может через меню справа сверху на экране "Магазин". Нажав на товар можно посмотреть информацию о нем, а так же участники группы могут купить товар, если им позволяет баланс.',
+    'Во вкладке "Настройки" вы можете посмотреть свою статистику, а так же поменять личные данные',
+    ' ',
   ];
 
   @override
@@ -140,23 +140,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Изображение онбординга
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(borderRadius),
-                          child: Image.asset(
-                            _onboardingImages[index],
-                            width: MediaQuery.of(context).size.width * 0.8,
-                            height: MediaQuery.of(context).size.height * 0.4,
-                            fit: BoxFit.cover,
+                        Container(
+                          width: MediaQuery.of(context).size.width * 0.8,
+                          height: MediaQuery.of(context).size.height * 0.4,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(borderRadius),
+                            border: Border.all(
+                              color: Colors.black,
+                              width: MediaQuery.of(context).size.height * 0.001,
+                            ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(borderRadius),
+                            child: Image.asset(
+                              _onboardingImages[index],
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
-                        SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+                        SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                         Text(
                           _onboardingTitles[index],
                           style: titleStyle,
                           textAlign: TextAlign.center,
                         ),
-                        SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+                        SizedBox(height: MediaQuery.of(context).size.height * 0.01),
                         Padding(
                           padding: EdgeInsets.symmetric(
                               horizontal: MediaQuery.of(context).size.width * 0.05),

@@ -330,7 +330,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     );
                   },
                   child: Text(
-                    'Как пользоваться?',
+                    'ЧаВо?',
                     style: _textStyleBold.copyWith(
                       color: _colorEnterButton,
                       fontSize: MediaQuery.of(context).size.width * 0.05,
