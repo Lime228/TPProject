@@ -163,7 +163,12 @@ class _TasksScreenState extends State<TasksScreen> {
 
   Future<void> _initData() async {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
-    await groupProvider.refreshGroupData(); // Вызовется один раз
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    await groupProvider.refreshGroupData();
+    if (authProvider.isAuthorized && groupProvider.isInGroup) {
+      await _loadTasks();
+      setState(() {});
+    }
   }
 
   Future<void> _refreshData() async {
@@ -172,8 +177,12 @@ class _TasksScreenState extends State<TasksScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     if (groupProvider.isInGroup && authProvider.isAuthorized) {
-      await taskProvider.refreshTasks();
-      await groupProvider.refreshGroupData();
+      await Future.wait([
+        taskProvider.refreshTasks(),
+        groupProvider.refreshGroupData(),
+        authProvider.refreshUserData(),
+      ]);
+      setState(() {});
     }
   }
 
@@ -281,22 +290,147 @@ class _TasksScreenState extends State<TasksScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-    final groupProvider = Provider.of<GroupProvider>(context);
+    return Consumer3<GroupProvider, TaskProvider, AuthProvider>(
+      builder: (context, groupProvider, taskProvider, authProvider, child) {
+        final tasks = taskProvider.tasks;
+        final bool showSearchAndSort = tasks != null && tasks.isNotEmpty;
 
-    if (!authProvider.isAuthorized) {
-      return _buildUnauthorizedView();
-    }
-
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          _buildProfileHeader(context),
-          Expanded(child: _buildMainContent()),
-        ],
-      ),
-      floatingActionButton: _buildAddTaskButton(),
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: Column(
+            children: [
+              _buildProfileHeader(context),
+              if (showSearchAndSort)
+                Container(
+                  width: TaskScreenStyles.searchSortWidth(context),
+                  height: MediaQuery.of(context).size.height * 0.04,
+                  margin: EdgeInsets.symmetric(
+                    horizontal: MediaQuery.of(context).size.width * 0.04,
+                    vertical: MediaQuery.of(context).size.height * 0.01,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.4,
+                        height: MediaQuery.of(context).size.height * 0.04,
+                        decoration: BoxDecoration(
+                          color: TaskScreenStyles.sortButtonColor,
+                          borderRadius: BorderRadius.circular(
+                            MediaQuery.of(context).size.width * 0.03,
+                          ),
+                        ),
+                        child: PopupMenuButton<String>(
+                          color: Colors.white,
+                          offset: const Offset(0, 30),
+                          onSelected: (value) {
+                            taskProvider.sortTasks(option: value);
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem<String>(
+                              value: 'date',
+                              child: Text('По дате окончания', style: _textStyleSemiBold),
+                            ),
+                            const PopupMenuItem<String>(
+                              value: 'completed',
+                              child: Text('Только выполненные', style: _textStyleSemiBold),
+                            ),
+                            const PopupMenuItem<String>(
+                              value: 'pending',
+                              child: Text('Только невыполненные', style: _textStyleSemiBold),
+                            ),
+                            const PopupMenuItem<String>(
+                              value: 'unconfirmed',
+                              child: Text('Ожидают подтверждения', style: _textStyleSemiBold),
+                            ),
+                            const PopupMenuItem<String>(
+                              value: 'default',
+                              child: Text('Обычная сортировка', style: _textStyleSemiBold),
+                            ),
+                          ],
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.sort,
+                                color: Colors.white,
+                                size: MediaQuery.of(context).size.width * 0.04,
+                              ),
+                              SizedBox(width: MediaQuery.of(context).size.width * 0.01),
+                              Text(
+                                'Сортировка',
+                                style: _textStyleSemiBold.copyWith(
+                                  color: Colors.white,
+                                  fontSize: MediaQuery.of(context).size.width * 0.035,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: MediaQuery.of(context).size.width * 0.02),
+                      Expanded(
+                        child: Container(
+                          height: MediaQuery.of(context).size.height * 0.04,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFC1FFEB),
+                            borderRadius: BorderRadius.circular(
+                              MediaQuery.of(context).size.width * 0.03,
+                            ),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: MediaQuery.of(context).size.width * 0.03,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.search,
+                                color: TaskScreenStyles.primaryColor,
+                                size: MediaQuery.of(context).size.width * 0.04,
+                              ),
+                              SizedBox(width: MediaQuery.of(context).size.width * 0.03),
+                              Expanded(
+                                child: TextField(
+                                  controller: _searchController,
+                                  style: _textStyleSemiBold.copyWith(
+                                    fontSize: MediaQuery.of(context).size.width * 0.035,
+                                    color: TaskScreenStyles.primaryColor,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: 'Поиск задач...',
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                  onChanged: (value) {
+                                    taskProvider.searchTasks(value);
+                                  },
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  Icons.close,
+                                  color: Colors.grey[600],
+                                  size: MediaQuery.of(context).size.width * 0.04,
+                                ),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  taskProvider.resetFilters();
+                                  FocusScope.of(context).unfocus();
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              Expanded(child: _buildMainContent()),
+            ],
+          ),
+          floatingActionButton: _buildAddTaskButton(),
+        );
+      },
     );
   }
 
@@ -578,146 +712,9 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
-  Widget _buildSearchAndSortBar() {
-    return Container(
-      width: TaskScreenStyles.searchSortWidth(context),
-      height: MediaQuery.of(context).size.height * 0.04,
-      margin: EdgeInsets.symmetric(
-        horizontal: MediaQuery.of(context).size.width * 0.04,
-        vertical: MediaQuery.of(context).size.height * 0.01,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: MediaQuery.of(context).size.width * 0.4,
-            height: MediaQuery.of(context).size.height * 0.04,
-            decoration: BoxDecoration(
-              color: TaskScreenStyles.sortButtonColor,
-              borderRadius: BorderRadius.circular(
-                MediaQuery.of(context).size.width * 0.03,
-              ),
-            ),
-            child: PopupMenuButton<String>(
-              color: Colors.white,
-              offset: const Offset(0, 30),
-              onSelected: (value) {
-                Provider.of<TaskProvider>(
-                  context,
-                  listen: false,
-                ).sortTasks(option: value);
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem<String>(
-                  value: 'date',
-                  child: Text('По дате окончания', style: _textStyleSemiBold),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'completed',
-                  child: Text('Только выполненные', style: _textStyleSemiBold),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'pending',
-                  child: Text('Только невыполненные', style: _textStyleSemiBold),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'unconfirmed',
-                  child: Text('Ожидают подтверждения', style: _textStyleSemiBold),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'default',
-                  child: Text('Обычная сортировка', style: _textStyleSemiBold),
-                ),
-              ],
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.sort,
-                    color: Colors.white,
-                    size: MediaQuery.of(context).size.width * 0.04,
-                  ),
-                  SizedBox(width: MediaQuery.of(context).size.width * 0.01),
-                  Text(
-                    'Сортировка',
-                    style: _textStyleSemiBold.copyWith(
-                      color: Colors.white,
-                      fontSize: MediaQuery.of(context).size.width * 0.035,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SizedBox(width: MediaQuery.of(context).size.width * 0.02),
-          Expanded(
-            child: Container(
-              height: MediaQuery.of(context).size.height * 0.04,
-              decoration: BoxDecoration(
-                color: const Color(0xFFC1FFEB),
-                borderRadius: BorderRadius.circular(
-                  MediaQuery.of(context).size.width * 0.03,
-                ),
-              ),
-              padding: EdgeInsets.symmetric(
-                horizontal: MediaQuery.of(context).size.width * 0.03,
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.search,
-                    color: TaskScreenStyles.primaryColor,
-                    size: MediaQuery.of(context).size.width * 0.04,
-                  ),
-                  SizedBox(width: MediaQuery.of(context).size.width * 0.03),
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      style: _textStyleSemiBold.copyWith(
-                        fontSize: MediaQuery.of(context).size.width * 0.035,
-                        color: TaskScreenStyles.primaryColor,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Поиск задач...',
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      onChanged: (value) {
-                        Provider.of<TaskProvider>(
-                          context,
-                          listen: false,
-                        ).searchTasks(value);
-                      },
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.close,
-                      color: Colors.grey[600],
-                      size: MediaQuery.of(context).size.width * 0.04,
-                    ),
-                    onPressed: () {
-                      _searchController.clear();
-                      Provider.of<TaskProvider>(
-                        context,
-                        listen: false,
-                      ).resetFilters();
-                      FocusScope.of(context).unfocus();
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTasksList() {
     return Column(
       children: [
-        _buildSearchAndSortBar(),
         Expanded(
           child: RefreshIndicator(
             color: Color(0xFF937DF3),
@@ -2310,7 +2307,12 @@ class _TasksScreenState extends State<TasksScreen> {
                               _safeReportEvent('group_create_confirm');
                               setState(() => _isCreating = true);
                               try {
+                                final authProvider = Provider.of<AuthProvider>(context, listen: false);
                                 await groupProvider.createGroup();
+                                await Future.wait([
+                                  authProvider.refreshUserData(),
+                                  groupProvider.refreshGroupData(),
+                                ]);
                                 if (mounted) {
                                   Navigator.pop(ctx);
                                   _showGroupCreatedDialog(groupProvider.groupCode);
