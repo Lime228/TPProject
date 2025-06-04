@@ -24,6 +24,7 @@
 - Презентация ([PDF](https://github.com/Lime228/TPProject/blob/main/Documentation/Финальная%20защита.pdf)) ([PPTX](https://github.com/Lime228/TPProject/blob/main/Documentation/Финальная%20защита.pptx))
 - Презентация мобильной части
 - [Курсовая работа по проекту](https://github.com/Lime228/TPProject/blob/main/Documentation/course_work_(1.1).pdf)
+- [Swagger ZадачOk API](https://api.zadachok.ru/swagger-ui/index.html#/)
 
 ### Доска задач
 - [YouTrack](https://youtrack.zadachok.ru/agiles)
@@ -46,8 +47,7 @@
 ### Документация
 - [Еженедельные отчеты](https://github.com/Lime228/TPProject/tree/main/Weekly%20reports)
 - Диаграммы, рассчеты, Roadmap и т.д. находятся на [Miro](https://miro.com/app/board/uXjVIVLnelk=/)
-- [Техническое задание](https://github.com/Lime228/TPProject/tree/main/Documentation)
-- [Схема API](https://api.zadachok.ru/swagger-ui/index.html#/)
+- Техническое задание ([PDF](https://github.com/Lime228/TPProject/blob/main/Documentation/TZ_ZadachOk.pdf)) ([DOCX](https://github.com/Lime228/TPProject/blob/main/Documentation/TZ_ZadachOk.docx))
 - [Дополнение 1 к техническому заданию](https://github.com/Lime228/TPProject/blob/main/Documentation/Дополнение%201%20к%20тз.pdf)
 - [Письмо к дополнению](https://github.com/Lime228/TPProject/blob/main/Documentation/Письмо%20к%20дополнению.pdf)
 - [PM-отчет (2 атт.)](https://github.com/Lime228/TPProject/blob/main/Documentation/PM-отчет.pdf)
