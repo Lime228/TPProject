@@ -1700,11 +1700,13 @@ class _TasksScreenState extends State<TasksScreen> {
       return;
     }
 
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Закрыть информацию о группе',
-      // Добавлено обязательное поле
       barrierColor: Colors.black.withOpacity(0.5),
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (ctx, anim1, anim2) {
@@ -1713,9 +1715,9 @@ class _TasksScreenState extends State<TasksScreen> {
           child: Material(
             color: Colors.transparent,
             child: Padding(
-              padding: const EdgeInsets.only(top: 50),
+              padding: EdgeInsets.only(top: screenHeight * 0.05),
               child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20),
+                margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16.0),
@@ -1732,7 +1734,12 @@ class _TasksScreenState extends State<TasksScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      padding: EdgeInsets.fromLTRB(
+                        screenWidth * 0.04,
+                        screenHeight * 0.02,
+                        screenWidth * 0.04,
+                        0,
+                      ),
                       child: Text(
                         'Информация о группе',
                         style: _textStyleBold.copyWith(
@@ -1742,22 +1749,19 @@ class _TasksScreenState extends State<TasksScreen> {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(screenWidth * 0.04),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Код: ${groupProvider.groupCode}', style: _textStyleSemiBold),
-                          const SizedBox(height: 10),
+                          SizedBox(height: screenHeight * 0.01),
                           Text(
                             groupProvider.isOwner
                                 ? 'Вы администратор группы'
                                 : 'Вы участник группы',
                             style: _textStyleBold.copyWith(
-                              color:
-                                  groupProvider.isOwner
-                                      ? Colors.green
-                                      : Colors.blue,
+                              color: groupProvider.isOwner ? Colors.green : Colors.blue,
                               fontSize: 16,
                             ),
                           ),
@@ -1765,22 +1769,21 @@ class _TasksScreenState extends State<TasksScreen> {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      padding: EdgeInsets.fromLTRB(
+                        screenWidth * 0.04,
+                        0,
+                        screenWidth * 0.04,
+                        screenHeight * 0.02,
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           if (!groupProvider.isOwner) ...[
-                          TextButton(
-                            onPressed:
-                                () => _handleLeaveGroup(ctx, groupProvider),
-                            child: const Text('Выйти из группы', style: _textStyleSemiBold),
-                          ),
-                          ],
-                          if (groupProvider.isOwner) ...[
-                            const SizedBox(width: 8),
-                          ],
-                          if (!groupProvider.isOwner) ...[
-                            const SizedBox(width: 8),
+                            TextButton(
+                              onPressed: () => _handleLeaveGroup(ctx, groupProvider),
+                              child: const Text('Выйти из группы', style: _textStyleSemiBold),
+                            ),
+                            SizedBox(width: screenWidth * 0.002),
                             TextButton(
                               onPressed: () {
                                 Navigator.pop(ctx);
@@ -1810,6 +1813,7 @@ class _TasksScreenState extends State<TasksScreen> {
       },
     );
   }
+
 
   Future<void> _handleLeaveGroup(
     BuildContext ctx,
@@ -2452,6 +2456,8 @@ class _TasksScreenState extends State<TasksScreen> {
     _safeReportEvent('group_join_dialog_open');
     bool _isJoining = false;
     String? _errorText;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     showDialog(
       context: context,
@@ -2460,12 +2466,12 @@ class _TasksScreenState extends State<TasksScreen> {
         builder: (context, setState) {
           return Dialog(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(TaskScreenStyles.dialogBorderRadius),
+              borderRadius: BorderRadius.circular(screenWidth * 0.05), // 5% ширины
             ),
             elevation: 8,
             backgroundColor: TaskScreenStyles.dialogBackgroundColor,
             child: Padding(
-              padding: TaskScreenStyles.dialogPadding,
+              padding: EdgeInsets.all(screenWidth * 0.05), // 5% ширины
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2476,34 +2482,35 @@ class _TasksScreenState extends State<TasksScreen> {
                       Text(
                         'Присоединиться к группе',
                         style: _textStyleBold.copyWith(
-                          fontSize: 20,
+                          fontSize: screenWidth * 0.05, // 5% ширины
                           color: TaskScreenStyles.dialogPrimaryColor,
                         ),
                       ),
-
                     ],
                   ),
 
                   Padding(
-                    padding: TaskScreenStyles.dialogContentPadding,
+                    padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02), // 2% высоты
                     child: Column(
                       children: [
                         Icon(
                           Icons.group,
-                          size: 64,
+                          size: screenWidth * 0.15, // 15% ширины
                           color: TaskScreenStyles.dialogPrimaryColor,
                         ),
-                        SizedBox(height: 16),
+                        SizedBox(height: screenHeight * 0.02), // 2% высоты
                         Text(
                           'Введите код группы',
-                          style: _textStyleSemiBold.copyWith(fontSize: 16),
+                          style: _textStyleSemiBold.copyWith(
+                            fontSize: screenWidth * 0.04, // 4% ширины
+                          ),
                           textAlign: TextAlign.center,
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(height: screenHeight * 0.01), // 1% высоты
                         Text(
                           'Попросите код у администратора группы',
                           style: _textStyleSemiBold.copyWith(
-                            fontSize: 14,
+                            fontSize: screenWidth * 0.035, // 3.5% ширины
                             color: Colors.grey,
                           ),
                           textAlign: TextAlign.center,
@@ -2512,19 +2519,15 @@ class _TasksScreenState extends State<TasksScreen> {
                     ),
                   ),
 
-
-
                   _buildRoundedTextField(
                     controller: _joinCodeController,
                     labelText: 'Код группы',
-                    validator:
-                        (value) =>
-                    value?.isEmpty ?? true
+                    validator: (value) => value?.isEmpty ?? true
                         ? 'Введите код группы'
                         : null,
                   ),
 
-                  SizedBox(height: 16),
+                  SizedBox(height: screenHeight * 0.02), // 2% высоты
 
                   if (_isJoining)
                     Center(child: CircularProgressIndicator())
@@ -2534,9 +2537,11 @@ class _TasksScreenState extends State<TasksScreen> {
                         Expanded(
                           child: OutlinedButton(
                             style: OutlinedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(vertical: 16),
+                              padding: EdgeInsets.symmetric(
+                                vertical: screenHeight * 0.02, // 2% высоты
+                              ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(screenWidth * 0.03), // 3% ширины
                               ),
                               side: BorderSide(
                                 color: TaskScreenStyles.dialogPrimaryColor,
@@ -2550,18 +2555,21 @@ class _TasksScreenState extends State<TasksScreen> {
                               'Отмена',
                               style: _textStyleSemiBold.copyWith(
                                 color: TaskScreenStyles.dialogPrimaryColor,
+                                fontSize: screenWidth * 0.03, // 4% ширины
                               ),
                             ),
                           ),
                         ),
-                        SizedBox(width: 16),
+                        SizedBox(width: screenWidth * 0.04), // 4% ширины
                         Expanded(
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: TaskScreenStyles.dialogPrimaryColor,
-                              padding: EdgeInsets.symmetric(vertical: 16),
+                              padding: EdgeInsets.symmetric(
+                                vertical: screenHeight * 0.02, // 2% высоты
+                              ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(screenWidth * 0.03), // 3% ширины
                               ),
                               elevation: 0,
                             ),
@@ -2606,6 +2614,7 @@ class _TasksScreenState extends State<TasksScreen> {
                               'Присоединиться',
                               style: _textStyleBold.copyWith(
                                 color: Colors.white,
+                                fontSize: screenWidth * 0.03, // 4% ширины
                               ),
                             ),
                           ),
