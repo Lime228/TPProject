@@ -822,13 +822,16 @@ class _TasksScreenState extends State<TasksScreen> {
     Color borderColor;
     IconData? statusIcon;
 
-    if (task.state == 2) {
+    if (task.state == 2) { // Выполненная задача
       borderColor = Colors.green;
       statusIcon = Icons.check;
-    } else if (task.state == 1) {
+    } else if (task.state == 1) { // Задача на подтверждении
       borderColor = Colors.orange;
       statusIcon = Icons.error_outline;
-    } else {
+    } else if (isOverdue) { // Просроченная и не выполненная задача
+      borderColor = Colors.red;
+      statusIcon = Icons.close;
+    } else { // Обычная активная задача
       borderColor = TaskScreenStyles.primaryColor;
     }
 
@@ -839,14 +842,8 @@ class _TasksScreenState extends State<TasksScreen> {
           : DismissDirection.none,
       background: Container(
         margin: EdgeInsets.symmetric(
-          horizontal: MediaQuery
-              .of(context)
-              .size
-              .width * 0.04,
-          vertical: MediaQuery
-              .of(context)
-              .size
-              .height * 0.01,
+          horizontal: MediaQuery.of(context).size.width * 0.04,
+          vertical: MediaQuery.of(context).size.height * 0.01,
         ),
         decoration: BoxDecoration(
           color: Colors.red,
@@ -945,19 +942,10 @@ class _TasksScreenState extends State<TasksScreen> {
         }
       },
       child: Container(
-        height: MediaQuery
-            .of(context)
-            .size
-            .height * 0.12,
+        height: MediaQuery.of(context).size.height * 0.12,
         margin: EdgeInsets.symmetric(
-          horizontal: MediaQuery
-              .of(context)
-              .size
-              .width * 0.04,
-          vertical: MediaQuery
-              .of(context)
-              .size
-              .height * 0.01,
+          horizontal: MediaQuery.of(context).size.width * 0.04,
+          vertical: MediaQuery.of(context).size.height * 0.01,
         ),
         child: Row(
           children: [
@@ -965,237 +953,217 @@ class _TasksScreenState extends State<TasksScreen> {
             InkWell(
               onTap: () => _completeTask(taskProvider, task.id),
               child: Container(
-                width: MediaQuery
-                    .of(context)
-                    .size
-                    .width * 0.08,
-                height: MediaQuery
-                    .of(context)
-                    .size
-                    .width * 0.08,
+                width: MediaQuery.of(context).size.width * 0.08,
+                height: MediaQuery.of(context).size.width * 0.08,
                 margin: EdgeInsets.only(
-                  right: MediaQuery
-                      .of(context)
-                      .size
-                      .width * 0.03,
+                  right: MediaQuery.of(context).size.width * 0.03,
                 ),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(color: borderColor, width: 2),
+                  color: statusIcon != null ? borderColor.withOpacity(0.1) : null,
                 ),
-                child:
-                statusIcon != null
+                child: statusIcon != null
                     ? Icon(
-                  statusIcon,
-                  size: MediaQuery
-                      .of(context)
-                      .size
-                      .width * 0.05,
-                  color: borderColor,
-                )
+                        statusIcon,
+                        size: MediaQuery.of(context).size.width * 0.05,
+                        color: borderColor,
+                      )
                     : null,
               ),
             ),
             // Task card content
             Expanded(
-              child: InkWell(
-                onTap: () => _showEditTaskDialog(task),
-                borderRadius: TaskScreenStyles.cardBorderRadius(context),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: TaskScreenStyles.cardBorderRadius(context),
+                  color: task.state == 2
+                      ? const Color(0xFFD9FFF3)
+                      : task.state == 1
+                          ? const Color(0xFFFFF3E0)
+                          : Colors.white,
+                  boxShadow: [TaskScreenStyles.cardShadow(context)],
+                ),
                 child: Stack(
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: TaskScreenStyles.cardBorderRadius(
-                            context),
-                        boxShadow: [TaskScreenStyles.cardShadow(context)],
-                        color:
-                        task.state == 2
-                            ? const Color(0xFFD9FFF3)
-                            : task.state == 1
-                            ? const Color(0xFFFFF3E0)
-                            : Colors.white,
-                      ),
-                    ),
-
-                    Stack(
-                      children: [
-                        // Твой ClipPath и градиентный фон
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          bottom: 0,
-                          width: MediaQuery.of(context).size.width * 0.25,
-                          child: ClipPath(
-                            clipper: _DiagonalClipper(),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: TaskScreenStyles.cardBorderRadius(context),
-                                gradient: LinearGradient(
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                  colors: isOverdue
-                                      ? [const Color(0xFF6E44FF).withOpacity(0.7), const Color(0xFFFF5252)]
-                                      : [const Color(0xFFCCC1FF).withOpacity(0.7), const Color(0xFF6E44FF)],
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF6E44FF).withOpacity(0.3),
-                                    blurRadius: 8,
-                                    spreadRadius: 2,
-                                    offset: const Offset(-5, 0),
-                                  ),
-                                ],
-                              ),
+                    // Градиентный слой с диагональю
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: MediaQuery.of(context).size.width * 0.30,
+                      child: ClipPath(
+                        clipper: _DiagonalClipper(),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.horizontal(
+                              right: Radius.circular(12),
+                            ),
+                            gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: isOverdue && task.state == 0
+                                  ? [const Color(0xFF6E44FF).withOpacity(0.7), const Color(0xFFFF5252)]
+                                  : [const Color(0xFFCCC1FF).withOpacity(0.7), const Color(0xFF6E44FF)],
                             ),
                           ),
                         ),
-
-                        // Маскировочный элемент (внизу слева)
-                        
-                      ],
-                    ),
-
-
-
-                    Padding(
-                      padding: EdgeInsets.all(
-                        MediaQuery
-                            .of(context)
-                            .size
-                            .width * 0.03,
                       ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 7,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    return ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        maxWidth: constraints.maxWidth * 0.88, // регулируй при необходимости
-                                      ),
-                                      child: Text(
-                                        task.name,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: _textStyleBold.copyWith(
-                                          fontSize: TaskScreenStyles.taskNameFontSize(context),
-                                          color: TaskScreenStyles.primaryColor,
-                                          decoration: task.state == 'Completed'
-                                              ? TextDecoration.lineThrough
-                                              : null,
+                    ),
+                    // Контент карточки
+                    InkWell(
+                      onTap: () => _showEditTaskDialog(task),
+                      child: Padding(
+                        padding: EdgeInsets.all(
+                          MediaQuery.of(context).size.width * 0.03,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 7,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      return ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          maxWidth: constraints.maxWidth * 0.88, // регулируй при необходимости
                                         ),
-                                      ),
-                                    );
-                                  },
-                                ),
+                                        child: Text(
+                                          task.name,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: _textStyleBold.copyWith(
+                                            fontSize: TaskScreenStyles.taskNameFontSize(context),
+                                            color: TaskScreenStyles.primaryColor,
+                                            decoration: task.state == 'Completed'
+                                                ? TextDecoration.lineThrough
+                                                : null,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
 
-                                // if (task.description.isNotEmpty)
-                                //   Padding(
-                                //     padding: EdgeInsets.only(
-                                //       top:
-                                //           MediaQuery.of(context).size.height *
-                                //           0.005,
-                                //     ),
-                                //     child: Text(
-                                //       task.description,
-                                //       style: _textStyleSemiBold.copyWith(
-                                //         fontSize: TaskScreenStyles.dateFontSize(
-                                //           context,
-                                //         ),
-                                //         color: Colors.grey[700],
-                                //       ),
-                                //       maxLines: 2,
-                                //       overflow: TextOverflow.ellipsis,
-                                //     ),
-                                //   ),
-                                if (task.customerId != 0)
-                                  Padding(
-                                    padding: EdgeInsets.only(
-                                      top:
-                                      MediaQuery
-                                          .of(context)
-                                          .size
-                                          .height *
-                                          0.005,
-                                    ),
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal:
-                                        MediaQuery
-                                            .of(context)
-                                            .size
-                                            .width *
-                                            0.02,
-                                        vertical:
+                                  // if (task.description.isNotEmpty)
+                                  //   Padding(
+                                  //     padding: EdgeInsets.only(
+                                  //       top:
+                                  //           MediaQuery.of(context).size.height *
+                                  //           0.005,
+                                  //     ),
+                                  //     child: Text(
+                                  //       task.description,
+                                  //       style: _textStyleSemiBold.copyWith(
+                                  //         fontSize: TaskScreenStyles.dateFontSize(
+                                  //           context,
+                                  //         ),
+                                  //         color: Colors.grey[700],
+                                  //       ),
+                                  //       maxLines: 2,
+                                  //       overflow: TextOverflow.ellipsis,
+                                  //     ),
+                                  //   ),
+                                  if (task.customerId != 0)
+                                    Padding(
+                                      padding: EdgeInsets.only(
+                                        top:
                                         MediaQuery
                                             .of(context)
                                             .size
                                             .height *
-                                            0.003,
+                                            0.005,
                                       ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.8),
-                                        borderRadius: BorderRadius.circular(
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal:
                                           MediaQuery
                                               .of(context)
                                               .size
                                               .width *
-                                              0.03,
+                                              0.02,
+                                          vertical:
+                                          MediaQuery
+                                              .of(context)
+                                              .size
+                                              .height *
+                                              0.003,
                                         ),
-                                      ),
-                                      child: Text(
-                                        'Для: ${groupProvider.members
-                                            .firstWhere((m) =>
-                                        m.id == task.customerId, orElse: () =>
-                                            UserModel(id: 0,
-                                                name: 'Неизвестно',
-                                                email: '',
-                                                login: ''))
-                                            .name}',
-                                        style: _textStyleBold.copyWith(
-                                          fontSize:
-                                          TaskScreenStyles.dateFontSize(
-                                            context,
-                                          ) *
-                                              0.8,
-                                          color: TaskScreenStyles.primaryColor,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.8),
+                                          borderRadius: BorderRadius.circular(
+                                            MediaQuery
+                                                .of(context)
+                                                .size
+                                                .width *
+                                                0.03,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'Для: ${groupProvider.members
+                                              .firstWhere((m) =>
+                                          m.id == task.customerId, orElse: () =>
+                                              UserModel(id: 0,
+                                                  name: 'Неизвестно',
+                                                  email: '',
+                                                  login: ''))
+                                              .name}',
+                                          style: _textStyleBold.copyWith(
+                                            fontSize:
+                                            TaskScreenStyles.dateFontSize(
+                                              context,
+                                            ) *
+                                                0.8,
+                                            color: TaskScreenStyles.primaryColor,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
 
-                          Expanded(
-                            flex: 3,
-                            child: Stack(
-                              children: [
-                                Positioned(
-                                  bottom: 0,
-                                  right: 0,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      if (startPoint != null)
-                                        Text(
-                                          'С ${DateFormat('dd.MM').format(
-                                              startPoint)}',
-                                          style: _textStyleSemiBold.copyWith(
-                                            fontSize: TaskScreenStyles
-                                                .dateFontSize(context) * 0.9,
-                                            color: Colors.white,
+                            Expanded(
+                              flex: 3,
+                              child: Stack(
+                                children: [
+                                  Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        if (startPoint != null)
+                                          Text(
+                                            'С ${DateFormat('dd.MM').format(
+                                                startPoint)}',
+                                            style: _textStyleSemiBold.copyWith(
+                                              fontSize: TaskScreenStyles
+                                                  .dateFontSize(context) * 0.9,
+                                              color: Colors.white,
+                                            ),
                                           ),
-                                        ),
-                                      if (endPoint != null)
+                                        if (endPoint != null)
+                                          Text(
+                                            'До ${DateFormat('dd.MM').format(
+                                                endPoint)}',
+                                            style: _textStyleBold.copyWith(
+                                              fontSize:
+                                              TaskScreenStyles.dateFontSize(
+                                                context,
+                                              ) *
+                                                  0.9,
+                                              color:
+                                              isOverdue
+                                                  ? Colors.white
+                                                  : Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         Text(
-                                          'До ${DateFormat('dd.MM').format(
-                                              endPoint)}',
+                                          DateFormat('HH:mm').format(endPoint!),
                                           style: _textStyleBold.copyWith(
                                             fontSize:
                                             TaskScreenStyles.dateFontSize(
@@ -1209,54 +1177,40 @@ class _TasksScreenState extends State<TasksScreen> {
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                      Text(
-                                        DateFormat('HH:mm').format(endPoint!),
-                                        style: _textStyleBold.copyWith(
-                                          fontSize:
-                                          TaskScreenStyles.dateFontSize(
-                                            context,
-                                          ) *
-                                              0.9,
-                                          color:
-                                          isOverdue
-                                              ? Colors.white
-                                              : Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                if (task.reward > 0)
-                                  Positioned(
-                                    top: 0,
-                                    right: 0,
-                                    child: _buildRewardBadge(task.reward),
-                                  ),
-                                if (task.state == 'Completed')
-                                  Positioned(
-                                    bottom:
-                                    MediaQuery
-                                        .of(context)
-                                        .size
-                                        .height *
-                                        0.025,
-                                    right: 0,
-                                    child: Icon(
-                                      Icons.verified,
-                                      color: Colors.white,
-                                      size:
+                                  if (task.reward > 0)
+                                    Positioned(
+                                      top: 0,
+                                      right: 0,
+                                      child: _buildRewardBadge(task.reward),
+                                    ),
+                                  if (task.state == 'Completed')
+                                    Positioned(
+                                      bottom:
                                       MediaQuery
                                           .of(context)
                                           .size
-                                          .width *
-                                          0.04,
+                                          .height *
+                                          0.025,
+                                      right: 0,
+                                      child: Icon(
+                                        Icons.verified,
+                                        color: Colors.white,
+                                        size:
+                                        MediaQuery
+                                            .of(context)
+                                            .size
+                                            .width *
+                                            0.04,
+                                      ),
                                     ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -3289,10 +3243,16 @@ class _DiagonalClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     final path = Path();
-    path.moveTo(size.width * 0.3, 0);
+    // Начинаем с верхнего левого угла диагонали
+    path.moveTo(size.width * 0.35, 0);
+    // Идем к правому верхнему углу
     path.lineTo(size.width, 0);
+    // Спускаемся к правому нижнему углу
     path.lineTo(size.width, size.height);
+    // Идем к левому нижнему углу
     path.lineTo(0, size.height);
+    // Поднимаемся по диагонали к начальной точке
+    path.lineTo(size.width * 0.35, 0);
     path.close();
     return path;
   }
