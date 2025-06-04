@@ -1,4 +1,3 @@
-
 # ZadachOk App (Frontend)
 
 Это фронтенд Flutter-приложения **ZadachOk**. Ниже приведена инструкция по первичному запуску проекта.
@@ -21,22 +20,36 @@
 
    Эта команда создаст необходимые системные папки, такие как `.idea`, `android/`, `ios/` и другие.
 
-5. **Откройте файл `android/app/build.gradle.kts`.**  
-   Найдите блок `android { ... }` и убедитесь, что он содержит следующий код:
+5. **Настройте файл `android/app/build.gradle.kts`.**  
+   Замените его содержимое следующим кодом:
 
    ```kotlin
+   plugins {
+       id("com.android.application")
+       id("kotlin-android")
+       id("dev.flutter.flutter-gradle-plugin")
+   }
+
+   dependencies {
+       coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+       implementation("androidx.window:window:1.2.0")
+       implementation("androidx.window:window-java:1.2.0")
+       implementation("androidx.core:core-ktx:1.12.0")
+   }
+
    android {
        namespace = "com.example.zadachok"
        compileSdk = flutter.compileSdkVersion
        ndkVersion = "27.0.12077973"
 
        compileOptions {
-           sourceCompatibility = JavaVersion.VERSION_11
-           targetCompatibility = JavaVersion.VERSION_11
+           isCoreLibraryDesugaringEnabled = true
+           sourceCompatibility = JavaVersion.VERSION_17
+           targetCompatibility = JavaVersion.VERSION_17
        }
 
        kotlinOptions {
-           jvmTarget = JavaVersion.VERSION_11.toString()
+           jvmTarget = JavaVersion.VERSION_17.toString()
        }
 
        defaultConfig {
@@ -53,33 +66,95 @@
            }
        }
    }
+
+   buildscript {
+       repositories {
+           google()
+           mavenCentral()
+       }
+   }
+
+   allprojects {
+       repositories {
+           google()
+           mavenCentral()
+       }
+   }
+
+   flutter {
+       source = "../.."
+   }
    ```
 
-   📌 Если значение `ndkVersion` указано другое — замените его на:
+6. **Добавьте разрешения и структуру в файл `android/app/src/main/AndroidManifest.xml`:**
 
-   ```kotlin
-   ndkVersion = "27.0.12077973"
+   ```xml
+   <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+       <uses-permission android:name="android.permission.INTERNET"/>
+       <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+       <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+       <uses-permission android:name="android.permission.VIBRATE"/>
+       <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+
+       <application android:label="ZadachOk" android:name="${applicationName}" android:icon="@mipmap/ic_launcher">
+           <activity
+               android:name=".MainActivity"
+               android:exported="true"
+               android:launchMode="singleTop"
+               android:taskAffinity=""
+               android:theme="@style/LaunchTheme"
+               android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+               android:hardwareAccelerated="true"
+               android:windowSoftInputMode="adjustResize">
+               <meta-data android:name="io.flutter.embedding.android.NormalTheme" android:resource="@style/NormalTheme"/>
+               <intent-filter>
+                   <action android:name="android.intent.action.MAIN"/>
+                   <category android:name="android.intent.category.LAUNCHER"/>
+               </intent-filter>
+           </activity>
+           <meta-data android:name="flutterEmbedding" android:value="2"/>
+       </application>
+
+       <queries>
+           <intent>
+               <action android:name="android.intent.action.PROCESS_TEXT"/>
+               <data android:mimeType="text/plain"/>
+           </intent>
+           <intent>
+               <action android:name="android.intent.action.VIEW"/>
+               <category android:name="android.intent.category.BROWSABLE"/>
+               <data android:scheme="https"/>
+           </intent>
+           <intent>
+               <action android:name="android.intent.action.VIEW"/>
+               <category android:name="android.intent.category.BROWSABLE"/>
+               <data android:scheme="http"/>
+           </intent>
+       </queries>
+   </manifest>
    ```
 
-6. **Подтяните зависимости.**  
+7. **Добавьте разрешения в файл `android/app/src/debug/AndroidManifest.xml`:**
+
+   ```xml
+   <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+       <uses-permission android:name="android.permission.INTERNET"/>
+       <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+       <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+       <uses-permission android:name="android.permission.VIBRATE"/>
+       <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+   </manifest>
+   ```
+
+8. **Подтяните зависимости.**  
    Откройте файл `pubspec.yaml` и нажмите `Pub get` (или выполните в терминале):
 
    ```bash
    flutter pub get
    ```
 
-   Это установит все необходимые зависимости для проекта.
-
-
----
-
-7. **Повторно запустите проект.**
-
-## 🔐 Тестовые данные для входа
-
-- **Логин:** `admin`  
-- **Пароль:** `admin`
+9. **Повторно запустите проект.**
 
 ---
 
-Если возникнут ошибки при сборке или запуске, убедитесь, что у вас установлены все зависимости Flutter и Android SDK, а также актуальная версия NDK.
+Если возникнут ошибки при сборке или запуске, убедитесь, что у вас установлены все зависимости Flutter и Android SDK, а также актуальная версия NDK (`27.0.12077973`).
