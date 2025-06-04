@@ -23,7 +23,7 @@
 - [Сопроводительное письмо](https://github.com/Lime228/TPProject/blob/main/Documentation/Сопроводительное%20письмо%20ZадачOk.pdf)
 - Презентация ([PDF](https://github.com/Lime228/TPProject/blob/main/Documentation/Финальная%20защита.pdf)) ([PPTX](https://github.com/Lime228/TPProject/blob/main/Documentation/Финальная%20защита.pptx))
 - [Презентация мобильной части](https://rutube.ru/video/private/9695434dfa4a2eb09cd4f4a66bf90107/?p=1-fBNsO8MlilVk6_Uge5IQ) ([Я.Диск](https://disk.yandex.ru/i/WWsBPWqtR3EYQQ))
-- Курсовая работа по проекту ([PDF](https://github.com/Lime228/TPProject/blob/main/Documentation/course_work_(1.2).pdf)) ([DOCX](https://github.com/Lime228/TPProject/blob/main/Documentation/course_work_(1.2).docx))
+- Курсовая работа по проекту ([PDF](https://github.com/Lime228/TPProject/blob/main/Documentation/course_work_(1.3).pdf)) ([DOCX](https://github.com/Lime228/TPProject/blob/main/Documentation/course_work_(1.3).docx))
 - [Swagger ZадачOk API](https://api.zadachok.ru/swagger-ui/index.html#/)
 - [Ссылка на APK](https://github.com/Lime228/TPProject/releases/tag/Pre-release)
 - [Гайд по запуску в Android Studio](https://github.com/Lime228/TPProject/blob/main/frontend/README.md)
