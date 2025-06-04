@@ -25,6 +25,7 @@
 - Презентация мобильной части
 - [Курсовая работа по проекту](https://github.com/Lime228/TPProject/blob/main/Documentation/course_work_(1.1).pdf)
 - [Swagger ZадачOk API](https://api.zadachok.ru/swagger-ui/index.html#/)
+- [Ссылка на APK](https://github.com/Lime228/TPProject/releases/tag/Pre-release)
 
 ### Доска задач
 - [YouTrack](https://youtrack.zadachok.ru/agiles)
