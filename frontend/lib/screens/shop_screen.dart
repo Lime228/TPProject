@@ -259,9 +259,9 @@ class _ShopScreenState extends State<ShopScreen> {
           height: screenWidth * 0.25, // ~25% от ширины экрана (было 100.0)
           decoration: BoxDecoration(
             color: ShopScreenConstants.primaryColor,
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(40),
-              bottomRight: Radius.circular(40),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(MediaQuery.of(context).size.width * 0.1),
+              bottomRight: Radius.circular(MediaQuery.of(context).size.width * 0.1),
             ),
             boxShadow: const [
               BoxShadow(
@@ -284,7 +284,7 @@ class _ShopScreenState extends State<ShopScreen> {
               Row(
                 children: [
                   CircleAvatar(
-                    radius: screenWidth * 0.065, // ~6.5% (было 25)
+                    radius: MediaQuery.of(context).size.width * 0.07, // ~6.5% (было 25)
                     backgroundColor: Colors.white,
                     backgroundImage: authProvider.user?.photoBytes != null &&
                         authProvider.user!.photoBytes!.isNotEmpty
@@ -295,7 +295,7 @@ class _ShopScreenState extends State<ShopScreen> {
                         ? Icon(
                       Icons.person,
                       color: theme.colorScheme.secondary,
-                      size: screenWidth * 0.065, // Соответствует radius
+                      size: screenWidth * 0.07, // Соответствует radius
                     )
                         : null,
                   ),
@@ -305,7 +305,7 @@ class _ShopScreenState extends State<ShopScreen> {
                     style: _textStyleBold.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: screenWidth * 0.055, // ~4.5% (было ~22)
+                      fontSize:theme.textTheme.titleLarge?.fontSize, // ~4.5% (было ~22)
                     ),
                   ),
                 ],
@@ -315,8 +315,8 @@ class _ShopScreenState extends State<ShopScreen> {
                   if (authProvider.isAuthorized && !authProvider.isAdmin && groupProvider.isInGroup)
                     Container(
                       padding: EdgeInsets.symmetric(
-                        horizontal: screenWidth * 0.05, // ~3% (было 12)
-                        vertical: screenWidth * 0.02, // ~1.5% (было 6)
+                        horizontal: screenWidth * 0.03, // ~3% (было 12)
+                        vertical: screenWidth * 0.015, // ~1.5% (было 6)
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
@@ -324,13 +324,13 @@ class _ShopScreenState extends State<ShopScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.star, color: Colors.amber, size: 16),
+                          Icon(Icons.star, color: Colors.amber, size: screenWidth * 0.045),
                           SizedBox(width: screenWidth * 0.01), // ~1% (было 4)
                           Text(
                             balance.toString(),
                             style: _textStyleBold.copyWith(
                               color: Colors.white,
-                              fontSize: screenWidth * 0.035, // ~3.5% (было 14)
+                              fontSize: screenWidth * 0.045, // ~3.5% (было 14)
                             ),
                           ),
                         ],
@@ -704,7 +704,7 @@ class _ShopScreenState extends State<ShopScreen> {
                 top: 0,
                 left: 0,
                 right: 0,
-                height: cardWidth * 1.4,
+                height: cardWidth * 0.9,
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.5),
@@ -724,7 +724,7 @@ class _ShopScreenState extends State<ShopScreen> {
                         ),
                         SizedBox(height: screenWidth * 0.02),
                         Text(
-                          'Ваш товар',
+                          'Куплено Вами',
                           style: _textStyleBold.copyWith(
                             color: Colors.white,
                             fontSize: screenWidth * 0.04,
@@ -1588,7 +1588,7 @@ class _ShopScreenState extends State<ShopScreen> {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Container(
-      width: screenWidth * 0.92, // 92% ширины экрана
+      width: screenWidth * 0.9, // 92% ширины экрана
       height: screenHeight * 0.04, // 4.5% высоты экрана
       margin: EdgeInsets.symmetric(
         horizontal: screenWidth * 0.04, // 4% отступ по бокам
@@ -1598,11 +1598,11 @@ class _ShopScreenState extends State<ShopScreen> {
         children: [
           // Кнопка сортировки
           Container(
-            width: screenWidth * 0.32, // 32% ширины экрана
-            height: double.infinity,
+            width: screenWidth * 0.4, // 32% ширины экрана
+            height: MediaQuery.of(context).size.height * 0.04,
             decoration: BoxDecoration(
               color: ShopScreenConstants.primaryColor,
-              borderRadius: BorderRadius.circular(screenWidth * 0.025), // 2.5%
+              borderRadius: BorderRadius.circular(screenWidth * 0.03), // 2.5%
             ),
             child: PopupMenuButton<String>(
               color: Colors.white,
@@ -1635,9 +1635,9 @@ class _ShopScreenState extends State<ShopScreen> {
                   Icon(
                     Icons.sort,
                     color: Colors.white,
-                    size: screenWidth * 0.05, // 4.5%
+                    size: screenWidth * 0.04, // 4.5%
                   ),
-                  SizedBox(width: screenWidth * 0.015), // 1.5%
+                  SizedBox(width: screenWidth * 0.01), // 1.5%
                   Text(
                     'Сортировка',
                     style: _textStyleSemiBold.copyWith(
@@ -1680,10 +1680,10 @@ class _ShopScreenState extends State<ShopScreen> {
                       ),
                       decoration: InputDecoration(
                         hintText: 'Поиск товаров...',
-                        hintStyle: _textStyleSemiBold.copyWith(
-                          fontSize: screenWidth * 0.035, // 3.5%
-                          color: ShopScreenConstants.primaryColor.withOpacity(0.6),
-                        ),
+                        // hintStyle: _textStyleSemiBold.copyWith(
+                        //   fontSize: screenWidth * 0.035, // 3.5%
+                        //   color: ShopScreenConstants.primaryColor.withOpacity(0.6),
+                        // ),
                         border: InputBorder.none,
                         isDense: true,
                         contentPadding: EdgeInsets.only(
