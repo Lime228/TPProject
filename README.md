@@ -18,10 +18,10 @@
 
 ## Наши ресурсы
 ### Всё к защите
-- Отчет о тестировании
-- Финальный ПМ-отчет
+- [Отчет о тестировании](https://github.com/Lime228/TPProject/blob/main/Documentation/Отчет%20о%20тестировании%20от%204%20июня.pdf)
+- [Финальный ПМ-отчет](https://github.com/Lime228/TPProject/blob/main/Documentation/Финальный%20ПМ-отчет.pdf)
 - Сопроводительное письмо
-- Презентация
+- Презентация ([PDF](https://github.com/Lime228/TPProject/blob/main/Documentation/Финальная%20защита.pdf)) ([PPTX](https://github.com/Lime228/TPProject/blob/main/Documentation/Финальная%20защита.pptx))
 - Презентация мобильной части
 - [Курсовая работа по проекту](https://github.com/Lime228/TPProject/blob/main/Documentation/course_work_(1.1).pdf)
 
