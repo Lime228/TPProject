@@ -1124,88 +1124,69 @@ class _TasksScreenState extends State<TasksScreen> {
 
                             Expanded(
                               flex: 3,
-                              child: Stack(
-                                children: [
-                                  Positioned(
-                                    bottom: 0,
-                                    right: 0,
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        if (startPoint != null)
-                                          Text(
-                                            'С ${DateFormat('dd.MM').format(
-                                                startPoint)}',
-                                            style: _textStyleSemiBold.copyWith(
-                                              fontSize: TaskScreenStyles
-                                                  .dateFontSize(context) * 0.9,
-                                              color: Colors.white,
+                              child: LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final screenHeight = MediaQuery.of(context).size.height;
+                                  final screenWidth = MediaQuery.of(context).size.width;
+
+                                  return Stack(
+                                    children: [
+                                      Positioned(
+                                        bottom: screenHeight * 0.01, // ~1% от высоты экрана
+                                        right: screenWidth * 0.02,   // ~2% от ширины экрана
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            if (startPoint != null)
+                                              Text(
+                                                'С ${DateFormat('dd.MM').format(startPoint)}',
+                                                style: _textStyleSemiBold.copyWith(
+                                                  fontSize: TaskScreenStyles.dateFontSize(context) * 0.9,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            if (endPoint != null)
+                                              Text(
+                                                'До ${DateFormat('dd.MM').format(endPoint)}',
+                                                style: _textStyleBold.copyWith(
+                                                  fontSize: TaskScreenStyles.dateFontSize(context) * 0.9,
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            Text(
+                                              DateFormat('HH:mm').format(endPoint!),
+                                              style: _textStyleBold.copyWith(
+                                                fontSize: TaskScreenStyles.dateFontSize(context) * 0.9,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
-                                          ),
-                                        if (endPoint != null)
-                                          Text(
-                                            'До ${DateFormat('dd.MM').format(
-                                                endPoint)}',
-                                            style: _textStyleBold.copyWith(
-                                              fontSize:
-                                              TaskScreenStyles.dateFontSize(
-                                                context,
-                                              ) *
-                                                  0.9,
-                                              color:
-                                              isOverdue
-                                                  ? Colors.white
-                                                  : Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        Text(
-                                          DateFormat('HH:mm').format(endPoint!),
-                                          style: _textStyleBold.copyWith(
-                                            fontSize:
-                                            TaskScreenStyles.dateFontSize(
-                                              context,
-                                            ) *
-                                                0.9,
-                                            color:
-                                            isOverdue
-                                                ? Colors.white
-                                                : Colors.white,
-                                            fontWeight: FontWeight.bold,
+                                          ],
+                                        ),
+                                      ),
+                                      if (task.reward > 0)
+                                        Positioned(
+                                          top: screenHeight * 0.001, // ~0.5% от высоты экрана
+                                          right: screenWidth * 0.0001, // ~2% от ширины экрана
+                                          child: _buildRewardBadge(task.reward),
+                                        ),
+                                      if (task.state == 'Completed')
+                                        Positioned(
+                                          bottom: screenHeight * 0.025, // ~2.5% от высоты экрана
+                                          right: screenWidth * 0.02,    // ~2% от ширины экрана
+                                          child: Icon(
+                                            Icons.verified,
+                                            color: Colors.white,
+                                            size: screenWidth * 0.04, // ~4% от ширины экрана
                                           ),
                                         ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (task.reward > 0)
-                                    Positioned(
-                                      top: 0,
-                                      right: 0,
-                                      child: _buildRewardBadge(task.reward),
-                                    ),
-                                  if (task.state == 'Completed')
-                                    Positioned(
-                                      bottom:
-                                      MediaQuery
-                                          .of(context)
-                                          .size
-                                          .height *
-                                          0.025,
-                                      right: 0,
-                                      child: Icon(
-                                        Icons.verified,
-                                        color: Colors.white,
-                                        size:
-                                        MediaQuery
-                                            .of(context)
-                                            .size
-                                            .width *
-                                            0.04,
-                                      ),
-                                    ),
-                                ],
+                                    ],
+                                  );
+                                },
                               ),
                             ),
+
                           ],
                         ),
                       ),
