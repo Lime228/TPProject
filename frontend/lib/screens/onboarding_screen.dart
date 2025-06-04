@@ -83,7 +83,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _skipOnboarding() {
-    Navigator.of(context).pop();
+    if (!_isFirstLaunch) {
+      Navigator.of(context).pop();
+    }else{
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('В первый раз пропустить ЧаВо нельзя!'),
+            backgroundColor: const Color(0xFF937DF3),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),)
+      );
+    }
   }
 
   @override
@@ -112,7 +123,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            if (!_isFirstLaunch)
+            
               Align(
                 alignment: Alignment.topRight,
                 child: TextButton(
