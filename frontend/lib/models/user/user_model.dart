@@ -72,7 +72,7 @@ class UserModel {
   }
 
   static DateTime? _parseBirthdayDate(Map<String, dynamic> json) {
-    final dateStr = json['birthday_date'] ?? json['birthday_date'];
+    final dateStr = json['birthday'] ?? json['birthday_date'];
     if (dateStr == null || dateStr.isEmpty) return null;
 
     debugPrint('Parsing birthday date from server: $dateStr');
@@ -114,6 +114,7 @@ class UserModel {
   };
 
   Map<String, dynamic> toUpdateRequest() {
+    debugPrint('=== Подготовка данных для обновления профиля ===');
     final request = {
       'customerId': id,
       'name': name,
@@ -123,7 +124,13 @@ class UserModel {
 
     // Добавляем дату рождения только если она есть
     if (birthdayDate != null) {
-      request['birthday_date'] = _formatDateForServer(birthdayDate!);
+      final formattedDate = birthdayDate!.toIso8601String().split('T')[0];
+      debugPrint('Форматирование даты рождения:');
+      debugPrint('- Исходная дата: $birthdayDate');
+      debugPrint('- Форматированная дата: $formattedDate');
+      request['birthday'] = formattedDate;
+    } else {
+      debugPrint('Дата рождения отсутствует в модели');
     }
 
     // Добавляем фото только если оно есть и не пустое
@@ -131,21 +138,15 @@ class UserModel {
       request['photo'] = photoBytes!;
     }
 
+    debugPrint('Подготовленные данные: $request');
     return request;
-  }
-
-  String _formatDateForServer(DateTime date) {
-    final formatted = '${date.year}-${date.month.toString().padLeft(2, '0')}-'
-        '${date.day.toString().padLeft(2, '0')}';
-    debugPrint('Formatted date for server: $formatted');
-    return formatted;
   }
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
     'email': email,
-    if (birthdayDate != null) 'birthday_date': birthdayDate!.toIso8601String(),
+    if (birthdayDate != null) 'birthday': birthdayDate!.toIso8601String(),
     'login': login,
     'photo': photoBytes,
     'admin': role == UserRole.admin ? "ADMIN" : "USER",

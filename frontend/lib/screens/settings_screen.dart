@@ -139,7 +139,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     'Настройки',
                     style: _textStyleBold.copyWith(
                       fontSize: titleFontSize * 1.4,
-                      color: titleColor,
+                      color: const Color(0xFF937DF3),
                     ),
                   ),
                   SizedBox(height: MediaQuery.of(context).size.height * 0.02),
@@ -263,7 +263,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.015),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: titleColor,
+                  color: const Color(0xFF937DF3),
                 ),
                 child: Icon(
                   Icons.add,
@@ -359,6 +359,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       final day = int.parse(dateParts[0]);
                       final month = int.parse(dateParts[1]);
                       final year = int.parse(dateParts[2]);
+                      
+                      // Проверяем валидность даты
+                      if (month < 1 || month > 12) {
+                        throw Exception('Неверный месяц');
+                      }
+                      
+                      // Получаем количество дней в месяце
+                      final daysInMonth = DateTime(year, month + 1, 0).day;
+                      if (day < 1 || day > daysInMonth) {
+                        throw Exception('Неверный день месяца');
+                      }
+                      
                       final newDate = DateTime(year, month, day);
 
                       debugPrint('User entered date: $value');
@@ -384,9 +396,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 hintText: 'ДД.ММ.ГГГГ',
                 hintStyle: TextStyle(
                   fontSize: MediaQuery.of(context).size.width * 0.04,
-                  color: Color.fromARGB(50, 0, 0, 0), // полупрозрачный чёрный
+                  color: Colors.grey[400], // Делаем подсказку более светлой
                 ),
-
               ),
               style: TextStyle(
                 fontSize: MediaQuery.of(context).size.width * 0.04,
@@ -400,7 +411,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: titleColor,
+                  backgroundColor: const Color(0xFF937DF3),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(blockBorderRadius),
                   ),
@@ -536,16 +547,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
               }
             },
             title: Text('Получать уведомления'),
+            activeColor: const Color(0xFF937DF3), // Цвет активного переключателя
           ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.02),
           Container(
             width: double.infinity,
             height: MediaQuery.of(context).size.height * 0.06,
-            decoration: BoxDecoration(
-              color: Colors.lightBlue[100],
-              borderRadius: BorderRadius.circular(blockBorderRadius),
-              border: Border.all(color: Colors.red.withOpacity(0.3)),
-            ),
-            child: TextButton(
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF937DF3),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(blockBorderRadius),
+                ),
+                elevation: 0, // Убираем тень
+              ),
               onPressed: () async {
                 _safeReportEvent('settings_test_notification');
                 if (authProvider.token == null) {
@@ -576,7 +591,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final task = activeTasks.last;
                 await notificationService.showTaskNotification(task: task);
               },
-              child: Text('Отправить тестовое уведомление'),
+              child: Text(
+                'Отправить тестовое уведомление',
+                style: _textStyleSemiBold.copyWith(
+                  color: Colors.white,
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
+                ),
+              ),
             ),
           ),
         ],
@@ -758,7 +779,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title,
             style: _textStyleBold.copyWith(
               fontSize: titleFontSize,
-              color: titleColor,
+              color: const Color(0xFF937DF3),
             ),
           ),
           SizedBox(height: MediaQuery.of(context).size.height * 0.02),
@@ -933,31 +954,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     try {
       DateTime? birthDate;
-      try {
-        final dateParts = _birthDateController.text.split('.');
-        if (dateParts.length == 3) {
-          final day = int.parse(dateParts[0]);
-          final month = int.parse(dateParts[1]);
-          final year = int.parse(dateParts[2]);
-          birthDate = DateTime(year, month, day);
+      final dateText = _birthDateController.text.trim();
+      
+      debugPrint('=== Обновление данных пользователя ===');
+      debugPrint('Обработка даты рождения: $dateText');
+      
+      if (dateText.isEmpty) {
+        debugPrint('Дата рождения не указана');
+      } else {
+        try {
+          final dateParts = dateText.split('.');
+          if (dateParts.length == 3) {
+            final day = int.parse(dateParts[0]);
+            final month = int.parse(dateParts[1]);
+            final year = int.parse(dateParts[2]);
+            
+            // Проверяем валидность даты
+            if (month < 1 || month > 12) {
+              throw Exception('Неверный месяц');
+            }
+            
+            // Получаем количество дней в месяце
+            final daysInMonth = DateTime(year, month + 1, 0).day;
+            if (day < 1 || day > daysInMonth) {
+              throw Exception('Неверный день месяца');
+            }
+            
+            birthDate = DateTime(year, month, day);
+            debugPrint('Дата успешно преобразована в DateTime: $birthDate');
+            debugPrint('Дата в ISO8601: ${birthDate.toIso8601String()}');
+          } else {
+            throw Exception('Неверный формат даты');
+          }
+        } catch (e) {
+          debugPrint('Ошибка парсинга даты: $e');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Неверный формат даты. Используйте ДД.ММ.ГГГГ'),
+              backgroundColor: const Color(0xFF937DF3),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+          return;
         }
-      } catch (e) {
-        debugPrint('Ошибка парсинга даты: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Неверный формат даты. Используйте ДД.ММ.ГГГГ'),
-            backgroundColor: const Color(0xFF937DF3),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),),
-        );
-        return;
       }
 
       final updatedUser = authProvider.user!.copyWith(
         name: _nameController.text,
-        birthdayDate: birthDate, // Отправляем DateTime объект
+        birthdayDate: birthDate,
       );
+
+      debugPrint('Отправка обновленных данных пользователя:');
+      debugPrint('- Имя: ${updatedUser.name}');
+      debugPrint('- Дата рождения: ${updatedUser.birthdayDate}');
+      debugPrint('- Дата рождения в ISO8601: ${updatedUser.birthdayDate?.toIso8601String()}');
 
       await _updateUserProfile(updatedUser);
 

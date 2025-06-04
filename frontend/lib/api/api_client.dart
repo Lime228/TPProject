@@ -183,21 +183,25 @@ class ApiClient implements ApiInterface {
 
     final url = Uri.parse('${ApiEndpoints.baseUrl}/api/auth/update');
 
-    // Добавляем логирование перед отправкой
-    debugPrint('Sending update request with data: ${user.toUpdateRequest()}');
-    debugPrint('Birthday date in model: ${user.birthdayDate}');
-    debugPrint('Formatted birthday date: ${user.birthdayDate != null ?
-    _formatDateForServer(user.birthdayDate!) : null}');
+    final requestData = user.toUpdateRequest();
+    debugPrint('=== Отправка запроса на обновление профиля ===');
+    debugPrint('URL: $url');
+    debugPrint('Данные запроса: $requestData');
+    debugPrint('Дата рождения в модели: ${user.birthdayDate}');
+    if (user.birthdayDate != null) {
+      debugPrint('Форматированная дата рождения: ${_formatDateForServer(user.birthdayDate!)}');
+    }
 
     try {
       final response = await _client.put(
         url,
         headers: _getHeaders(),
-        body: json.encode(user.toUpdateRequest()),
+        body: json.encode(requestData),
       ).timeout(requestTimeout);
 
-      // Логируем сырой ответ
-      debugPrint('Raw response: ${response.statusCode} ${response.body}');
+      debugPrint('=== Ответ сервера ===');
+      debugPrint('Статус код: ${response.statusCode}');
+      debugPrint('Тело ответа: ${response.body}');
 
       return _handleUserResponse(response);
     } on http.ClientException catch (e) {
