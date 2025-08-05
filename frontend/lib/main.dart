@@ -1,4 +1,6 @@
+import 'package:appmetrica_plugin/appmetrica_plugin.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
@@ -10,23 +12,79 @@ import 'package:zadachok/providers/settings_provider.dart';
 import 'package:zadachok/providers/shop_provider.dart';
 import 'package:zadachok/providers/task_provider.dart';
 import 'package:zadachok/screens/splash_screen.dart';
+import 'package:zadachok/services/notification_service.dart';
+import 'package:zadachok/services/connectivity_service.dart';
+import 'package:zadachok/services/local_storage_service.dart';
+import 'package:zadachok/services/local_state_service.dart';
 
 import 'api/endpoints_config_parse.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.edgeToEdge,
+    overlays: [SystemUiOverlay.top],
+  );
+  
+
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarDividerColor: Colors.transparent,
+    ),
+  );
+
   await initializeDateFormatting('ru');
   final prefs = await SharedPreferences.getInstance();
   await EndpointsConfigParse.load();
 
-  final apiClient = ApiClient();
+  final notificationService = NotificationService();
+  await notificationService.init();
 
-  // Загружаем начальные данные
-  final authProvider = AuthProvider(groupProvider: GroupProvider(authProvider: null));
+
+  final connectivityService = ConnectivityService();
+  final localStorageService = LocalStorageService();
+  final localStateService = LocalStateService();
+  
+  await localStorageService.init();
+  await localStateService.init();
+
+  await AppMetrica.activate(
+    const AppMetricaConfig(
+      '2781a5e7-fcdf-4212-a9dc-f0985ae15f9a',
+      logs: true,
+    ),
+  );
+
+
+  final groupProvider = GroupProvider(
+    authProvider: null,
+    localState: localStateService,
+  );
+  
+  final authProvider = AuthProvider(
+    groupProvider: groupProvider,
+    localState: localStateService,
+  );
+  
   await authProvider.checkAuth();
 
+  if (authProvider.isAuthorized && authProvider.token != null) {
+    notificationService.setAuthToken(authProvider.token);
+  }
+
+  groupProvider.setAuthProvider(authProvider);
+
+  final shopProvider = ShopProvider(authProvider: authProvider, prefs: prefs);
+  final taskProvider = TaskProvider(
+    authProvider: authProvider,
+    localStorage: localStorageService,
+    connectivity: connectivityService,
+  );
+
   if (authProvider.isAuthorized) {
-    final groupProvider = GroupProvider(authProvider: authProvider);
     await groupProvider.loadGroupData();
     if (groupProvider.isInGroup) {
       await groupProvider.refreshGroupData();
@@ -37,24 +95,13 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => authProvider),
-        ChangeNotifierProxyProvider<AuthProvider, GroupProvider>(
-          create: (context) => GroupProvider(
-            authProvider: Provider.of<AuthProvider>(context, listen: false),
-          ),
-          update: (context, authProvider, groupProvider) =>
-          groupProvider ?? GroupProvider(authProvider: authProvider),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => TaskProvider(authProvider: authProvider),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => SettingsProvider()..loadSettings(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ShopProvider(
-            prefs: prefs, authProvider: authProvider, 
-          ),
-        ),
+        ChangeNotifierProvider(create: (_) => groupProvider),
+        ChangeNotifierProvider(create: (_) => taskProvider),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()..loadSettings()),
+        ChangeNotifierProvider(create: (_) => shopProvider),
+        Provider.value(value: connectivityService),
+        Provider.value(value: localStorageService),
+        Provider.value(value: localStateService),
       ],
       child: const MyApp(),
     ),
@@ -66,6 +113,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     return MaterialApp(
       locale: const Locale('ru'),
       debugShowCheckedModeBanner: false,

@@ -32,16 +32,23 @@ dependencies:
   http: ^1.1.0
   table_calendar: ^3.0.9
   image_picker: ^1.0.7
+  appmetrica_plugin: ^3.0.0
   shared_preferences: ^2.5.3
+  flutter_local_notifications: ^18.0.0
+  permission_handler: ^11.0.0
+  timezone: ^0.9.2
   provider: ^6.1.4
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+  flutter_svg: ^2.0.7
+  connectivity_plus: ^5.0.2
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
@@ -52,21 +59,38 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
+  flutter_lints: ^2.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
 flutter:
-
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: lib/assets/fonts/Inter.ttf
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
   assets:
-    - lib/assets/logo.png
+#    - assets/
+#    - assets/images/
+#    - assets/icons/
     - lib/assets/config.json
+    - lib/assets/calendar.svg
+    - lib/assets/calendar_active.svg
+    - lib/assets/shop.svg
+    - lib/assets/shop_active.svg
+    - lib/assets/tasks.svg
+    - lib/assets/tasks_active.svg
+    - lib/assets/settings.svg
+    - lib/assets/settings_active.svg
+    - lib/assets/login.svg
+    - lib/assets/login_active.svg
+    - lib/assets/logo.svg
+    - lib/assets/onboarding/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -98,3 +122,8 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+platforms:
+  android:
+  ios:
+  windows:

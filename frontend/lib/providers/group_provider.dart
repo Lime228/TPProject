@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zadachok/models/lobby/lobby_model.dart';
 import 'package:zadachok/models/user/user_model.dart';
+import 'package:zadachok/services/local_state_service.dart';
 import '../api/api_client.dart';
 import 'auth_provider.dart';
 
@@ -12,10 +14,14 @@ class GroupProvider with ChangeNotifier {
   LobbyModel? _lobby;
   List<UserModel> _members = [];
   UserModel? _currentUser;
+  final LocalStateService _localState;
 
   final client = ApiClient();
 
-  GroupProvider({required this.authProvider});
+  GroupProvider({
+    required this.authProvider,
+    required LocalStateService localState,
+  }) : _localState = localState;
 
   // Геттеры
   String? get groupCode => _lobby?.code;
@@ -65,6 +71,7 @@ class GroupProvider with ChangeNotifier {
 
   // Основные методы
   Future<void> createGroup() async {
+
     try {
       final userId = _validateCurrentUser();
       final apiClient = _getAuthenticatedClient();
@@ -143,30 +150,32 @@ class GroupProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Ошибка обновления данных группы: $e');
-      // Если ошибка, возможно пользователь не в группе
-      _lobby = null;
-      _members = [];
-      await _saveGroupData();
-      notifyListeners();
+      // В случае ошибки используем локальные данные
+      final groupState = await _localState.getGroupState();
+      if (groupState != null) {
+        _lobby = groupState['lobby'];
+        _members = groupState['members'];
+        notifyListeners();
+      }
     }
   }
 
 
 
   Future<void> loadGroupData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final lobbyJson = prefs.getString('lobby');
-    final membersJson = prefs.getStringList('members') ?? [];
-
-    if (lobbyJson != null) {
-      _lobby = LobbyModel.fromJson(jsonDecode(lobbyJson));
-      _members = membersJson.map((json) => UserModel.fromJson(jsonDecode(json))).toList();
+    final groupState = await _localState.getGroupState();
+    if (groupState != null) {
+      _lobby = groupState['lobby'];
+      _members = groupState['members'];
       notifyListeners();
     }
   }
 
   Future<void> resetGroup() async {
     await _clearGroupData();
+    _lobby = null;
+    _members = [];
+    notifyListeners();
   }
 
   // Валидация и вспомогательные методы
@@ -191,21 +200,10 @@ class GroupProvider with ChangeNotifier {
 
   Future<void> _saveGroupData() async {
     if (_lobby == null) return;
-    final prefs = await SharedPreferences.getInstance();
-
-    await prefs.setString('lobby', jsonEncode(_lobby!.toJson()));
-    await prefs.setStringList(
-        'members',
-        _members.map((m) => jsonEncode(m.toJson())).toList()
-    );
+    await _localState.saveGroupState(_lobby!, _members);
   }
 
   Future<void> _clearGroupData() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('lobby');
-    await prefs.remove('members');
-    _lobby = null;
-    _members = [];
-    notifyListeners();
+    await _localState.clearGroupState();
   }
 }

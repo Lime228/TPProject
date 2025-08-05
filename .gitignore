@@ -49,3 +49,4 @@ frontend/pubspec.lock
 frontend/android/.gitignore
 android
 config.json
+backend/api

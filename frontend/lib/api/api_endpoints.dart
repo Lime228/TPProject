@@ -27,6 +27,9 @@ class ApiEndpoints {
   static final String _lobbyGetPath = EndpointsConfigParse.lobbyGetPath;
   static final String _lobbyDeletePath = EndpointsConfigParse.lobbyDeletePath;
 
+  static final String _notificationCreatePath = EndpointsConfigParse.notificationCreatePath;
+  static final String _notificationGetPath = EndpointsConfigParse.notificationGetPath;
+
 
 
   static String get baseUrl => _baseUrl;
@@ -56,4 +59,7 @@ class ApiEndpoints {
   static String get lobbyAddUserUrl => _baseUrl + _lobbyAddUserPath;
   static String get lobbyGetUrl => _baseUrl + _lobbyGetPath;
   static String get lobbyDeleteUrl => _baseUrl + _lobbyDeletePath;
+
+  static String get notificationCreateUrl => _baseUrl + _notificationCreatePath;
+  static String get notificationGetUrl => _baseUrl + _notificationGetPath;
 }

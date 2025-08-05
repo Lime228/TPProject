@@ -1,14 +1,32 @@
+import 'package:appmetrica_plugin/appmetrica_plugin.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:zadachok/api/api_client.dart';
 import 'package:zadachok/api/api_interface.dart';
 import 'package:zadachok/models/user/user_model.dart';
 import 'package:zadachok/providers/auth_provider.dart';
+import 'package:zadachok/providers/shop_provider.dart';
+import 'package:zadachok/providers/task_provider.dart';
 import 'package:zadachok/routes/main_navigation.dart';
 import 'package:zadachok/screens/password_recovery_screen.dart';
 import 'package:zadachok/screens/register_screen.dart';
 import '../api/mock_api_client.dart';
 import '../providers/group_provider.dart';
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'onboarding_screen.dart';
+
+const TextStyle _textStyleSemiBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w600, // SemiBold
+);
+
+const TextStyle _textStyleBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w700, // Bold
+);
 
 class LoginScreen extends StatefulWidget {
   final ApiInterface apiClient;
@@ -27,28 +45,29 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _errorMessage;
   bool _obscureText = true;
 
-  static const _borderRadius = 15.0;
-  static const _shadowOffset = Offset(0, 4);
-  static const _shadowBlur = 6.0;
-  static const _contentPadding = EdgeInsets.symmetric(
-    horizontal: 20,
-    vertical: 15,
+
+  double get _borderRadius => MediaQuery.of(context).size.width * 0.035;
+  Offset get _shadowOffset => Offset(0, MediaQuery.of(context).size.height * 0.005);
+  double get _shadowBlur => MediaQuery.of(context).size.width * 0.015;
+  EdgeInsets get _contentPadding => EdgeInsets.symmetric(
+    horizontal: MediaQuery.of(context).size.width * 0.05,
+    vertical: MediaQuery.of(context).size.height * 0.02,
   );
-  static const _buttonWidth = 150.0;
-  static const _buttonHeight = 44.0;
-  static const _inputWidth = 305.0;
-  static const _inputHeight = 41.0;
+  double get _buttonWidth => MediaQuery.of(context).size.width * 0.4;
+  double get _buttonHeight => MediaQuery.of(context).size.height * 0.06;
+  double get _inputWidth => MediaQuery.of(context).size.width * 0.8;
+  double get _inputHeight => MediaQuery.of(context).size.height * 0.06;
   static const _colorEnter = Color.fromARGB(100, 110, 68, 255);
   static const _colorEnterButton = Color(0xFF937DF3);
 
-  static const _textStyle = TextStyle(
-    fontSize: 15,
+  TextStyle get _textStyle => TextStyle(
+    fontSize: MediaQuery.of(context).size.width * 0.04,
     fontFamily: 'Inter',
     fontWeight: FontWeight.w600,
   );
 
-  static const _enterStyle = TextStyle(
-    fontSize: 15,
+  TextStyle get _enterStyle => TextStyle(
+    fontSize: MediaQuery.of(context).size.width * 0.04,
     fontFamily: 'Inter',
     fontWeight: FontWeight.w600,
     color: Colors.white,
@@ -57,41 +76,84 @@ class _LoginScreenState extends State<LoginScreen> {
   void _togglePasswordVisibility() =>
       setState(() => _obscureText = !_obscureText);
 
+  Future<void> _safeReportEvent(String eventName, {Map<String, dynamic>? attributes}) async {
+    try {
+      await AppMetrica.reportEvent(eventName);
+    } catch (e) {
+      debugPrint('Ошибка отправки события в AppMetrica: $e');
+      await _reportErrorToAppMetrica(
+        message: 'Failed to report event: $eventName',
+        error: e,
+      );
+    }
+  }
+
+  Future<void> _reportErrorToAppMetrica({
+    required dynamic error,
+    String? message,
+  }) async {
+    try {
+      await AppMetrica.reportError(
+        message: message ?? 'Error occurred in LoginScreen',
+        errorDescription: AppMetricaErrorDescription(
+          (error is Exception ? error : Exception(error.toString())) as StackTrace,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Ошибка отправки ошибки в AppMetrica: $e');
+    }
+  }
+
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    if (mounted) {
+      setState(() => _isLoading = true);
+    }
 
     try {
+      await _safeReportEvent('login_attempt');
+
       final user = await widget.apiClient.login(
-          UserModel(
-            login: _usernameController.text,
-            password: _passwordController.text,
-            name: '',
-            email: '',
-            birthdayDate: DateTime(1980, 1, 1),
-          )
-          );
+        UserModel(
+          login: _usernameController.text,
+          password: _passwordController.text,
+          name: '',
+          email: '',
+          birthdayDate: DateTime.now(),
+        ),
+      );
 
-          final token = widget.apiClient.getAuthToken();
-      debugPrint("Токен получен: ${token}");
-
+      final token = widget.apiClient.getAuthToken();
       if (token == null) throw Exception('Токен не получен');
+
+      await _safeReportEvent('login_success');
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final groupProvider = Provider.of<GroupProvider>(context, listen: false);
+      final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+      final shopProvider = Provider.of<ShopProvider>(context, listen: false);
 
-      // Устанавливаем данные авторизации
       await authProvider.setAuthData(user: user, token: token);
+      
 
-      // Обновляем данные группы
-      groupProvider.setCurrentUser(user);
-      await groupProvider.loadGroupData();
-      if (groupProvider.isInGroup) {
-        await groupProvider.refreshGroupData();
-      }
+      await authProvider.refreshAll(groupProvider, taskProvider, shopProvider);
 
       if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Вход выполнен успешно',
+            style: _textStyleSemiBold,
+          ),
+          backgroundColor: _colorEnterButton,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
@@ -100,6 +162,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
     } catch (e) {
       debugPrint("Ошибка входа: ${e.toString()}");
+      await _reportErrorToAppMetrica(
+        error: e,
+        message: 'Login error for user: ${_usernameController.text}',
+      );
+
       if (mounted) {
         setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
       }
@@ -110,149 +177,193 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _navigateToPasswordRecovery() async {
+    await _safeReportEvent('navigate_to_password_recovery');
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PasswordRecoveryScreen(
+          apiClient: widget.apiClient,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _navigateToRegister() async {
+    await _safeReportEvent('navigate_to_register');
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RegisterScreen(
+          apiClient: widget.apiClient,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.white,
-        body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30),
-    child: Form(
-    key: _formKey,
-    child: SingleChildScrollView(
-    child: Column(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-    const SizedBox(height: 151),
-    Image.asset('lib/assets/logo.png', width: 150),
-    const SizedBox(height: 30),
-    const Text(
-    "Вход",
-    style: TextStyle(
-    fontSize: 28,
-    fontWeight: FontWeight.bold,
-    color: _colorEnter,
-    ),
-    ),
-    const SizedBox(height: 20),
-    _buildInputField(
-    hintText: 'Логин',
-    controller: _usernameController,
-    validator: (value) {
-    if (value == null || value.isEmpty) {
-    return 'Введите логин';
-    }
-    return null;
-    },
-    ),
-    const SizedBox(height: 10),
-    _buildInputField(
-    hintText: 'Пароль',
-    controller: _passwordController,
-    isPassword: true,
-    validator: (value) {
-    if (value == null || value.isEmpty) {
-    return 'Введите пароль';
-    }
-    return null;
-    },
-    suffixIcon: IconButton(
-    icon: Icon(
-    _obscureText ? Icons.visibility_off : Icons.visibility,
-    color: Colors.grey,
-    ),
-    onPressed: _togglePasswordVisibility,
-    ),
-    ),
-    const SizedBox(height: 10),
-    Align(
-    alignment: Alignment.centerRight,
-    child: GestureDetector(
-    onTap:
-    () => Navigator.push(
-    context,
-    MaterialPageRoute(
-    builder:
-    (_) => PasswordRecoveryScreen(
-    apiClient: widget.apiClient,
-    ),
-    ),
-    ),
-    child: const Text(
-    'Не помню пароль',
-    style: TextStyle(color: Colors.grey),
-    ),
-    ),
-    ),
-    if (_errorMessage != null)
-    Padding(
-    padding: const EdgeInsets.only(top: 10),
-    child: Text(
-    _errorMessage!,
-    style: const TextStyle(color: Colors.red),
-    ),
-    ),
-    const SizedBox(height: 20),
-    Container(
-    width: _buttonWidth,
-    height: _buttonHeight,
-    decoration: BoxDecoration(
-    borderRadius: BorderRadius.circular(25),
-    boxShadow: const [
-    BoxShadow(
-    color: Colors.black26,
-    blurRadius: 6,
-    offset: Offset(0, 4),
-    ),
-    ],
-    ),
-    child: ElevatedButton(
-    onPressed: _isLoading ? null : _login,
-    style: ElevatedButton.styleFrom(
-    backgroundColor: _colorEnterButton,
-    shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(25),
-    ),
-    shadowColor: Colors.transparent,
-    ),
-    child:
-    _isLoading
-
-        ? const CircularProgressIndicator(
-      color: Colors.white,
-    )
-        : const Text("Войти", style: _enterStyle),
-    ),
-    ),
-      const SizedBox(height: 20),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text("Ещё нет аккаунта? "),
-          GestureDetector(
-            onTap:
-                () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder:
-                    (_) => RegisterScreen(
-                  apiClient: widget.apiClient,
+      backgroundColor: Colors.white,
+      body: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width * 0.08,
+        ),
+        child: Form(
+          key: _formKey,
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+                SvgPicture.asset(
+                  'lib/assets/logo.svg',
+                  width: MediaQuery.of(context).size.width * 0.35,
                 ),
-              ),
-            ),
-            child: const Text(
-              "Зарегистрироваться",
-              style: TextStyle(color: _colorEnterButton),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.04),
+                Text(
+                  "Вход",
+                  style: _textStyleBold.copyWith(
+                    fontSize: MediaQuery.of(context).size.width * 0.08,
+                    color: _colorEnter,
+                  ),
+                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+                _buildInputField(
+                  hintText: 'Логин',
+                  controller: _usernameController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Введите логин';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.015),
+                _buildInputField(
+                  hintText: 'Пароль',
+                  controller: _passwordController,
+                  isPassword: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Введите пароль';
+                    }
+                    return null;
+                  },
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureText ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.grey,
+                      size: MediaQuery.of(context).size.width * 0.06,
+                    ),
+                    onPressed: _togglePasswordVisibility,
+                  ),
+                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.015),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: _navigateToPasswordRecovery,
+                    child: Text(
+                      'Не помню пароль',
+                      style: _textStyleSemiBold.copyWith(
+                        color: Colors.grey,
+                        fontSize: MediaQuery.of(context).size.width * 0.035,
+                      ),
+                    ),
+                  ),
+                ),
+                if (_errorMessage != null)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      top: MediaQuery.of(context).size.height * 0.015,
+                    ),
+                    child: Text(
+                      _errorMessage!,
+                      style: _textStyleSemiBold.copyWith(
+                        color: Colors.red,
+                        fontSize: MediaQuery.of(context).size.width * 0.035,
+                      ),
+                    ),
+                  ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+                Container(
+                  width: _buttonWidth,
+                  height: _buttonHeight,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(_borderRadius),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: _shadowBlur,
+                        offset: _shadowOffset,
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _login,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _colorEnterButton,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(_borderRadius),
+                      ),
+                      shadowColor: Colors.transparent,
+                    ),
+                    child: _isLoading
+                        ? SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.06,
+                      height: MediaQuery.of(context).size.width * 0.06,
+                      child: const CircularProgressIndicator(
+                        color: Colors.white,
+                      ),
+                    )
+                        : Text("Войти", style: _enterStyle),
+                  ),
+                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+                    );
+                  },
+                  child: Text(
+                    'ЧаВо?',
+                    style: _textStyleBold.copyWith(
+                      color: _colorEnterButton,
+                      fontSize: MediaQuery.of(context).size.width * 0.05,
+                    ),
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Ещё нет аккаунта? ",
+                      style: _textStyleSemiBold.copyWith(
+                        fontSize: MediaQuery.of(context).size.width * 0.035,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _navigateToRegister,
+                      child: Text(
+                        "Зарегистрироваться",
+                        style: _textStyleBold.copyWith(
+                          color: _colorEnterButton,
+                          fontSize: MediaQuery.of(context).size.width * 0.035,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+              ],
             ),
           ),
-        ],
-      ),
-      const SizedBox(height: 30),
-    ],
-    ),
-    ),
-    ),
         ),
+      ),
     );
   }
 
@@ -270,11 +381,11 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(_borderRadius),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
               color: Colors.black26,
-              blurRadius: 6,
-              offset: Offset(0, 4),
+              blurRadius: _shadowBlur,
+              offset: _shadowOffset,
             ),
           ],
         ),
@@ -289,6 +400,12 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             hintText: hintText,
             suffixIcon: suffixIcon,
+            hintStyle: _textStyle.copyWith(
+              fontSize: MediaQuery.of(context).size.width * 0.035,
+            ),
+          ),
+          style: _textStyle.copyWith(
+            fontSize: MediaQuery.of(context).size.width * 0.04,
           ),
           validator: validator,
         ),

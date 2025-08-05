@@ -1,15 +1,18 @@
-class TaskModel{
-  int id;
-  String name;
-  int reward;
-  String description;
-  String startPoint;
-  String endPoint;
-  int state;
-  int customerId;
+import 'dart:convert';
+import 'package:flutter/material.dart';
 
-  bool isCompleted;
-  bool isOverdue;
+class TaskModel {
+  final int id;
+  final String name;
+  final int reward;
+  final String description;
+  final String startPoint;
+  final String endPoint;
+  final int state;
+  final int customerId;
+
+  final bool isCompleted;
+  final bool isOverdue;
 
   TaskModel({
     this.id = 0,
@@ -28,7 +31,7 @@ class TaskModel{
     try {
       return DateTime.parse(endPoint);
     } catch (e) {
-      print('Invalid deadline format: $endPoint');
+      debugPrint('Invalid deadline format: $endPoint');
       return null;
     }
   }
@@ -37,11 +40,10 @@ class TaskModel{
     try {
       return startPoint.isNotEmpty ? DateTime.parse(startPoint) : DateTime.now();
     } catch (e) {
-      print('Invalid startPoint format: $startPoint');
+      debugPrint('Invalid startPoint format: $startPoint');
       return DateTime.now();
     }
   }
-
 
   TaskModel copyWith({
     int? id,
@@ -64,21 +66,18 @@ class TaskModel{
       endPoint: endPoint ?? this.endPoint,
       state: state ?? this.state,
       customerId: customerId ?? this.customerId,
-
       isCompleted: isCompleted ?? this.isCompleted,
       isOverdue: isOverdue ?? this.isOverdue,
     );
   }
 
-
-  @override
-  Map<String, dynamic> createRequest(int lId) => {
+  Map<String, dynamic> createRequest(int lobbyId) => {
     'name': name,
-    'reward': reward.toInt(),
+    'reward': reward,
     'description': description,
     'startdate': startPoint,
     'enddate': endPoint,
-    'lobbyid': lId,
+    'lobbyid': lobbyId,
     'customerid': customerId,
   };
 
@@ -94,42 +93,38 @@ class TaskModel{
   };
 
   Map<String, dynamic> deleteRequest() => {
-    'taskId':id
+    'taskId': id
   };
 
-
   factory TaskModel.fromResponse(Map<String, dynamic> json) {
+    debugPrint('TaskModel.fromResponse: $json');
+    final taskId = json['id'] ?? json['taskId'] ?? 0;
     return TaskModel(
-      id: json['id'] ?? 0,
-      name: json['name'],
+      id: taskId,
+      name: json['name'] ?? '',
       reward: json['reward']?.toInt() ?? 0,
-      description: json['description'],
-      startPoint: json['startDate'],
-      endPoint: json['endDate'],
-      customerId: json['customerId'],
-      state: json['isActive'],
-
-      isCompleted: json['isCompleted'] ?? false, // это че то лишнее надо с этим что то сделать
+      description: json['description'] ?? '',
+      startPoint: json['startDate'] ?? json['startdate'] ?? DateTime.now().toIso8601String(),
+      endPoint: json['endDate'] ?? json['enddate'] ?? DateTime.now().toIso8601String(),
+      customerId: json['customerId'] ?? json['customerid'] ?? 0,
+      state: json['isActive'] ?? json['state'] ?? 0,
+      isCompleted: json['isCompleted'] ?? false,
       isOverdue: json['isOverdue'] ?? false,
     );
   }
 
-
-  // static List<TaskModel> listFromJson(List<dynamic> jsonList) {
-  //   return jsonList.map((json) => TaskModel.fromResponse(json)).toList();
-  // }
-
   factory TaskModel.fromJson(Map<String, dynamic> json) {
+    debugPrint('TaskModel.fromJson: $json');
+    final taskId = json['id'] ?? json['taskId'] ?? 0;
     return TaskModel(
-      id: json['id'],
-      name: json['name'],
+      id: taskId,
+      name: json['name'] ?? '',
       reward: json['reward']?.toInt() ?? 0,
-      description: json['description'],
-      startPoint: json['startDate'],
-      endPoint: json['endDate'],
-      customerId: json['customerId'],
-      state: json['isActive'],
-
+      description: json['description'] ?? '',
+      startPoint: json['startDate'] ?? json['startdate'] ?? DateTime.now().toIso8601String(),
+      endPoint: json['endDate'] ?? json['enddate'] ?? DateTime.now().toIso8601String(),
+      customerId: json['customerId'] ?? json['customerid'] ?? 0,
+      state: json['isActive'] ?? json['state'] ?? 0,
       isCompleted: json['isCompleted'] ?? false,
       isOverdue: json['isOverdue'] ?? false,
     );
@@ -137,14 +132,21 @@ class TaskModel{
 
   Map<String, dynamic> toJson() => {
     'id': id,
+    'taskId': id,
     'name': name,
     'reward': reward,
     'description': description,
-    'startdate': startPoint,
-    'enddate': endPoint,
-    'lobbyid': state,
-    'customerid': customerId,
+    'startDate': startPoint,
+    'endDate': endPoint,
+    'customerId': customerId,
+    'isActive': state,
+    'state': state,
     'isCompleted': isCompleted,
     'isOverdue': isOverdue,
   };
+
+  @override
+  String toString() {
+    return 'TaskModel(id: $id, name: $name, state: $state)';
+  }
 }

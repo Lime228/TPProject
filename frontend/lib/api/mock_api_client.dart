@@ -7,6 +7,8 @@ import '../models/shop/product/product_model.dart';
 import '../models/task/task_model.dart';
 import '../models/wallet/wallet_model.dart';
 import 'api_interface.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
 class MockApiClient implements ApiInterface {
   const MockApiClient();
@@ -187,6 +189,7 @@ class MockApiClient implements ApiInterface {
       name: request.name,
       email: request.email,
       birthdayDate: request.birthdayDate,
+      photoBytes: request.photoBytes,
       login: request.login,
       role: request.role,
     );
@@ -239,7 +242,7 @@ class MockApiClient implements ApiInterface {
   }
 
   @override
-  Future<void> deleteShopItem(int itemId) async {
+  Future<void> deleteShopItem(int shopId, int productId) async {
     await Future.delayed(const Duration(seconds: 1));
   }
 
@@ -263,6 +266,30 @@ class MockApiClient implements ApiInterface {
   @override
   Future<List<ProductModel>> getShopProducts(int shopID) {
     // TODO: implement getShopProducts
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<bool> resetPassword(UserModel request, String code, String password) {
+    // TODO: implement resetPassword
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<bool> restorePassword(UserModel request) {
+    // TODO: implement restorePassword
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Map<String, dynamic>> generateNotification(int taskId) {
+    // TODO: implement generateNotification
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Map<String, dynamic>> getNotificationStatus(String notificationId) {
+    // TODO: implement getNotificationStatus
     throw UnimplementedError();
   }
 }

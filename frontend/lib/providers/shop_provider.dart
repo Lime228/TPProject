@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zadachok/models/shop/shop_model.dart';
+import 'package:zadachok/models/user/user_model.dart';
 import '../api/api_client.dart';
 import '../api/api_interface.dart';
 import '../models/shop/product/product_model.dart';
@@ -23,7 +24,6 @@ class ShopProvider with ChangeNotifier {
 
   ShopProvider({required this.authProvider, required this.prefs});
 
-  // Геттеры
   List<ProductModel> get products => _filteredProducts;
   List<ProductModel> get allProducts => _products;
   bool get isLoading => _isLoading;
@@ -35,10 +35,8 @@ class ShopProvider with ChangeNotifier {
     notifyListeners();
   }
 
-
   Future<void> refreshProducts() async {
     if (_currentShopId == null || authProvider?.user == null) return;
-
     if (_isLoading) return;
 
     _setLoading(true);
@@ -50,14 +48,13 @@ class ShopProvider with ChangeNotifier {
       debugPrint('Начало обновления товаров для магазина $_currentShopId');
       _products = products;
       _applyFilters();
-      notifyListeners();
     } catch (e) {
       _error = 'Ошибка обновления товаров: ${e.toString()}';
       debugPrint(_error!);
     } finally {
       _setLoading(false);
+      debugPrint('Загружено ${_products.length} товаров');
     }
-    debugPrint('Загружено ${_products.length} товаров');
   }
 
   ApiClient _getAuthenticatedClient() {
@@ -77,7 +74,7 @@ class ShopProvider with ChangeNotifier {
     }
     _currentShopId = shopId;
     await prefs.setInt('current_shop_id', shopId);
-    await refreshProducts(); // Запускаем загрузку товаров
+    await refreshProducts();
   }
 
   Future<void> loadProducts() async {
@@ -99,20 +96,23 @@ class ShopProvider with ChangeNotifier {
     }
   }
 
-
   Future<bool> createProduct(ProductModel product) async {
-    if (_currentShopId == null) {
-      _error = 'Магазин не выбран';
-      return false;
-    }
-
     try {
       final shop = ShopModel(id: _currentShopId!, productIds: []);
       final apiClient = _getAuthenticatedClient();
-      final newProduct = await apiClient.createShopItem(shop, product);
+
+      // Сначала создаем товар без ссылки
+      var newProduct = await apiClient.createShopItem(shop, product.copyWith(link: null));
+
+      // Затем обновляем товар, добавляя ссылку
+      if (product.link != null) {
+        newProduct = await apiClient.updateShopItem(
+            newProduct.copyWith(link: product.link)
+        );
+      }
+
       _products.add(newProduct);
       _applyFilters();
-      notifyListeners(); // Добавьте это
       return true;
     } catch (e) {
       _error = 'Ошибка добавления товара: $e';
@@ -136,10 +136,60 @@ class ShopProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> buyProduct(int productId) async {
+    try {
+      final result = await client.buyShopItem(
+        _currentShopId!,
+        productId,
+        authProvider!.user!.id,
+      );
+
+      if (result.customerId == authProvider!.user!.id) {
+        await refreshProducts();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      _error = 'Ошибка резервирования: ${e.toString()}';
+      debugPrint(_error!);
+      return false;
+    }
+  }
+
+  Future<bool> confirmPurchase(int productId) async {
+    try {
+      final product = _products.firstWhere((p) => p.id == productId);
+      if (product.customerId != authProvider!.user!.id) {
+        throw Exception('Нельзя подтвердить чужую покупку');
+      }
+
+      final updated = await client.updateShopItem(
+        product.copyWith(
+          id: productId,
+          isAvailable: false,
+        ),
+      );
+
+      final index = _products.indexWhere((p) => p.id == productId);
+      if (index != -1) _products[index] = updated;
+      _applyFilters();
+      return !updated.isAvailable;
+    } catch (e) {
+      _error = 'Ошибка подтверждения: ${e.toString()}';
+      debugPrint(_error!);
+      return false;
+    }
+  }
+
   Future<bool> removeProduct(int productId) async {
+    if (_currentShopId == null) {
+      _error = 'Магазин не выбран';
+      return false;
+    }
+
     try {
       final apiClient = _getAuthenticatedClient();
-      await apiClient.deleteShopItem(productId);
+      await apiClient.deleteShopItem(_currentShopId!, productId);
       _products.removeWhere((p) => p.id == productId);
       _applyFilters();
       return true;
@@ -175,13 +225,11 @@ class ShopProvider with ChangeNotifier {
   }
 
   void _applyFilters() {
-    // Фильтрация
     _filteredProducts = _products.where((p) {
       return p.name.toLowerCase().contains(_searchQuery) ||
           p.description.toLowerCase().contains(_searchQuery);
     }).toList();
 
-    // Сортировка
     switch (_sortBy) {
       case 'price_asc':
         _filteredProducts.sort((a, b) => a.price.compareTo(b.price));
@@ -189,7 +237,7 @@ class ShopProvider with ChangeNotifier {
       case 'price_desc':
         _filteredProducts.sort((a, b) => b.price.compareTo(a.price));
         break;
-      default: // name
+      default:
         _filteredProducts.sort((a, b) => a.name.compareTo(b.name));
     }
 
@@ -197,12 +245,15 @@ class ShopProvider with ChangeNotifier {
   }
 
   void _setLoading(bool loading) {
-    _isLoading = loading;
-    notifyListeners();
+    if (_isLoading != loading) {
+      _isLoading = loading;
+      notifyListeners();
+    }
   }
+
   @override
   void dispose() {
-    _setLoading(false); // Отменяем текущую загрузку при уничтожении
+    _setLoading(false);
     super.dispose();
   }
 }

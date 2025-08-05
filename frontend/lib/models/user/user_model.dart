@@ -1,3 +1,8 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:flutter/cupertino.dart';
+
 class UserModel {
   final int id;
   final String name;
@@ -5,7 +10,7 @@ class UserModel {
   final DateTime? birthdayDate;
   final String login;
   final UserRole role;
-  final String photoBase64;
+  final String? photoBytes;
   String? password; // Только для регистрации/авторизации
 
   UserModel({
@@ -14,7 +19,7 @@ class UserModel {
     required this.email,
     this.birthdayDate,
     required this.login,
-    this.photoBase64 = '',
+    this.photoBytes,
     this.password,
     this.role = UserRole.user,
   });
@@ -25,7 +30,7 @@ class UserModel {
     String? email,
     DateTime? birthdayDate,
     String? login,
-    String? photoBase64,
+    String? photoBytes,
     String? password,
     UserRole? role,
   }) {
@@ -35,7 +40,7 @@ class UserModel {
       email: email ?? this.email,
       birthdayDate: birthdayDate ?? this.birthdayDate,
       login: login ?? this.login,
-      photoBase64: photoBase64 ?? this.photoBase64,
+      photoBytes: photoBytes ?? this.photoBytes,
       password: password ?? this.password,
       role: role ?? this.role,
     );
@@ -43,16 +48,46 @@ class UserModel {
 
   factory UserModel.fromResponse(Map<String, dynamic> json) {
     return UserModel(
-      id: json['customer_ID'] ?? 0,
+      id: _parseId(json),
       login: json['login'] ?? '',
-      email: json['customer_email'] ?? '',
+      email: _parseEmail(json),
       role: UserRole.fromString(json['admin']?.toString() ?? ''),
-      birthdayDate: json['birthdayDate'] != null
-          ? DateTime.tryParse(json['birthdayDate'])
-          : null,
-      photoBase64: json['customer_photo'] ?? '',
-      name: json['customer_name'] ?? '',
+      birthdayDate: _parseBirthdayDate(json),
+      photoBytes: _parsePhotoBytes(json),
+      name: _parseName(json),
     );
+  }
+
+  // Вспомогательные методы для парсинга с учетом обоих форматов
+  static int _parseId(Map<String, dynamic> json) {
+    return json['id'] ?? json['customer_ID'] ?? 0;
+  }
+
+  static String _parseName(Map<String, dynamic> json) {
+    return json['name'] ?? json['customer_name'] ?? '';
+  }
+
+  static String _parseEmail(Map<String, dynamic> json) {
+    return json['email'] ?? json['customer_email'] ?? '';
+  }
+
+  static DateTime? _parseBirthdayDate(Map<String, dynamic> json) {
+    final dateStr = json['birthday'] ?? json['birthday_date'];
+    if (dateStr == null || dateStr.isEmpty) return null;
+
+    debugPrint('Parsing birthday date from server: $dateStr');
+
+    try {
+      // Парсим только дату (без времени)
+      return DateTime.parse(dateStr.substring(0, 10)); // Берем первые 10 символов (ГГГГ-ММ-ДД)
+    } catch (e) {
+      debugPrint('Ошибка парсинга даты рождения: $e. Input: $dateStr');
+      return null;
+    }
+  }
+
+  static String? _parsePhotoBytes(Map<String, dynamic> json) {
+    return json['photo']?.toString() ?? json['customer_photo']?.toString();
   }
 
   Map<String, dynamic> toRegisterRequest() => {
@@ -60,8 +95,6 @@ class UserModel {
     'password': password,
     'email': email,
     'name': name,
-    if (birthdayDate != null) 'birthdayDate': birthdayDate!.toIso8601String(),
-    if (photoBase64.isNotEmpty) 'photo': photoBase64,
   };
 
   Map<String, dynamic> toLoginRequest() => {
@@ -80,37 +113,61 @@ class UserModel {
     'newPassword': newPassword
   };
 
-  Map<String, dynamic> toUpdateRequest() => {
-    'customerId': id,
-    'name': name,
-    'email': email,
-    if (birthdayDate != null) 'birthdayDate': birthdayDate!.toIso8601String(),
-    if (photoBase64.isNotEmpty) 'photo': photoBase64,
-    'admin': role == UserRole.admin ? "ADMIN" : "USER",
-  };
+  Map<String, dynamic> toUpdateRequest() {
+    debugPrint('=== Подготовка данных для обновления профиля ===');
+    final request = {
+      'customerId': id,
+      'name': name,
+      'email': email,
+      'admin': role == UserRole.admin ? "ADMIN" : "USER",
+    };
+
+    // Добавляем дату рождения только если она есть
+    if (birthdayDate != null) {
+      final formattedDate = birthdayDate!.toIso8601String().split('T')[0];
+      debugPrint('Форматирование даты рождения:');
+      debugPrint('- Исходная дата: $birthdayDate');
+      debugPrint('- Форматированная дата: $formattedDate');
+      request['birthday'] = formattedDate;
+    } else {
+      debugPrint('Дата рождения отсутствует в модели');
+    }
+
+    // Добавляем фото только если оно есть и не пустое
+    if (photoBytes != null && photoBytes!.isNotEmpty) {
+      request['photo'] = photoBytes!;
+    }
+
+    debugPrint('Подготовленные данные: $request');
+    return request;
+  }
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
     'email': email,
-    if (birthdayDate != null) 'birthdayDate': birthdayDate!.toIso8601String(),
+    if (birthdayDate != null) 'birthday': birthdayDate!.toIso8601String(),
     'login': login,
+    'photo': photoBytes,
     'admin': role == UserRole.admin ? "ADMIN" : "USER",
-    'photo': photoBase64,
   };
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] ?? 0,
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
-      birthdayDate: json['birthdayDate'] != null
-          ? DateTime.tryParse(json['birthdayDate'])
-          : null,
+      id: _parseId(json),
       login: json['login'] ?? '',
-      photoBase64: json['photo'] ?? '',
+      email: _parseEmail(json),
       role: UserRole.fromString(json['admin']?.toString() ?? ''),
+      birthdayDate: _parseBirthdayDate(json),
+      photoBytes: _parsePhotoBytes(json),
+      name: _parseName(json),
     );
+  }
+
+  Uint8List? get photoBytesUint8List {
+    return photoBytes != null && photoBytes!.isNotEmpty
+        ? base64Decode(photoBytes!)
+        : null;
   }
 
   @override

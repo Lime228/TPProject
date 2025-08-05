@@ -1,18 +1,27 @@
 import 'dart:convert';
-import 'dart:io';
+import 'package:appmetrica_plugin/appmetrica_plugin.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:zadachok/providers/auth_provider.dart';
 import 'package:zadachok/providers/settings_provider.dart';
 import 'package:zadachok/providers/group_provider.dart';
 import 'package:zadachok/routes/main_navigation.dart';
-
 import '../api/api_client.dart';
 import '../models/user/user_model.dart';
 import '../providers/shop_provider.dart';
 import '../providers/task_provider.dart';
+import '../services/notification_service.dart';
+
+const TextStyle _textStyleSemiBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w600, // SemiBold
+);
+
+const TextStyle _textStyleBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w700, // Bold
+);
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -22,42 +31,60 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  static const double BLOCK_WIDTH = 352.0;
-  static const double BLOCK_PADDING = 15.0;
-  static const double BLOCK_BORDER_RADIUS = 15.0;
-  static const double TITLE_FONT_SIZE = 25.0;
-  static const Color TITLE_COLOR = Color(0xFF6E44FF);
-  static const Color DECORATIVE_LINE_COLOR = Color(0xFFCCC1FF);
-  static const double DECORATIVE_LINE_WIDTH = 250.0;
-  static const double DECORATIVE_LINE_HEIGHT = 2.0;
-  static const double AVATAR_RADIUS = 50.0;
-  static const double SETTINGS_ICON_SIZE = 24.0;
-
   final _scrollController = ScrollController();
   final _searchController = TextEditingController();
-  final _nameController = TextEditingController(text: 'Имя');
-  // final _surnameController = TextEditingController(text: 'Фамилия');
-  final _birthDateController = TextEditingController(text: 'ДД.ММ.ГГГГ');
+  final _nameController = TextEditingController();
+  final _birthDateController = TextEditingController();
   final _picker = ImagePicker();
+  String? _avatarBytes;
 
-  File? _avatarImage;
 
-  final Map<String, int> _taskStatistics = {
-    'Пн': 3, 'Вт': 7, 'Ср': 3,
-    'Чт': 8, 'Пт': 6, 'Сб': 4, 'Вс': 2,
-  };
+  double get blockWidth => MediaQuery.of(context).size.width * 0.9;
+  double get blockPadding => MediaQuery.of(context).size.width * 0.04;
+  double get blockBorderRadius => MediaQuery.of(context).size.width * 0.035;
+  double get titleFontSize => MediaQuery.of(context).size.width * 0.065;
+  double get avatarRadius => MediaQuery.of(context).size.width * 0.12;
+  double get settingsIconSize => MediaQuery.of(context).size.width * 0.06;
+  double get decorativeLineWidth => MediaQuery.of(context).size.width * 0.7;
+  double get decorativeLineHeight => MediaQuery.of(context).size.height * 0.002;
+
+  static const Color titleColor = Color(0xFF6E44FF);
+  static const Color decorativeLineColor = Color(0xFFCCC1FF);
 
   final Map<String, GlobalKey> _blockKeys = {
     'личные данные': GlobalKey(),
     'статистика': GlobalKey(),
     'уведомления': GlobalKey(),
-    'другие настройки': GlobalKey(),
-    'бонусные настройки': GlobalKey(),
-    'экспериментальные функции': GlobalKey(),
-    'обновления': GlobalKey(),
-    'геолокация': GlobalKey(),
     'аккаунт': GlobalKey(),
   };
+
+  Future<void> _safeReportEvent(String eventName, {Map<String, dynamic>? attributes}) async {
+    try {
+      await AppMetrica.reportEvent(eventName);
+    } catch (e) {
+      debugPrint('Ошибка отправки события в AppMetrica: $e');
+      await _reportErrorToAppMetrica(
+        message: 'Failed to report event: $eventName',
+        error: e,
+      );
+    }
+  }
+
+  Future<void> _reportErrorToAppMetrica({
+    required dynamic error,
+    String? message,
+  }) async {
+    try {
+      await AppMetrica.reportError(
+        message: message ?? 'Error occurred in SettingsScreen',
+        errorDescription: AppMetricaErrorDescription(
+          (error is Exception ? error : Exception(error.toString())) as StackTrace,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Ошибка отправки ошибки в AppMetrica: $e');
+    }
+  }
 
   @override
   void initState() {
@@ -72,17 +99,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (authProvider.isAuthorized && authProvider.user != null) {
       final user = authProvider.user!;
       _nameController.text = user.name;
-      // _surnameController.text = user.name.split(' ').length > 1 ? user.name.split(' ')[1] : '';
 
       if (user.birthdayDate != null) {
         _birthDateController.text =
-        '${user.birthdayDate!.day}.${user.birthdayDate!.month}.${user.birthdayDate!.year}';
+        '${user.birthdayDate!.day.toString().padLeft(2, '0')}.'
+            '${user.birthdayDate!.month.toString().padLeft(2, '0')}.'
+            '${user.birthdayDate!.year}';
       }
 
-      // Загрузка аватарки из настроек
       await settingsProvider.loadSettings();
-      if (settingsProvider.avatarImage != null) {
-        setState(() => _avatarImage = settingsProvider.avatarImage);
+      if (user.photoBytes != null && user.photoBytes!.isNotEmpty) {
+        setState(() => _avatarBytes = user.photoBytes);
+        await settingsProvider.updateUserData(avatarBytes: user.photoBytes!);
+      } else {
+        setState(() => _avatarBytes = null);
+        await settingsProvider.updateUserData(avatarBytes: '');
       }
     }
   }
@@ -100,31 +131,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SafeArea(
             child: SingleChildScrollView(
               controller: _scrollController,
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Настройки',
-                      style: TextStyle(
-                        fontSize: 35,
-                        fontWeight: FontWeight.bold,
-                        color: TITLE_COLOR,
-                      ),
+              padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.05),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Настройки',
+                    style: _textStyleBold.copyWith(
+                      fontSize: titleFontSize * 1.4,
+                      color: const Color(0xFF937DF3),
                     ),
-                    const SizedBox(height: 15),
-                    _buildSearchField(),
-                    const SizedBox(height: 15),
-                    _buildPersonalDataBlock(authProvider, isAuthorized),
-                    _buildDecorativeLine(),
-                    _buildStatisticsBlock(authProvider, isAuthorized),
-                    _buildDecorativeLine(),
-                    _buildNotificationsBlock(settings),
-                    _buildDecorativeLine(),
-                    _buildAccountBlock(authProvider, isAuthorized),
-                  ],
-                ),
+                  ),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+                  _buildSearchField(),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+                  _buildPersonalDataBlock(authProvider, isAuthorized),
+                  _buildDecorativeLine(),
+                  _buildStatisticsBlock(authProvider, isAuthorized),
+                  _buildDecorativeLine(),
+                  _buildNotificationsBlock(authProvider, settings, isAuthorized),
+                  _buildDecorativeLine(),
+                  _buildAccountBlock(authProvider, isAuthorized),
+                ],
               ),
             ),
           ),
@@ -133,31 +161,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-
-
   Widget _buildSearchField() {
     return GestureDetector(
-      onTap: () => _scrollToBlock(_searchController.text),
+      onTap: () {
+        _safeReportEvent('settings_search', attributes: {'query': _searchController.text});
+        _scrollToBlock(_searchController.text);
+      },
       child: Container(
-        width: BLOCK_WIDTH,
-        height: 27,
+        width: blockWidth,
+        height: MediaQuery.of(context).size.height * 0.045,
         decoration: BoxDecoration(
           color: const Color(0xFFC1FFEB),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(blockBorderRadius),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        padding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width * 0.03,
+        ),
         child: Row(
           children: [
-            const Icon(Icons.search, color: TITLE_COLOR, size: 16),
-            const SizedBox(width: 10),
+            Icon(
+              Icons.search,
+              color: titleColor,
+              size: MediaQuery.of(context).size.width * 0.05,
+            ),
+            SizedBox(width: MediaQuery.of(context).size.width * 0.03),
             Expanded(
               child: TextField(
                 controller: _searchController,
-                style: const TextStyle(fontSize: 12, color: TITLE_COLOR),
-                decoration: const InputDecoration(
+                style: TextStyle(
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
+                  color: titleColor,
+                ),
+                decoration: InputDecoration(
                   hintText: 'Поиск',
                   border: InputBorder.none,
                   isDense: true,
+                  hintStyle: TextStyle(
+                    fontSize: MediaQuery.of(context).size.width * 0.04,
+                  ),
                 ),
               ),
             ),
@@ -176,7 +217,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildAvatar(),
-          const SizedBox(width: 30),
+          SizedBox(width: MediaQuery.of(context).size.width * 0.07),
           _buildNameFields(),
         ],
       )
@@ -185,31 +226,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildAvatar() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.user;
+
+
+    final avatar = (user != null && user.photoBytes != null && user.photoBytes!.isNotEmpty)
+        ? user.photoBytes
+        : null;
+
     return Stack(
       children: [
         CircleAvatar(
-          radius: AVATAR_RADIUS,
-          backgroundColor: Colors.grey,
-          backgroundImage: _avatarImage != null ? FileImage(_avatarImage!) : null,
-          child: _avatarImage == null
-              ? const Icon(Icons.person, size: 50, color: Colors.white)
+          radius: avatarRadius,
+          backgroundColor: Colors.grey[200],
+          backgroundImage: avatar != null
+              ? MemoryImage(base64Decode(avatar))
+              : null,
+          child: avatar == null
+              ? Icon(
+            Icons.person,
+            size: avatarRadius * 0.8,
+            color: Colors.grey[600],
+          )
               : null,
         ),
-        Positioned(
-          bottom: 0,
-          right: 0,
-          child: GestureDetector(
-            onTap: _pickImage,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: TITLE_COLOR,
+        if (authProvider.isAuthorized)
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: GestureDetector(
+              onTap: () {
+                _safeReportEvent('settings_avatar_change');
+                _pickImage();
+              },
+              child: Container(
+                padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.015),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF937DF3),
+                ),
+                child: Icon(
+                  Icons.add,
+                  color: Colors.white,
+                  size: MediaQuery.of(context).size.width * 0.05,
+                ),
               ),
-              child: const Icon(Icons.add, color: Colors.white, size: 20),
             ),
           ),
-        ),
       ],
     );
   }
@@ -221,18 +284,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Поле для имени
-          const Text('Имя', style: TextStyle(fontSize: 12, color: Color(0xFF666666))),
-          const SizedBox(height: 8),
+          Text(
+            'Имя',
+            style: _textStyleSemiBold.copyWith(
+              fontSize: MediaQuery.of(context).size.width * 0.035,
+              color: const Color(0xFF666666),
+            ),
+          ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.01),
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: const [
+              borderRadius: BorderRadius.circular(blockBorderRadius),
+              boxShadow:  [
                 BoxShadow(
                   color: Colors.black12,
-                  blurRadius: 8,
-                  offset: Offset(0, 4),
+                  blurRadius: MediaQuery.of(context).size.width * 0.015,
+                  offset: Offset(0, MediaQuery.of(context).size.height * 0.005),
                 ),
               ],
             ),
@@ -244,60 +312,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   await _updateUserProfile(updatedUser);
                 }
               },
-              decoration: const InputDecoration(
-                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: InputDecoration(
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width * 0.04,
+                  vertical: MediaQuery.of(context).size.height * 0.015,
+                ),
                 border: InputBorder.none,
                 hintText: 'Введите имя',
+                hintStyle: TextStyle(
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
+                ),
+              ),
+              style: TextStyle(
+                fontSize: MediaQuery.of(context).size.width * 0.04,
               ),
             ),
           ),
-          const SizedBox(height: 16),
-
-          // // Поле для фамилии
-          // const Text('Фамилия', style: TextStyle(fontSize: 12, color: Color(0xFF666666))),
-          // const SizedBox(height: 8),
-          // Container(
-          //   decoration: BoxDecoration(
-          //     color: Colors.white,
-          //     borderRadius: BorderRadius.circular(18),
-          //     boxShadow: const [
-          //       BoxShadow(
-          //         color: Colors.black12,
-          //         blurRadius: 8,
-          //         offset: Offset(0, 4),
-          //       ),
-          //     ],
-          //   ),
-          //   child: TextField(
-          //     controller: _surnameController,
-          //     onChanged: (value) async {
-          //       if (authProvider.isAuthorized && authProvider.user != null) {
-          //         final fullName = _nameController.text + (value.isNotEmpty ? ' $value' : '');
-          //         final updatedUser = authProvider.user!.copyWith(name: fullName);
-          //         await _updateUserProfile(updatedUser);
-          //       }
-          //     },
-          //     decoration: const InputDecoration(
-          //       contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          //       border: InputBorder.none,
-          //       hintText: 'Введите фамилию',
-          //     ),
-          //   ),
-          // ),
-          // const SizedBox(height: 16),
-
-          // Поле для даты рождения
-          const Text('Дата рождения', style: TextStyle(fontSize: 12, color: Color(0xFF666666))),
-          const SizedBox(height: 8),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+          Text(
+            'Дата рождения',
+            style: _textStyleSemiBold.copyWith(
+              fontSize: MediaQuery.of(context).size.width * 0.035,
+              color: const Color(0xFF666666),
+            ),
+          ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.01),
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: const [
+              borderRadius: BorderRadius.circular(blockBorderRadius),
+              boxShadow:  [
                 BoxShadow(
                   color: Colors.black12,
-                  blurRadius: 8,
-                  offset: Offset(0, 4),
+                  blurRadius: MediaQuery.of(context).size.width * 0.015,
+                  offset: Offset(0, MediaQuery.of(context).size.height * 0.005),
                 ),
               ],
             ),
@@ -311,77 +359,77 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       final day = int.parse(dateParts[0]);
                       final month = int.parse(dateParts[1]);
                       final year = int.parse(dateParts[2]);
+                      
+
+                      if (month < 1 || month > 12) {
+                        throw Exception('Неверный месяц');
+                      }
+                      
+
+                      final daysInMonth = DateTime(year, month + 1, 0).day;
+                      if (day < 1 || day > daysInMonth) {
+                        throw Exception('Неверный день месяца');
+                      }
+                      
                       final newDate = DateTime(year, month, day);
+
+                      debugPrint('User entered date: $value');
+                      debugPrint('Parsed DateTime: $newDate');
 
                       final updatedUser = authProvider.user!.copyWith(birthdayDate: newDate);
                       await _updateUserProfile(updatedUser);
 
-                      // Обновляем в локальных настройках
                       final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
                       await settingsProvider.updateUserData(birthDate: value);
                     }
                   } catch (e) {
-                    debugPrint('Ошибка формата даты: $e');
+                    debugPrint('Ошибка формата даты: $e. Input: $value');
                   }
                 }
               },
               decoration: InputDecoration(
-                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width * 0.04,
+                  vertical: MediaQuery.of(context).size.height * 0.015,
+                ),
                 border: InputBorder.none,
                 hintText: 'ДД.ММ.ГГГГ',
                 hintStyle: TextStyle(
-                  color: Color(0x81_E4_E4_E4), // Чёрный, 50% прозрачности
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
+                  color: Colors.grey[400],
                 ),
-                filled: true,
-                fillColor: Colors.white, // Светло-серый фон
+              ),
+              style: TextStyle(
+                fontSize: MediaQuery.of(context).size.width * 0.04,
               ),
               keyboardType: TextInputType.datetime,
-            )
+            ),
           ),
-
-          // Кнопка сохранения изменений (опционально)
           if (authProvider.isAuthorized) ...[
-            const SizedBox(height: 20),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.03),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6E44FF),
+                  backgroundColor: const Color(0xFF937DF3),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: BorderRadius.circular(blockBorderRadius),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: EdgeInsets.symmetric(
+                    vertical: MediaQuery.of(context).size.height * 0.015,
+                  ),
                 ),
-                onPressed: () async {
-                  // Дополнительное подтверждение сохранения
-                  final shouldSave = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Сохранить изменения?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Отмена'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Сохранить'),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (shouldSave == true) {
-                    await _updateAllFields();
-                  }
+                onPressed: () {
+                  _safeReportEvent('settings_save_changes');
+                  _updateAllFields();
                 },
-                  child: const Padding(
-                    padding: EdgeInsets.only(left: 35, top: 0), // ← Настройте значения
-                    child: Text(
-                      'Сохранить изменения',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                  )
+                child: Text(
+                  'Сохранить изменения',
+                  style: _textStyleSemiBold.copyWith(
+                    color: Colors.white,
+                    fontSize: MediaQuery.of(context).size.width * 0.04,
+                  ),
+                ),
               ),
             ),
           ],
@@ -390,101 +438,85 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _updateAllFields() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (!authProvider.isAuthorized || authProvider.user == null) return;
+  Widget _buildStatisticsBlock(AuthProvider authProvider, bool isAuthorized) {
+    Map<String, int> _buildTaskStatistics() {
+      final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+      final stats = <String, int>{
+        'Пн': 0, 'Вт': 0, 'Ср': 0, 'Чт': 0, 'Пт': 0, 'Сб': 0, 'Вс': 0,
+      };
 
-    try {
-      // Формируем полное имя
-      final fullName = _nameController.text;
+      if (authProvider.user == null) return stats;
 
-      // Парсим дату рождения
-      DateTime? birthDate;
-      try {
-        final dateParts = _birthDateController.text.split('.');
-        if (dateParts.length == 3) {
-          birthDate = DateTime(
-            int.parse(dateParts[2]),
-            int.parse(dateParts[1]),
-            int.parse(dateParts[0]),
-          );
+      final completedTasks = taskProvider.tasks.where((task) =>
+      task.state == 2 && task.customerId == authProvider.user!.id).toList();
+
+      for (final task in completedTasks) {
+        final endPoint = task.deadline;
+        if (endPoint != null) {
+          final dayName = _getDayOfWeekName(endPoint.weekday);
+          stats[dayName] = (stats[dayName] ?? 0) + 1;
         }
-      } catch (e) {
-        debugPrint('Ошибка парсинга даты: $e');
       }
 
-      // Создаем обновленного пользователя
-      final updatedUser = authProvider.user!.copyWith(
-        name: fullName,
-        birthdayDate: birthDate,
-      );
-
-      // Обновляем на сервере
-      await _updateUserProfile(updatedUser);
-
-      // Обновляем локальные настройки
-      final settingsProvider = Provider.of<SettingsProvider>(
-          context, listen: false);
-      await settingsProvider.updateUserData(
-        name: _nameController.text,
-        // surname: _surnameController.text,
-        birthDate: _birthDateController.text,
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Данные успешно сохранены')),
-      );
-    } catch (e) {
-      debugPrint('Ошибка сохранения данных: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка сохранения: $e')),
-      );
+      return stats;
     }
-  }
 
-  Widget _buildStatisticsBlock(AuthProvider authProvider, bool isAuthorized) {
     return _buildBlock(
       key: _blockKeys['статистика']!,
       title: 'Статистика',
       child: isAuthorized
           ? Column(
         children: [
-          const Text(
+          Text(
             'Количество выполненных заданий по дням',
-            style: TextStyle(fontSize: 16, color: Color(0xFF666666)),
+            style: _textStyleSemiBold.copyWith(
+              fontSize: MediaQuery.of(context).size.width * 0.04,
+              color: const Color(0xFF666666),
+            ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.02),
           SizedBox(
-            height: 220,
+            height: MediaQuery.of(context).size.height * 0.2,
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: _taskStatistics.entries.map((entry) {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Container(
-                        width: 28,
-                        height: entry.value * 18.0,
-                        decoration: BoxDecoration(
-                          color: TITLE_COLOR,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        entry.key,
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      Text(
-                        entry.value.toString(),
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ],
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).size.height * 0.03,
+              ),
+              child: Consumer<TaskProvider>(
+                builder: (context, taskProvider, child) {
+                  final stats = _buildTaskStatistics();
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: stats.entries.map((entry) {
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Container(
+                            width: MediaQuery.of(context).size.width * 0.08,
+                            height: entry.value * MediaQuery.of(context).size.height * 0.02,
+                            decoration: BoxDecoration(
+                              color: titleColor,
+                              borderRadius: BorderRadius.circular(blockBorderRadius),
+                            ),
+                          ),
+                          SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+                          Text(
+                            entry.key,
+                            style: _textStyleSemiBold.copyWith(
+                              fontSize: MediaQuery.of(context).size.width * 0.035,
+                            ),
+                          ),
+                          Text(
+                            entry.value.toString(),
+                            style: _textStyleSemiBold.copyWith(
+                              fontSize: MediaQuery.of(context).size.width * 0.035,
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList(),
                   );
-                }).toList(),
+                },
               ),
             ),
           ),
@@ -494,101 +526,197 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildNotificationsBlock(SettingsProvider settings) {
+  Widget _buildNotificationsBlock(AuthProvider authProvider, SettingsProvider settings, bool isAuthorized) {
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    final notificationService = NotificationService();
+
     return _buildBlock(
       key: _blockKeys['уведомления']!,
       title: 'Уведомления',
-      child: SwitchListTile(
-        activeTrackColor: Color(0xFF6E44FF),
-        value: settings.notificationsEnabled,
-        onChanged: (val) => settings.update('notificationsEnabled', val),
-        title: const Text('Получать уведомления'),
-        secondary: const Icon(Icons.notifications, size: SETTINGS_ICON_SIZE),
+      child: Column(
+        children: [
+          SwitchListTile(
+            value: settings.notificationsEnabled,
+            onChanged: (val) {
+              _safeReportEvent('settings_notifications_toggle', attributes: {'enabled': val});
+              settings.update('notificationsEnabled', val);
+              notificationService.setNotificationsEnabled(val);
+
+              if (authProvider.token != null) {
+                notificationService.setAuthToken(authProvider.token);
+              }
+            },
+            title: Text('Получать уведомления'),
+            activeColor: const Color(0xFF937DF3),
+          ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+          Container(
+            width: double.infinity,
+            height: MediaQuery.of(context).size.height * 0.06,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF937DF3),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(blockBorderRadius),
+                ),
+                elevation: 0,
+              ),
+              onPressed: () async {
+                _safeReportEvent('settings_test_notification');
+                if (authProvider.token == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Требуется авторизация'),
+                      backgroundColor: const Color(0xFF937DF3),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),),
+                  );
+                  return;
+                }
+
+                final activeTasks = taskProvider.tasks.where((t) => t.state == 0).toList();
+                if (activeTasks.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Нет активных задач!'),
+                      backgroundColor: const Color(0xFF937DF3),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),),
+                  );
+                  return;
+                }
+
+                final task = activeTasks.last;
+                await notificationService.showTaskNotification(task: task);
+              },
+              child: Text(
+                'Отправить тестовое уведомление',
+                style: _textStyleSemiBold.copyWith(
+                  color: Colors.white,
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
-
-
 
   Widget _buildAccountBlock(AuthProvider authProvider, bool isAuthorized) {
     final groupProvider = Provider.of<GroupProvider>(context, listen: false);
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+
     return _buildBlock(
       key: _blockKeys['аккаунт']!,
       title: 'Аккаунт',
       child: isAuthorized
           ? Column(
         children: [
-          const SizedBox(height: 20),
-
-          // 🔄 Кнопка обновления данных
+          SizedBox(height: MediaQuery.of(context).size.height * 0.03),
           Container(
             width: double.infinity,
-            height: 50,
+            height: MediaQuery.of(context).size.height * 0.06,
             decoration: BoxDecoration(
               color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(blockBorderRadius),
               border: Border.all(color: Colors.blue.withOpacity(0.3)),
             ),
             child: TextButton(
               onPressed: () async {
+                _safeReportEvent('settings_refresh_data');
                 try {
-                  await authProvider.refreshAll(groupProvider, taskProvider, shopProvider);
+
+                  await authProvider.refreshUserData();
+                  
+
+                  try {
+                    await groupProvider.loadGroupData();
+                    if (groupProvider.isInGroup) {
+                      await Future.wait([
+                        groupProvider.refreshGroupData(),
+                        taskProvider.refreshTasks(),
+                        shopProvider.refreshProducts(),
+                      ]);
+                    }
+                  } catch (e) {
+                    debugPrint('Некритичная ошибка при обновлении дополнительных данных: $e');
+                  }
+
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Данные успешно обновлены')),
+                    SnackBar(
+                      content: Text(
+                        'Данные успешно обновлены',
+                        style: _textStyleSemiBold,
+                      ),
+                      backgroundColor: const Color(0xFF937DF3),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   );
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Ошибка обновления: $e')),
+                    SnackBar(
+                      content: Text(
+                        'Ошибка обновления данных пользователя',
+                        style: _textStyleSemiBold,
+                      ),
+                      backgroundColor: const Color(0xFF937DF3),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   );
                 }
               },
-              child: const Text(
+              child: Text(
                 'Обновить данные',
-                style: TextStyle(
+                style: _textStyleBold.copyWith(
                   color: Colors.blue,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
                 ),
               ),
             ),
           ),
-
-          const SizedBox(height: 10),
-
+          SizedBox(height: MediaQuery.of(context).size.height * 0.015),
           Container(
             width: double.infinity,
-            height: 50,
+            height: MediaQuery.of(context).size.height * 0.06,
             decoration: BoxDecoration(
               color: Colors.red[50],
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(blockBorderRadius),
               border: Border.all(color: Colors.red.withOpacity(0.3)),
             ),
             child: TextButton(
               onPressed: () {
+                _safeReportEvent('settings_logout');
                 authProvider.logout();
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
                       (route) => false,
                 );
               },
-              child: const Text(
+              child: Text(
                 'Выйти из аккаунта',
-                style: TextStyle(
+                style: _textStyleBold.copyWith(
                   color: Colors.red,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          const Text(
+          SizedBox(height: MediaQuery.of(context).size.height * 0.015),
+          Text(
             'После выхода потребуется повторная авторизация',
-            style: TextStyle(
+            style: _textStyleSemiBold.copyWith(
               color: Colors.grey,
-              fontSize: 12,
+              fontSize: MediaQuery.of(context).size.width * 0.03,
             ),
             textAlign: TextAlign.center,
           ),
@@ -596,38 +724,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
       )
           : Column(
         children: [
-          const SizedBox(height: 20),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.03),
           Container(
             width: double.infinity,
-            height: 50,
+            height: MediaQuery.of(context).size.height * 0.06,
             decoration: BoxDecoration(
               color: Colors.green[50],
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(blockBorderRadius),
               border: Border.all(color: Colors.green.withOpacity(0.3)),
             ),
             child: TextButton(
               onPressed: () {
-                authProvider.logout();
+                _safeReportEvent('settings_login_prompt');
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
                 );
               },
-              child: const Text(
+              child: Text(
                 'Войти в аккаунт',
-                style: TextStyle(
+                style: _textStyleBold.copyWith(
                   color: Colors.green,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          const Text(
+          SizedBox(height: MediaQuery.of(context).size.height * 0.015),
+          Text(
             'Авторизуйтесь для доступа ко всем функциям',
-            style: TextStyle(
+            style: _textStyleSemiBold.copyWith(
               color: Colors.grey,
-              fontSize: 12,
+              fontSize: MediaQuery.of(context).size.width * 0.03,
             ),
             textAlign: TextAlign.center,
           ),
@@ -636,16 +763,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-
   Widget _buildDecorativeLine() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 20),
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: MediaQuery.of(context).size.height * 0.03),
       child: Center(
         child: SizedBox(
-          width: DECORATIVE_LINE_WIDTH,
-          height: DECORATIVE_LINE_HEIGHT,
+          width: decorativeLineWidth,
+          height: decorativeLineHeight,
           child: DecoratedBox(
-            decoration: BoxDecoration(color: DECORATIVE_LINE_COLOR),
+            decoration: BoxDecoration(color: decorativeLineColor),
           ),
         ),
       ),
@@ -658,49 +784,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Key? key,
   }) {
     return Container(
-        key: key,
-        width: BLOCK_WIDTH,
-        padding: const EdgeInsets.all(BLOCK_PADDING),
-    decoration: BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(BLOCK_BORDER_RADIUS),
-    boxShadow: const [
-    BoxShadow(
-    color: Colors.black12,
-    blurRadius: 8,
-    offset: Offset(0, 4),
-    ),
-    ],
-    ),
-    child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-    Text(
-    title,
-    style: const TextStyle(
-    fontSize: TITLE_FONT_SIZE,
-    fontWeight: FontWeight.bold,
-    color: TITLE_COLOR,
-    ),
-    ),
-    const SizedBox(height: 15),
-    child,
-    ],
-    ),
+      key: key,
+      width: blockWidth,
+      padding: EdgeInsets.all(blockPadding),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(blockBorderRadius),
+        boxShadow:  [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: MediaQuery.of(context).size.width * 0.015,
+            offset: Offset(0, MediaQuery.of(context).size.height * 0.005),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: _textStyleBold.copyWith(
+              fontSize: titleFontSize,
+              color: const Color(0xFF937DF3),
+            ),
+          ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+          child,
+        ],
+      ),
     );
   }
 
   Widget _unauthorizedMessage(String text) {
     return Container(
-      width: BLOCK_WIDTH,
+      width: blockWidth,
       alignment: Alignment.center,
-      padding: const EdgeInsets.all(10),
+      padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.03),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 17, color: Color(0xFF666666)),
+        style: _textStyleSemiBold.copyWith(
+          fontSize: MediaQuery.of(context).size.width * 0.04,
+          color: const Color(0xFF666666),
+        ),
         textAlign: TextAlign.center,
       ),
     );
+  }
+
+  String _getDayOfWeekName(int weekday) {
+    switch (weekday) {
+      case 1: return 'Пн';
+      case 2: return 'Вт';
+      case 3: return 'Ср';
+      case 4: return 'Чт';
+      case 5: return 'Пт';
+      case 6: return 'Сб';
+      case 7: return 'Вс';
+      default: return '';
+    }
   }
 
   void _scrollToBlock(String query) {
@@ -720,44 +861,95 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // Обновим метод _pickImage:
   Future<void> _pickImage() async {
     try {
       final image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
-        final file = File(image.path);
-        setState(() => _avatarImage = file);
+        final bytes = await image.readAsBytes();
+        final base64Image = base64Encode(bytes);
+
+        setState(() => _avatarBytes = base64Image);
 
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+        if (authProvider.isAuthorized && authProvider.token != null && authProvider.user != null) {
+          try {
+            await authProvider.updateUserPhoto(base64Image);
+            await settingsProvider.updateUserData(avatarBytes: base64Image);
 
-        // Сохраняем локально
-        await settingsProvider.updateUserData(avatar: file);
 
-        // Обновляем на сервере
-        if (authProvider.isAuthorized && authProvider.user != null) {
-          final updatedUser = authProvider.user!.copyWith(photoBase64: base64Encode(await file.readAsBytes()));
-          await authProvider.setAuthData(
-            user: updatedUser,
-            token: authProvider.token!,
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Аватар успешно обновлен', style: _textStyleSemiBold),
+                backgroundColor: const Color(0xFF937DF3),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
+          } catch (e) {
+            debugPrint('Ошибка при обновлении аватара: $e');
+
+            setState(() => _avatarBytes = authProvider.user?.photoBytes);
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Ошибка при обновлении аватара', style: _textStyleSemiBold),
+                backgroundColor: const Color(0xFF937DF3),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
+          }
+        } else {
+          setState(() => _avatarBytes = null);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Требуется авторизация', style: _textStyleSemiBold),
+              backgroundColor: const Color(0xFF937DF3),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
           );
-
-          final apiClient = ApiClient();
-          apiClient.setAuthToken(authProvider.token!);
-          await apiClient.updateUserProfile(updatedUser);
         }
       }
     } catch (e) {
       debugPrint('Ошибка при выборе изображения: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка при загрузке изображения: $e')),
+        SnackBar(
+          content: Text('Ошибка при загрузке изображения: ${e.toString()}', style: _textStyleSemiBold),
+          backgroundColor: const Color(0xFF937DF3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
       );
     }
   }
 
-
   Future<void> _updateUserProfile(UserModel updatedUser) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    if (authProvider.token == null) {
+      debugPrint('Токен авторизации отсутствует');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Требуется авторизация', style: _textStyleSemiBold),
+          backgroundColor: const Color(0xFF937DF3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      return;
+    }
+
     final apiClient = ApiClient();
     apiClient.setAuthToken(authProvider.token!);
 
@@ -770,14 +962,108 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       debugPrint('Ошибка обновления профиля: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка обновления профиля: $e')),
+        SnackBar(content: Text('Ошибка обновления профиля', style: _textStyleSemiBold),
+          backgroundColor: const Color(0xFF937DF3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
       );
+      rethrow;
     }
   }
 
-  Future<void> _uploadAvatarToServer(File image) async {
-    debugPrint('Начало загрузки аватарки на сервер...');
-    await Future.delayed(const Duration(seconds: 1));
-    debugPrint('Аватар успешно загружен на сервер!');
+  Future<void> _updateAllFields() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (!authProvider.isAuthorized || authProvider.user == null) return;
+
+    try {
+      DateTime? birthDate;
+      final dateText = _birthDateController.text.trim();
+      
+      debugPrint('=== Обновление данных пользователя ===');
+      debugPrint('Обработка даты рождения: $dateText');
+      
+      if (dateText.isEmpty) {
+        debugPrint('Дата рождения не указана');
+      } else {
+        try {
+          final dateParts = dateText.split('.');
+          if (dateParts.length == 3) {
+            final day = int.parse(dateParts[0]);
+            final month = int.parse(dateParts[1]);
+            final year = int.parse(dateParts[2]);
+            
+
+            if (month < 1 || month > 12) {
+              throw Exception('Неверный месяц');
+            }
+            
+
+            final daysInMonth = DateTime(year, month + 1, 0).day;
+            if (day < 1 || day > daysInMonth) {
+              throw Exception('Неверный день месяца');
+            }
+            
+            birthDate = DateTime(year, month, day);
+            debugPrint('Дата успешно преобразована в DateTime: $birthDate');
+            debugPrint('Дата в ISO8601: ${birthDate.toIso8601String()}');
+          } else {
+            throw Exception('Неверный формат даты');
+          }
+        } catch (e) {
+          debugPrint('Ошибка парсинга даты: $e');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Неверный формат даты. Используйте ДД.ММ.ГГГГ'),
+              backgroundColor: const Color(0xFF937DF3),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+          return;
+        }
+      }
+
+      final updatedUser = authProvider.user!.copyWith(
+        name: _nameController.text,
+        birthdayDate: birthDate,
+      );
+
+      debugPrint('Отправка обновленных данных пользователя:');
+      debugPrint('- Имя: ${updatedUser.name}');
+      debugPrint('- Дата рождения: ${updatedUser.birthdayDate}');
+      debugPrint('- Дата рождения в ISO8601: ${updatedUser.birthdayDate?.toIso8601String()}');
+
+      await _updateUserProfile(updatedUser);
+
+      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+      await settingsProvider.updateUserData(
+        name: _nameController.text,
+        birthDate: _birthDateController.text,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Данные успешно сохранены', style: _textStyleSemiBold),
+          backgroundColor: const Color(0xFF937DF3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),),
+      );
+    } catch (e) {
+      debugPrint('Ошибка сохранения данных: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка сохранения: $e', style: _textStyleSemiBold),
+          backgroundColor: const Color(0xFF937DF3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),),
+      );
+    }
   }
 }

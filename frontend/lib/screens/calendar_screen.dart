@@ -1,25 +1,39 @@
+import 'package:appmetrica_plugin/appmetrica_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:zadachok/models/task/task_model.dart';
 import 'package:zadachok/screens/tasks_screen.dart';
+import '../models/user/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/group_provider.dart';
 import '../providers/task_provider.dart';
 
+const TextStyle _textStyleSemiBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w600, // SemiBold
+);
+
+const TextStyle _textStyleBold = TextStyle(
+  fontFamily: 'Inter',
+  fontWeight: FontWeight.w700, // Bold
+);
 
 class CalendarStyles {
-  static const double headerHeight = 100.0;
-  static const double monthHeaderHeight = 62.0;
-  static const double calendarHeight = 240.0;
-  static const double dayLabelFontSize = 25.0;
-  static const double dayNumberFontSize = 25.0;
-  static const double monthNameFontSize = 36.0;
-  static const double yearFontSize = 40.0;
-  static const double taskTitleFontSize = 18.0;
-  static const double taskDescriptionFontSize = 14.0;
-  static const double titleMonthCalendarSize = 23.0;
+  // Изменяем фиксированные размеры на функции, которые учитывают размер экрана
+  static double headerHeight(BuildContext context) => MediaQuery.of(context).size.height * 0.12;
+  static double monthHeaderHeight(BuildContext context) => MediaQuery.of(context).size.height * 0.07;
+  static double calendarHeight(BuildContext context) => MediaQuery.of(context).size.height * 0.28;
+  // Размеры шрифтов относительно ширины экрана
+  static double dayLabelFontSize(BuildContext context) => MediaQuery.of(context).size.width * 0.06;
+  static double dayNumberFontSize(BuildContext context) => MediaQuery.of(context).size.width * 0.06;
+  static double monthNameFontSize(BuildContext context) => MediaQuery.of(context).size.width * 0.09;
+  static double yearFontSize(BuildContext context) => MediaQuery.of(context).size.width * 0.1;
+  static double taskTitleFontSize(BuildContext context) => MediaQuery.of(context).size.width * 0.045;
+  static double taskDescriptionFontSize(BuildContext context) => MediaQuery.of(context).size.width * 0.035;
+  static double titleMonthCalendarSize(BuildContext context) => MediaQuery.of(context).size.width * 0.055;
 
+  // Цвета остаются без изменений
   static const Color primaryColor = Color(0xFF937DF3);
   static const Color secondaryColor = Color(0xFF6E44FF);
   static const Color monthHeaderColor = Color(0xFFCCC1FF);
@@ -31,16 +45,24 @@ class CalendarStyles {
   static const Color taskOnTimeColor = Colors.green;
   static const Color todayMonthColor = Color(0xFFC1FFEB);
 
-  static const BorderRadius headerBorderRadius = BorderRadius.only(
-    bottomLeft: Radius.circular(40),
-    bottomRight: Radius.circular(40),
+  static BorderRadius headerBorderRadius(BuildContext context) => BorderRadius.only(
+    bottomLeft: Radius.circular(MediaQuery.of(context).size.width * 0.1),
+    bottomRight: Radius.circular(MediaQuery.of(context).size.width * 0.1),
   );
 
-  static const EdgeInsets headerPadding = EdgeInsets.fromLTRB(25, 15, 24, 10);
-  static const EdgeInsets calendarPadding = EdgeInsets.all(16);
-  static const EdgeInsets taskCardPadding = EdgeInsets.all(12);
-  static const EdgeInsets monthPickerPadding = EdgeInsets.all(16);
+  // Адаптивные отступы
+  static EdgeInsets headerPadding(BuildContext context) => EdgeInsets.fromLTRB(
+    MediaQuery.of(context).size.width * 0.06,
+    MediaQuery.of(context).size.height * 0.02,
+    MediaQuery.of(context).size.width * 0.06,
+    MediaQuery.of(context).size.height * 0.01,
+  );
 
+  static EdgeInsets calendarPadding(BuildContext context) => EdgeInsets.all(MediaQuery.of(context).size.width * 0.04);
+  static EdgeInsets taskCardPadding(BuildContext context) => EdgeInsets.all(MediaQuery.of(context).size.width * 0.03);
+  static EdgeInsets monthPickerPadding(BuildContext context) => EdgeInsets.all(MediaQuery.of(context).size.width * 0.04);
+
+  // Тени остаются без изменений
   static const BoxShadow headerShadow = BoxShadow(
     color: Colors.black26,
     blurRadius: 12,
@@ -68,28 +90,41 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
-
   DateTime _selectedDate = DateTime.now();
   bool _showYearPicker = false;
 
-  Widget _buildYearPickerOverlay() {
-    return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      child: AnimatedSize(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        alignment: Alignment.topCenter,
-        child: _showYearPicker
-            ? Material(
-          elevation: 2,
-          borderRadius: BorderRadius.circular(6),
-          child: _buildYearPicker(),
-        )
-            : const SizedBox(),
-      ),
-    );
+  Future<void> _safeReportEvent(String eventName, {Map<String, dynamic>? attributes}) async {
+    try {
+      await AppMetrica.reportEvent(eventName);
+    } catch (e) {
+      debugPrint('Ошибка отправки события в AppMetrica: $e');
+      await _reportErrorToAppMetrica(
+        message: 'Failed to report event: $eventName',
+        error: e,
+      );
+    }
+  }
+
+  Future<void> _reportErrorToAppMetrica({
+    required dynamic error,
+    String? message,
+  }) async {
+    try {
+      await AppMetrica.reportError(
+        message: message ?? 'Error occurred in CalendarScreen',
+        errorDescription: AppMetricaErrorDescription(
+          (error is Exception ? error : Exception(error.toString())) as StackTrace,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Ошибка отправки ошибки в AppMetrica: $e');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _safeReportEvent('calendar_screen_opened');
   }
 
   @override
@@ -108,11 +143,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Widget _buildMainContent() {
     return Column(
       children: [
-
         _buildYearHeader(),
-        const SizedBox(height: 12),
-
-
+        SizedBox(height: MediaQuery.of(context).size.height * 0.01),
         Expanded(
           child: _buildCalendarContentWithAuthCheck(),
         ),
@@ -131,7 +163,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           children: [
             _buildMonthHeader(),
             _buildCalendarGrid(),
-            const SizedBox(height: 12),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.01),
             auth.isAuthorized && group.isInGroup
                 ? _buildTaskList()
                 : _buildUnauthorizedTaskMessage(),
@@ -144,32 +176,36 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Widget _buildYearHeader() {
     return Container(
       width: double.infinity,
-      height: CalendarStyles.headerHeight,
+      height: CalendarStyles.headerHeight(context),
       decoration: BoxDecoration(
         color: CalendarStyles.primaryColor,
-        borderRadius: CalendarStyles.headerBorderRadius,
+        borderRadius: CalendarStyles.headerBorderRadius(context),
         boxShadow: [CalendarStyles.headerShadow],
       ),
-      padding: CalendarStyles.headerPadding,
+      padding: CalendarStyles.headerPadding(context),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
             '${_selectedDate.year}',
-            style: const TextStyle(
-              fontSize: CalendarStyles.yearFontSize,
+            style: _textStyleBold.copyWith(
+              fontSize: CalendarStyles.yearFontSize(context),
               color: Colors.white,
-              fontWeight: FontWeight.bold,
             ),
           ),
           IconButton(
             icon: Icon(
               _showYearPicker ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
               color: Colors.white,
-              size: 40,
+              size: MediaQuery.of(context).size.width * 0.1,
             ),
-            onPressed: () => setState(() => _showYearPicker = !_showYearPicker),
+            onPressed: () {
+              _safeReportEvent(
+                _showYearPicker ? 'year_picker_closed' : 'year_picker_opened',
+              );
+              setState(() => _showYearPicker = !_showYearPicker);
+            },
           ),
         ],
       ),
@@ -180,16 +216,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final currentMonth = toBeginningOfSentenceCase(DateFormat.MMMM('ru').format(_selectedDate));
 
     return GestureDetector(
-      onTap: () => setState(() {
-        _showYearPicker = false;
-      }),
+      onTap: () {
+        _safeReportEvent('month_header_tapped');
+        setState(() {
+          _showYearPicker = false;
+        });
+      },
       child: Container(
-        height: CalendarStyles.monthHeaderHeight,
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        height: CalendarStyles.monthHeaderHeight(context),
+        margin: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.04),
+        padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.04),
         decoration: BoxDecoration(
           color: CalendarStyles.monthHeaderColor,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.03),
           boxShadow: [CalendarStyles.monthHeaderShadow],
         ),
         child: Row(
@@ -197,10 +236,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
           children: [
             Text(
               currentMonth!,
-              style: const TextStyle(
+              style: _textStyleBold.copyWith(
                 color: CalendarStyles.secondaryColor,
-                fontSize: CalendarStyles.monthNameFontSize,
-                fontWeight: FontWeight.bold,
+                fontSize: CalendarStyles.monthNameFontSize(context),
               ),
             ),
           ],
@@ -213,30 +251,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final tasks = Provider.of<TaskProvider>(context).tasks;
 
     return Container(
-      height: CalendarStyles.calendarHeight,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      // margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-      padding: CalendarStyles.calendarPadding,
+      height: CalendarStyles.calendarHeight(context),
+      margin: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.04),
+      padding: CalendarStyles.calendarPadding(context),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.04),
         boxShadow: [CalendarStyles.calendarShadow],
       ),
       child: Column(
         children: [
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: _buildDayLabels(),
           ),
-
-
           Expanded(
             child: GridView.count(
               shrinkWrap: true,
               crossAxisCount: 7,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
+              mainAxisSpacing: 0,
+              crossAxisSpacing: 0,
+              padding: EdgeInsets.zero,
               children: _buildCalendarDays(_selectedDate, tasks),
             ),
           ),
@@ -250,10 +285,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return days.map((day) => Center(
       child: Text(
         day,
-        style: const TextStyle(
+        style: _textStyleBold.copyWith(
           color: CalendarStyles.dayLabelColor,
-          fontWeight: FontWeight.bold,
-          fontSize: CalendarStyles.dayLabelFontSize,
+          fontSize: CalendarStyles.dayLabelFontSize(context),
         ),
       ),
     )).toList();
@@ -281,56 +315,90 @@ class _CalendarScreenState extends State<CalendarScreen> {
     required DateTime date,
     required List<TaskModel> tasks,
   }) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     final isToday = DateUtils.isSameDay(DateTime.now(), date);
     final isSelected = DateUtils.isSameDay(_selectedDate, date);
-    final hasTasks = tasks.any((t) => DateUtils.isSameDay(date, _safeParseDate(t.endPoint)));
+
+    final double highlightSize = screenWidth * 0.1;
+
+    // Проверяем, есть ли задачи с дедлайном в эту дату
+    final hasDeadlineToday = tasks.any((t) {
+      final deadline = _safeParseDate(t.endPoint);
+      return deadline != null &&
+          deadline.year == date.year &&
+          deadline.month == date.month &&
+          deadline.day == date.day;
+    });
 
     return GestureDetector(
-      onTap: () => setState(() => _selectedDate = date),
-      // child: Transform.translate(
-      // offset: Offset(0, -35), // ← Сдвиг по X и Y //вот тут короче надо пофиксить
+      onTap: () {
+        _safeReportEvent('calendar_day_selected', attributes: {
+          'day': day,
+          'month': date.month,
+          'year': date.year,
+          'has_tasks': tasks.isNotEmpty,
+        });
+        setState(() => _selectedDate = date);
+      },
       child: Container(
-        padding: EdgeInsets.only(left: 0, bottom: 7),
+        padding: EdgeInsets.only(bottom: 10),
         alignment: Alignment.center,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: isSelected ? Color(0xFFCCC1FF) : null,
-          border: Border.all(
-            color: isToday
-                ? (isSelected ? Colors.white : CalendarStyles.todayBorderColor)
-                : Colors.transparent,
-            width: 0,
-          ),
-        ),
         child: Stack(
           alignment: Alignment.center,
           children: [
+            if (isSelected || isToday)
+              Transform.translate(
+                offset: Offset(0, screenHeight * 0.0008),
+                child: Container(
+                  width: highlightSize,
+                  height: highlightSize,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected ? const Color(0xFFCCC1FF) : null,
+                    border: isToday && !isSelected
+                        ? Border.all(
+                      color: CalendarStyles.todayBorderColor,
+                      width: 2,
+                    )
+                        : null,
+                  ),
+                ),
+              ),
             Text(
               '$day',
-              style: TextStyle(
-                color: isSelected ? CalendarStyles.selectedDayColor : CalendarStyles.dayNumberColor,
-                fontSize: CalendarStyles.dayNumberFontSize,
+              style: _textStyleBold.copyWith(
+                color: isSelected
+                    ? CalendarStyles.selectedDayColor
+                    : CalendarStyles.dayNumberColor,
+                fontSize: CalendarStyles.dayNumberFontSize(context),
                 fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
               ),
             ),
-            if (hasTasks)
-              Positioned(
-                top: 0.1,
-                right: 2,
+            // Показываем красную точку, если есть задачи с дедлайном на этот день
+            if (hasDeadlineToday)
+              Align(
+                alignment: Alignment.topRight,
                 child: Container(
-                  width: 8,
-                  height: 8,
+                  margin: EdgeInsets.only(
+                    top: screenHeight * 0.002,
+                    right: day < 10 ? screenWidth * 0.02 : screenWidth * 0.005,
+                  ),
+                  width: screenWidth * 0.015,
+                  height: screenWidth * 0.015,
                   decoration: const BoxDecoration(
                     color: Colors.red,
                     shape: BoxShape.circle,
                   ),
                 ),
               ),
-          ],),
+          ],
         ),
-      // ),
+      ),
     );
   }
+
 
   Widget _buildTaskList() {
     final tasks = Provider.of<TaskProvider>(context).tasks;
@@ -340,18 +408,24 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }).toList();
 
     if (filteredTasks.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Text('Нет задач на выбранную дату'),
+      _safeReportEvent('calendar_no_tasks_for_date');
+      return Padding(
+        padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.04),
+        child: Text('Нет задач на выбранную дату', style: _textStyleSemiBold),
       );
     }
 
+    _safeReportEvent('calendar_tasks_shown', attributes: {
+      'task_count': filteredTasks.length,
+      'date': _selectedDate.toString(),
+    });
+
     return SizedBox(
-      height: 300,
+      height: MediaQuery.of(context).size.height * 0.35,
       child: ListView.builder(
         shrinkWrap: true,
         physics: const ClampingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.04),
         itemCount: filteredTasks.length,
         itemBuilder: (context, i) => _buildTaskCard(filteredTasks[i]),
       ),
@@ -359,200 +433,297 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _buildTaskCard(TaskModel task) {
-    final theme = Theme.of(context);
     final startPoint = _safeParseDate(task.startPoint);
     final endPoint = _safeParseDate(task.endPoint);
     final isOverdue = endPoint != null && endPoint.isBefore(DateTime.now());
     final groupProvider = Provider.of<GroupProvider>(context);
-    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-
-    return Container(
-      height: 96,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
 
 
-
-          Expanded(
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              child: Stack(
-                children: [
-
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                      color: task.state == 'Completed'
-                          ? const Color(0xFFD9FFF3)
-                          : Colors.white,
+    return GestureDetector(
+      onTap: () {
+        _safeReportEvent('calendar_task_selected', attributes: {
+          'task_id': task.id,
+          'task_name': task.name,
+          'is_overdue': isOverdue,
+        });
+        // Здесь можно добавить навигацию к деталям задачи
+      },
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.15,
+        margin: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width * 0.04,
+          vertical: MediaQuery.of(context).size.height * 0.01,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: InkWell(
+                borderRadius: TaskScreenStyles.cardBorderRadius(context),
+                child: Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: TaskScreenStyles.cardBorderRadius(context),
+                        boxShadow: [TaskScreenStyles.cardShadow(context)],
+                        color: task.state == 2
+                            ? const Color(0xFFD9FFF3)
+                            : task.state == 1
+                            ? const Color(0xFFFFF3E0)
+                            : Colors.white,
+                      ),
                     ),
-                  ),
-
-
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: 100,
-                    child: ClipPath(
-                      clipper: _DiagonalClipper(),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          gradient: LinearGradient(
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                            colors: [
-                              const Color(0xFFCCC1FF).withOpacity(0.7),
-                              const Color(0xFF6E44FF),
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: MediaQuery.of(context).size.width * 0.25,
+                      child: ClipPath(
+                        clipper: _DiagonalClipper(),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: TaskScreenStyles.cardBorderRadius(context),
+                            gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: isOverdue
+                                  ? [
+                                const Color(0xFF6E44FF).withOpacity(0.7),
+                                const Color(0xFFFF5252),
+                              ] // просрочено
+                                  : [
+                                const Color(0xFFCCC1FF).withOpacity(0.7),
+                                const Color(0xFF6E44FF),
+                              ], // актуально
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF6E44FF).withOpacity(0.3),
+                                blurRadius: 8,
+                                spreadRadius: 2,
+                                offset: const Offset(-5, 0),
+                              ),
                             ],
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF6E44FF).withOpacity(0.3),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                              offset: const Offset(-5, 0),
-                            ),
-                          ],
                         ),
                       ),
                     ),
-                  ),
-
-
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-
-                        Expanded(
-                          flex: 7,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                task.name,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: TaskScreenConstants.primaryColor,
-                                  decoration: task.state == 'Completed'
-                                      ? TextDecoration.lineThrough
-                                      : null,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (task.description.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text(
-                                    task.description,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.grey[700],
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-
-
-                        Expanded(
-                          flex: 3,
-                          child: Stack(
-                            children: [
-
-                              Positioned(
-                                bottom: 0,
-                                right: 0,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    if (endPoint != null)
-                                      Text(
-                                        'До ${DateFormat('dd.MM').format(endPoint)}',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: isOverdue
-                                              ? Colors.red[400]
-                                              : Colors.white,
-                                          fontWeight: FontWeight.bold,
+                    Padding(
+                      padding: EdgeInsets.all(
+                        MediaQuery
+                            .of(context)
+                            .size
+                            .width * 0.03,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 7,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    return ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        maxWidth: constraints.maxWidth * 0.88, // регулируй при необходимости
+                                      ),
+                                      child: Text(
+                                        task.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: _textStyleBold.copyWith(
+                                          fontSize: TaskScreenStyles.taskNameFontSize(context),
+                                          color: TaskScreenStyles.primaryColor,
+                                          decoration: task.state == 'Completed'
+                                              ? TextDecoration.lineThrough
+                                              : null,
                                         ),
                                       ),
-                                    if (startPoint != null)
-                                      Text(
-                                        'С ${DateFormat('dd.MM').format(startPoint)}',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.white.withOpacity(0.8),
+                                    );
+                                  },
+                                ),
+
+                                // if (task.description.isNotEmpty)
+                                //   Padding(
+                                //     padding: EdgeInsets.only(
+                                //       top:
+                                //           MediaQuery.of(context).size.height *
+                                //           0.005,
+                                //     ),
+                                //     child: Text(
+                                //       task.description,
+                                //       style: _textStyleSemiBold.copyWith(
+                                //         fontSize: TaskScreenStyles.dateFontSize(
+                                //           context,
+                                //         ),
+                                //         color: Colors.grey[700],
+                                //       ),
+                                //       maxLines: 2,
+                                //       overflow: TextOverflow.ellipsis,
+                                //     ),
+                                //   ),
+                                if (task.customerId != 0)
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      top:
+                                      MediaQuery
+                                          .of(context)
+                                          .size
+                                          .height *
+                                          0.005,
+                                    ),
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal:
+                                        MediaQuery
+                                            .of(context)
+                                            .size
+                                            .width *
+                                            0.02,
+                                        vertical:
+                                        MediaQuery
+                                            .of(context)
+                                            .size
+                                            .height *
+                                            0.003,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.8),
+                                        borderRadius: BorderRadius.circular(
+                                          MediaQuery
+                                              .of(context)
+                                              .size
+                                              .width *
+                                              0.03,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        'Для: ${groupProvider.members
+                                            .firstWhere((m) =>
+                                        m.id == task.customerId, orElse: () =>
+                                            UserModel(id: 0,
+                                                name: 'Неизвестно',
+                                                email: '',
+                                                login: ''))
+                                            .name}',
+                                        style: _textStyleBold.copyWith(
+                                          fontSize:
+                                          TaskScreenStyles.dateFontSize(
+                                            context,
+                                          ) *
+                                              0.8,
+                                          color: TaskScreenStyles.primaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+
+                          Expanded(
+                            flex: 3,
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final screenHeight = MediaQuery.of(context).size.height;
+                                final screenWidth = MediaQuery.of(context).size.width;
+
+                                return Stack(
+                                  children: [
+                                    Positioned(
+                                      bottom: screenHeight * 0.01, // ~1% от высоты экрана
+                                      right: screenWidth * 0.02,   // ~2% от ширины экрана
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          if (startPoint != null)
+                                            Text(
+                                              'С ${DateFormat('dd.MM').format(startPoint)}',
+                                              style: _textStyleSemiBold.copyWith(
+                                                fontSize: TaskScreenStyles.dateFontSize(context) * 0.9,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          if (endPoint != null)
+                                            Text(
+                                              'До ${DateFormat('dd.MM').format(endPoint)}',
+                                              style: _textStyleBold.copyWith(
+                                                fontSize: TaskScreenStyles.dateFontSize(context) * 0.9,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          Text(
+                                            DateFormat('HH:mm').format(endPoint!),
+                                            style: _textStyleBold.copyWith(
+                                              fontSize: TaskScreenStyles.dateFontSize(context) * 0.9,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (task.reward > 0)
+                                      Positioned(
+                                        top: screenHeight * 0.01, // ~0.5% от высоты экрана
+                                        right: screenWidth * 0.0001, // ~2% от ширины экрана
+                                        child: _buildRewardBadge(task.reward),
+                                      ),
+                                    if (task.state == 'Completed')
+                                      Positioned(
+                                        bottom: screenHeight * 0.025, // ~2.5% от высоты экрана
+                                        right: screenWidth * 0.02,    // ~2% от ширины экрана
+                                        child: Icon(
+                                          Icons.verified,
+                                          color: Colors.white,
+                                          size: screenWidth * 0.04, // ~4% от ширины экрана
                                         ),
                                       ),
                                   ],
-                                ),
-                              ),
-                              if (task.reward > 0)
-                                Positioned(
-                                  top: 0,
-                                  right: 0,
-                                  child: _buildRewardBadge(task.reward),
-                                ),
-                              if (task.state == 'Completed')
-                                const Positioned(
-                                  bottom: 20,
-                                  right: 0,
-                                  child: Icon(
-                                    Icons.verified,
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
-                                ),
-                            ],
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                      ],
+
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildRewardBadge(int reward) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width * 0.015,
+        vertical: MediaQuery.of(context).size.height * 0.002,
+      ),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.025),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.star, size: 16, color: Colors.amber),
-          const SizedBox(width: 2),
+          Icon(
+            Icons.star,
+            size: MediaQuery.of(context).size.width * 0.04,
+            color: Colors.amber,
+          ),
+          SizedBox(width: MediaQuery.of(context).size.width * 0.005),
           Text(
             reward.toStringAsFixed(reward.truncateToDouble() == reward ? 0 : 1),
-            style: const TextStyle(
-              fontSize: 12,
+            style: _textStyleBold.copyWith(
+              fontSize: MediaQuery.of(context).size.width * 0.03,
               color: Colors.black87,
-              fontWeight: FontWeight.bold,
             ),
           ),
         ],
@@ -573,30 +744,54 @@ class _CalendarScreenState extends State<CalendarScreen> {
       message = 'Нет доступа к задачам';
     }
 
+    _safeReportEvent('calendar_unauthorized_access', attributes: {
+      'is_authorized': auth.isAuthorized,
+      'in_group': group.isInGroup,
+    });
+
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.04),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(height: 50),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.06),
             Icon(
               auth.isAuthorized ? Icons.group : Icons.lock,
-              size: 64,
+              size: MediaQuery.of(context).size.width * 0.15,
               color: const Color(0xFF937DF3),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.01),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+              style: _textStyleBold.copyWith(
+                fontSize: MediaQuery.of(context).size.width * 0.045,
               ),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.01),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildYearPickerOverlay() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        alignment: Alignment.topCenter,
+        child: _showYearPicker
+            ? Material(
+          elevation: 2,
+          borderRadius: BorderRadius.circular(6),
+          child: _buildYearPicker(),
+        )
+            : const SizedBox(),
       ),
     );
   }
@@ -627,43 +822,47 @@ class _CalendarScreenState extends State<CalendarScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 40),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.05),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.06),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     '$currentYear',
-                    style: const TextStyle(
-                      fontSize: CalendarStyles.yearFontSize,
+                    style: _textStyleBold.copyWith(
+                      fontSize: CalendarStyles.yearFontSize(context),
                       color: Colors.white,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   IconButton(
                     icon: Icon(
                       _showYearPicker ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                       color: Colors.white,
-                      size: 50,
+                      size: MediaQuery.of(context).size.width * 0.12,
                     ),
-                    onPressed: () => setState(() {
-                      _showYearPicker = !_showYearPicker;
-                    }),
+                    onPressed: () {
+                      _safeReportEvent(
+                        _showYearPicker ? 'year_picker_closed' : 'year_picker_opened',
+                      );
+                      setState(() {
+                        _showYearPicker = !_showYearPicker;
+                      });
+                    },
                   ),
                 ],
               ),
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.02),
                 child: GridView.count(
                   shrinkWrap: true,
                   physics: const ClampingScrollPhysics(),
                   crossAxisCount: 3,
                   childAspectRatio: 1.1,
-                  mainAxisSpacing: 4,
-                  crossAxisSpacing: 4,
+                  mainAxisSpacing: MediaQuery.of(context).size.width * 0.01,
+                  crossAxisSpacing: MediaQuery.of(context).size.width * 0.01,
                   children: List.generate(12, (index) {
                     final month = index + 1;
                     final monthName = toBeginningOfSentenceCase(
@@ -695,35 +894,39 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }) {
     final isSelectedMonth = _selectedDate.month == month && _selectedDate.year == year;
 
-    return Container(
-      padding: const EdgeInsets.all(5),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        color: isSelectedMonth ? CalendarStyles.secondaryColor.withOpacity(0.5) : null,
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: () {
-          setState(() {
-            _selectedDate = DateTime(year, month);
-            _showYearPicker = false;
-          });
-        },
+    return GestureDetector(
+      onTap: () {
+        _safeReportEvent('calendar_month_selected', attributes: {
+          'month': month,
+          'year': year,
+        });
+        setState(() {
+          _selectedDate = DateTime(year, month);
+          _showYearPicker = false;
+        });
+      },
+      child: Container(
+        padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.01),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width * 0.01),
+          color: isSelectedMonth ? CalendarStyles.secondaryColor.withOpacity(0.5) : null,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               monthName,
-              style: TextStyle(
-                fontSize: CalendarStyles.titleMonthCalendarSize,
-                fontWeight: FontWeight.bold,
+              style: _textStyleBold.copyWith(
+                fontSize: CalendarStyles.titleMonthCalendarSize(context),
                 color: isCurrentMonth
                     ? CalendarStyles.todayMonthColor
-                    : (isSelectedMonth ? Colors.white : Colors.white.withOpacity(0.8)),
+                    : (isSelectedMonth ? Colors.white : Colors.white.withOpacity(1)),
               ),
             ),
-            const SizedBox(height: 5),
-            Expanded(
+            SizedBox(height: MediaQuery.of(context).size.height * 0.0001),
+            // Заменили Expanded на ограниченный по высоте Container
+            Container(
+              height: MediaQuery.of(context).size.width * 0.0001, // Фиксированная высота
               child: _buildMiniCalendar(year, month),
             ),
           ],
@@ -733,6 +936,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _buildMiniCalendar(int year, int month) {
+    final screenWidth = MediaQuery.of(context).size.width;
     final firstDay = DateTime(year, month, 1);
     final lastDay = DateTime(year, month + 1, 0);
     final startOffset = (firstDay.weekday + 6) % 7;
@@ -742,28 +946,53 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final currentMonth = currentDate.month;
     final currentYear = currentDate.year;
 
-    return GridView.count(
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 7,
-      childAspectRatio: 1,
-      padding: EdgeInsets.zero,
-      mainAxisSpacing: 0,
-      crossAxisSpacing: 0,
-      shrinkWrap: true,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        for (int i = 0; i < startOffset; i++) const SizedBox(),
-        for (int day = 1; day <= daysInMonth; day++)
-          Center(
-            child: Text(
-              '$day',
-              style: TextStyle(
-                fontSize: 9,
-                color: (month == currentMonth && year == currentYear)
-                    ? CalendarStyles.todayMonthColor
-                    : Colors.white,
+        // Заголовок с днями недели
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'].map((day) {
+            return SizedBox(
+              width: screenWidth / 7,
+              child: Center(
+                child: Text(
+                  day,
+                  style: _textStyleBold.copyWith(
+                    fontSize: screenWidth * 0,
+                    color: CalendarStyles.dayLabelColor,
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          }).toList(),
+        ),
+        // Сетка дней
+        GridView.count(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          crossAxisCount: 7,
+          childAspectRatio: 1.1,
+          padding: EdgeInsets.zero,
+          children: [
+            // Пустые ячейки для выравнивания
+            for (int i = 0; i < startOffset; i++)
+              Container(),
+            // Ячейки с днями месяца
+            for (int day = 1; day <= daysInMonth; day++)
+              Center(
+                child: Text(
+                  '$day',
+                  style: _textStyleSemiBold.copyWith(
+                    fontSize: screenWidth * 0.025,
+                    color: (month == currentMonth && year == currentYear)
+                        ? CalendarStyles.todayMonthColor
+                        : Colors.white,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ],
     );
   }

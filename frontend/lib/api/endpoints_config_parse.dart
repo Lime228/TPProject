@@ -35,5 +35,8 @@ class EndpointsConfigParse {
   static String get lobbyGetPath => _config["api"]["endpoints"]["lobbyGet"];
   static String get lobbyDeletePath => _config["api"]["endpoints"]["lobbyDelete"];
 
+  static String get notificationCreatePath => _config["api"]["endpoints"]["notificationCreate"];
+  static String get notificationGetPath => _config["api"]["endpoints"]["notificationGet"];
+
 
 }

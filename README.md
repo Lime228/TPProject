@@ -14,11 +14,19 @@
 ## О приложении
 
 ### ZадачOk
-Мобильное приложение «ZадачOk» предназначено для совместного ведения задач с возможностью создания групп пользователей.
-В зависимости от установленных администратором условий, участники могут получать вознаграждение в виде внутренней некоммерческой валюты. 
-В приложении предусмотрен встроенный магазин, в котором данная валюта может быть использована для приобретения доступных товаров или услуг, предусмотренных администратором.
+Мобильное приложение «ZадачOk» для совместного ведения списка задач с возможностью создания групп пользователей. В зависимости от установленных администратором условий, участники могут получать вознаграждение в виде внутренней некоммерческой валюты. В приложении предусмотрен встроенный магазин, в котором данная валюта может быть использована для приобретения доступных товаров или услуг.
 
 ## Наши ресурсы
+### Всё к защите
+- [Отчет о тестировании](https://github.com/Lime228/TPProject/blob/main/Documentation/Отчет%20о%20тестировании%20от%204%20июня.pdf)
+- [Финальный ПМ-отчет](https://github.com/Lime228/TPProject/blob/main/Documentation/Финальный%20ПМ-отчет.pdf)
+- [Сопроводительное письмо](https://github.com/Lime228/TPProject/blob/main/Documentation/Сопроводительное%20письмо%20ZадачOk.pdf)
+- Презентация ([PDF](https://github.com/Lime228/TPProject/blob/main/Documentation/Финальная%20защита.pdf)) ([PPTX](https://github.com/Lime228/TPProject/blob/main/Documentation/Финальная%20защита.pptx))
+- [Презентация мобильной части](https://rutube.ru/video/private/9695434dfa4a2eb09cd4f4a66bf90107/?p=1-fBNsO8MlilVk6_Uge5IQ) ([Я.Диск](https://disk.yandex.ru/i/WWsBPWqtR3EYQQ))
+- Курсовая работа по проекту ([PDF](https://github.com/Lime228/TPProject/blob/main/Documentation/course_work_(1.3).pdf)) ([DOCX](https://github.com/Lime228/TPProject/blob/main/Documentation/course_work_(1.3).docx))
+- [Swagger ZадачOk API](https://api.zadachok.ru/swagger-ui/index.html#/)
+- [Ссылка на APK](https://github.com/Lime228/TPProject/releases/tag/Pre-release)
+- [Гайд по запуску в Android Studio](https://github.com/Lime228/TPProject/blob/main/frontend/README.md)
 
 ### Доска задач
 - [YouTrack](https://youtrack.zadachok.ru/agiles)
@@ -41,13 +49,12 @@
 ### Документация
 - [Еженедельные отчеты](https://github.com/Lime228/TPProject/tree/main/Weekly%20reports)
 - Диаграммы, рассчеты, Roadmap и т.д. находятся на [Miro](https://miro.com/app/board/uXjVIVLnelk=/)
-- [Техническое задание](https://github.com/Lime228/TPProject/tree/main/Documentation)
-- [Схема API](https://api.zadachok.ru/swagger-ui/index.html#/)
+- Техническое задание ([PDF](https://github.com/Lime228/TPProject/blob/main/Documentation/TZ_ZadachOk.pdf)) ([DOCX](https://github.com/Lime228/TPProject/blob/main/Documentation/TZ_ZadachOk.docx))
 - [Дополнение 1 к техническому заданию](https://github.com/Lime228/TPProject/blob/main/Documentation/Дополнение%201%20к%20тз.pdf)
 - [Письмо к дополнению](https://github.com/Lime228/TPProject/blob/main/Documentation/Письмо%20к%20дополнению.pdf)
 - [PM-отчет (2 атт.)](https://github.com/Lime228/TPProject/blob/main/Documentation/PM-отчет.pdf)
 - [Отчет о тестировании](https://github.com/Lime228/TPProject/blob/main/Documentation/Otchyot_o_testirovanii.pdf)
-- [Курсовая работа по проекту](https://github.com/Lime228/TPProject/blob/main/Documentation/course_work_(0.2).pdf)
+
 
 ### Проверка
 - [Чек-лист](https://github.com/Lime228/TPProject/blob/main/Documentation/ВГУ-ТП.%20Чеклист%201%20этап%20Команда%208.2.pdf)
@@ -62,3 +69,4 @@
 - [О коммитах](https://youtrack.zadachok.ru/articles/TPP-A-7/O-kommitah)
 - [Как собрать frontend в Android Studio](https://github.com/Lime228/TPProject/blob/main/frontend/README.md)
 - API находится по адресу https://api.zadachok.ru
+- [Билд на момент 26 мая 2025 года](https://disk.yandex.ru/d/1UvaWr48cTbPvA)

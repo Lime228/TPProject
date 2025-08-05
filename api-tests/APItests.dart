@@ -233,9 +233,9 @@ void main() {
       print('Создание задачи...');
 
       final requestData = {
-        'name': 'TEST TASK',
+        'name': 'тест TASK',
         'reward': 100,
-        'description': 'Ogo, chto eto? Eto je opisanie!',
+        'description': 'тест русского описания',
         'startdate': '2025-05-02',
         'enddate': '2025-05-20',
         'lobbyid': 1,
@@ -262,7 +262,7 @@ void main() {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
 
-        expect(responseData['name'], equals('TEST TASK'),
+        expect(responseData['name'], equals('тест TASK'),
             reason: 'Название задания не соответствует');
 
 
